@@ -4,9 +4,11 @@ Der vollständige CodeSearch-Kurs auf dem Handy: **459 Schritte in 34 Kapiteln**
 
 Stand der Quelle: `codesearch_lab` vom 23.10.2026, einschließlich State-Atlas und der sieben LLM-Werkzeuge.
 
+Live: https://tombkn.github.io/codesearch-pocket/
+
 ## Auf dem Handy
 
-1. Seite öffnen (GitHub Pages-Adresse).
+1. Seite öffnen: https://tombkn.github.io/codesearch-pocket/
 2. iPhone: Teilen → **Zum Home-Bildschirm**.
 3. Android: Menü → **App installieren** / Zum Startbildschirm.
 
