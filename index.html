@@ -2,120 +2,79 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0c0c0c">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#15161a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>CodeSearch Pocket</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg">
-  <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css?v=3">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <meta name="apple-mobile-web-app-title" content="CodeSearch">
+  <link rel="stylesheet" href="css/app.css?v=9c1dc1db1d">
 </head>
-<body>
-  <div class="app">
-    <header class="titlebar">
-      <span class="mark"></span>
-      <span class="name">CODESEARCH</span>
-      <span class="spacer"></span>
-      <button class="icon-btn" id="btn-work">PLATZ</button>
-      <button class="icon-btn" id="btn-play">PLAY</button>
-      <button class="icon-btn" id="btn-map">KURS</button>
-      <button class="icon-btn" id="btn-feat">ATLAS</button>
+<body data-look="classic">
+  <div id="app" class="app">
+    <!-- Kopf der Seite: TD-Seite, Kurs, Atlas -->
+    <header class="topbar">
+      <button class="tb" id="btn-td" title="TouchDesigner: Netz, Parameter, Timeline">TD</button>
+      <span class="tb-title" id="tb-title">CodeSearch Pocket</span>
+      <span class="tb-prog" id="tb-prog">0/0</span>
+      <button class="tb" id="btn-keys" title="Tastenleiste">⌨</button>
+      <button class="tb" id="btn-course" title="Kapitel">KURS</button>
+      <button class="tb" id="btn-atlas" title="Nachschlagen">ATLAS</button>
+      <button class="tb" id="btn-offline" title="Offline auf dem Handy speichern">⇩</button>
     </header>
-    <div class="focus">
-      FOCUS <b id="focus-name">BranchLab</b>
-      <span class="stay">BLEIBT · <span id="prog-mini">0/459</span></span>
-    </div>
-    <div class="scopes" id="scopes">
-      <button class="chip" data-scope="GLOBAL">GLOBAL</button>
-      <button class="chip on" data-scope="NUR">NUR</button>
-      <button class="chip" data-scope="REKURSIV">REKURSIV</button>
-    </div>
-    <div class="tabs" id="tabs"></div>
-    <div class="field-row">
-      <span class="gt">&gt;</span>
-      <input id="cmd" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="states   oder   gain">
-      <button class="go" id="go">ENTER</button>
-    </div>
-    <section class="workspace">
-      <div class="groups" id="groups"></div>
-      <div class="list" id="list"></div>
-      <aside class="detail" id="detail"></aside>
-      <div class="labbar" id="labbar">
-        <button data-lab="prepare">Vorbereiten</button>
-        <button data-lab="fire">Fire</button>
-        <button data-lab="mutate">Liste ändern</button>
-        <button data-lab="notify">Dependency</button>
-        <button data-lab="replace">Neue Liste</button>
-        <button data-lab="clearChild">Child löschen</button>
-        <button data-lab="expression">Gain EXPR</button>
-        <button data-lab="constant">Gain CONST</button>
-        <button data-lab="startup">Startwert</button>
-        <button data-lab="runtimeReset">Runtime</button>
-        <button data-lab="reinit">Reinit</button>
-        <button data-lab="storageReset">Storage</button>
-        <button data-lab="double">Doublefire</button>
-        <span class="swatch-wrap"><span class="swatch" id="swatch"></span></span>
+
+    <!-- Das CodeSearch-Fenster -->
+    <section class="cs" id="cs" aria-label="CodeSearch">
+      <div class="cs-title" id="cs-title"></div>
+      <div class="cs-scopes" id="cs-scopes"></div>
+      <div class="cs-tabs" id="cs-tabs"></div>
+      <div class="cs-context" id="cs-context"></div>
+      <div class="cs-field">
+        <span class="cs-gt" id="cs-mode-label">SEARCH</span>
+        <input id="cs-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
+        <button class="cs-enter" id="cs-enter" title="Enter">⏎</button>
       </div>
+      <div class="cs-filters" id="cs-filters"></div>
+      <div class="cs-data" id="cs-data"></div>
+      <div class="cs-record" id="cs-record"></div>
+      <div class="cs-crumb" id="cs-crumb"></div>
+      <div class="cs-groups" id="cs-groups"></div>
+      <div class="cs-body" id="cs-body">
+        <div class="cs-list" id="cs-list"></div>
+        <div class="cs-split" id="cs-split" title="ziehen: Liste / Detail"></div>
+        <aside class="cs-detail" id="cs-detail"></aside>
+      </div>
+      <div class="cs-status" id="cs-status"></div>
+      <div class="cs-closed" id="cs-closed"><p id="cs-closed-why"></p><button id="btn-reopen">CodeSearch öffnen (Shift+K)</button></div>
     </section>
-    <footer class="status">
-      <span id="status-left">SEARCH</span>
-      <span id="status-right"></span>
-    </footer>
+
+    <!-- Tastenleiste -->
+    <div class="keys" id="keys"></div>
+
+    <!-- Tour-Karte -->
+    <section class="tour" id="tour">
+      <div class="tour-grip" id="tour-grip"><span></span></div>
+      <div class="tour-head" id="tour-head"></div>
+      <div class="tour-body" id="tour-body"></div>
+      <div class="tour-actions" id="tour-actions"></div>
+    </section>
   </div>
 
-  <section class="sheet" id="sheet">
-    <div class="handle" id="handle"></div>
-    <div class="sheet-head">
-      <div>
-        <div class="ch" id="sheet-ch">KAPITEL</div>
-        <h2 id="sheet-title">Dein Arbeitsplatz</h2>
-        <div class="peek" id="peek"></div>
-      </div>
-    </div>
-    <div class="sheet-body">
-      <div id="banner" class="banner hidden"></div>
-      <div class="block"><div class="lbl">JETZT DU</div><p id="now"></p></div>
-      <div class="block"><div class="lbl">WARUM</div><p id="why"></p></div>
-      <div class="block"><div class="lbl">ERWARTET</div><p id="expected"></p></div>
-      <div class="block muted"><div class="lbl">GRENZE</div><p id="limit"></p></div>
-      <div class="block muted"><div class="lbl">GLOSSAR</div><p id="glossary"></p></div>
-      <div class="block"><div class="lbl">PRÜFUNG</div><ul class="checks" id="checks"></ul></div>
-    </div>
-  </section>
-  <div class="actions">
-    <button id="btn-back">Zurück</button>
-    <button id="btn-seen">Gesehen</button>
-    <button class="good" id="btn-check">Prüfen</button>
-    <button class="prime" id="btn-next">Weiter</button>
-  </div>
+  <!-- Ueberlagerungen -->
+  <div class="layer" id="layer-td"></div>
+  <div class="layer" id="layer-course"></div>
+  <div class="layer" id="layer-atlas"></div>
+  <div class="layer" id="layer-flowlens"></div>
+  <div class="layer" id="layer-offline"></div>
+  <div class="popup" id="popup"></div>
+  <div class="quick" id="quick"></div>
+  <div class="floats" id="floats"></div>
+  <div class="toast" id="toast"></div>
 
-  <section class="overlay" id="overlay-map">
-    <header>
-      <h1>KURS</h1>
-      <span class="home-progress" id="map-progress"></span>
-      <button class="close">Schließen</button>
-    </header>
-    <div class="body" id="map-list"></div>
-  </section>
-
-  <section class="overlay" id="overlay-feat">
-    <header>
-      <h1>WERKZEUGE</h1>
-      <button class="close">Schließen</button>
-    </header>
-    <div class="body" id="feat-list"></div>
-  </section>
-
-  <script type="module" src="js/app.js?v=3"></script>
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("sw.js");
-    }
-  </script>
+  <script type="module" src="js/app.js?v=9c1dc1db1d"></script>
 </body>
 </html>

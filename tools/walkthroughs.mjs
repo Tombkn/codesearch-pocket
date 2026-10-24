@@ -1,0 +1,355 @@
+// Handgriffe je Schritt: so loest ein Mensch am Handy jede Station. Nur Gesten (g.*), nie Zustand setzen.
+// GENERIC leitet einfache Faelle aus den Regeln ab; SCRIPTS beschreibt jeden Schritt, der mehr braucht.
+
+import { markerMatch } from "../js/core/tour.js";
+
+const ctxRow = (name, kinds = ["symbol", "method", "state", "parstate"]) => (h) => kinds.includes(h.kind) && h.ctx === name;
+
+export function generic(g, lesson) {
+  const rules = lesson.rules || [];
+  const keys = new Set(rules.map((r) => r.key));
+  const rule = (key) => rules.find((r) => r.key === key);
+  const did = [];
+  if (keys.has("marker.selected") && lesson.marker && lesson.marker.match) {
+    const i = g.cs.state.hits.findIndex((h) => markerMatch(h, lesson.marker.match));
+    if (i < 0) throw new Error(`Marker-Zeile fehlt in der Ansicht: ${JSON.stringify(lesson.marker.match)}`);
+    g.tapRow(i);
+    did.push("marker");
+  }
+  if (keys.has("selected_ctx") && !did.length) {
+    const name = rule("selected_ctx").value;
+    const i = g.cs.state.hits.findIndex(ctxRow(name));
+    if (i < 0) throw new Error(`Zeile ${name} fehlt`);
+    g.tapRow(i);
+    did.push("ctx");
+  }
+  if (keys.has("observed")) g.seen();
+  return did;
+}
+
+const sel = (text) => (g) => g.tapRow(text);
+const seenOnly = (g) => g.seen();
+
+// Suche: Feld tippen (ohne Enter), optional Kategorie vorher
+const search = (query, filter = null, family = null) => (g) => {
+  if (filter) g.filter(filter);
+  if (family) g.family(family);
+  g.type(query);
+};
+
+export const SCRIPTS = {
+  // ---------------------------------------------------------------- Kapitel 0 Ankommen
+  start: (g) => g.workspace(),
+  play: (g) => g.play(true),
+  one_question_one_tab: (g) => { g.tour.compareOpen = true; g.seen(); },
+  overview: (g) => g.help(),
+  focus: (g) => { g.netSelect("BranchLab/control"); g.key("Alt+Shift+K"); },
+  data_name: (g) => g.data("name"),
+  data_relative: (g) => g.data("relative"),
+  data_op: (g) => g.data("op_relative"),
+  data_full: (g) => g.data("full"),
+  data_details: (g) => g.dataDetails(),
+  data_back: (g) => { g.dataDetails(); g.dataBack(); },
+  // ---------------------------------------------------------------- Kapitel 1 Suchen
+  search: search("aurora"),
+  and: search("aurora copper"),
+  pattern: search("aur*"),
+  exclude: search("aurora ^copper"),
+  or: search("copper | cobalt"),
+  phrase: search("\"aurora copper\""),
+  filter_code: search("RouteEvent", "code"),
+  filter_ext: search("ApplyPreset", "ext"),
+  filter_callback: search("Tick", "callback"),
+  filter_op: search("level", "op"),
+  filter_par: search("Intensity", "par"),
+  filter_chan: search("gain", "chan"),
+  filter_table: search("warm", "table"),
+  filter_dat: search("aurora", "dat"),
+  family: (g) => { g.filter("op"); g.family("top"); },
+  flat: (g) => g.scope("currentflat"),
+  recursive: (g) => g.scope("currentpane"),
+  quick: (g) => { g.key("Ctrl+P"); g.quickType("ApplyPreset"); },
+  empty: search("zzz_keinen_treffer_947"),
+  // ---------------------------------------------------------------- Kapitel 2 Netz lesen
+  usedby: (g) => { g.tab("refs"); g.tapRow("level_expr"); },
+  inspect: (g) => g.tapRow((h) => h.kind === "expr" && h.text.includes("gain")),
+  flow: (g) => { g.tab("chain"); g.tapRow((h) => h.kind === "chain" && h.path.endsWith("BranchLab/out1")); },
+  selected: (g) => { g.tapRow((h) => h.kind === "chain" && h.path.endsWith("source_pattern")); g.key("Ctrl+Enter"); },
+  jump: (g) => { g.tapRow((h) => h.kind === "chain" && h.path.endsWith("level_expr")); g.key("Enter"); },
+  readorder: (g) => { g.readOrder(); g.tapRow("source_pattern"); },
+  // ---------------------------------------------------------------- Kapitel 3 Verzweigter Dataflow
+  fanout: (g) => g.tapRow((h) => h.kind === "chain" && h.path.includes("SoftBranch")),
+  fanin: (g) => g.tapRow((h) => h.kind === "chain" && h.path.endsWith("level_expr")),
+  expression: (g) => g.tapRow((h) => h.kind === "chain" && h.path.endsWith("control")),
+  export: (g) => g.tapRow((h) => h.kind === "chain" && h.path.includes("control")),
+  binding: (g) => g.tapRow((h) => h.kind === "chain" && h.art === "BIND"),
+  compin: (g) => g.tapRow((h) => h.kind === "chain" && h.path.endsWith("source_pattern")),
+  compout: (g) => g.tapRow((h) => h.kind === "chain" && h.path.endsWith("select_color")),
+  oppath: (g) => g.tapRow((h) => h.kind === "chain" && h.path.includes("ColorEngine")),
+  feedback: (g) => g.tapRow((h) => h.kind === "chain" && h.path.endsWith("BranchLab/out1")),
+  switch: (g) => g.tapRow((h) => h.kind === "chain" && h.path.endsWith("merge_image")),
+  branch_difference: (g) => g.blPar("Softness", 28),
+  data_event: (g) => { g.blPar("Intensity", 0.35); g.blPulse("Fire"); },
+  data_duplicates: (g) => { g.data("name"); g.seen(); },
+  // ---------------------------------------------------------------- Kapitel 4 Extensions
+  structure: (g) => { g.tab("map"); g.tapRow(ctxRow("RouteEvent", ["method"])); },
+  map: (g) => { g.tapRow((h) => h.kind === "button" && h.action_key === "LANDKARTE"); g.key("Enter"); },
+  triggers: (g) => { g.tab("entries"); g.tapRow((h) => h.kind === "entry" && h.ctx === "onParFire"); },
+  callback: (g) => { g.tapRow((h) => h.kind === "entry" && h.ctx === "onParFire"); g.key("Ctrl+Enter"); },
+  property: (g) => g.tapRow(ctxRow("Deckkraft", ["method"])),
+  frame_trigger: (g) => g.tapRow("frame_tick"),
+  inactive_trigger: (g) => g.tapRow("tasten"),
+  impact_method: (g) => { g.tapRow(ctxRow("_send", ["method"])); g.key("Ctrl+I"); },
+  state: (g) => { g.rowMenu(ctxRow("_index", ["state"])); g.menu("URSACHE"); g.seen(); },
+  other_ext: (g) => g.tapRow(ctxRow("ApplyPreset", ["method"])),
+  return: (g) => { g.doubleTapRow((h) => h.kind === "button" && h.action_key === "LANDKARTE"); g.tapRow(ctxRow("_send", ["symbol"])); g.seen(); },
+  all_ext: (g) => g.overview("ext"),
+  overview_atlas: (g) => g.overview("atlas"),
+  overview_short: (g) => g.overview("short"),
+  overview_health: (g) => g.overview("health"),
+  data_method: (g) => { g.tapRow(ctxRow("RouteEvent", ["method"])); g.data("op_relative"); },
+  // ---------------------------------------------------------------- Kapitel 5 Ereignisse und Guards
+  guard: (g) => g.blPulse("Fire"),
+  route_warm: (g) => { g.blPar("Route", "warm"); g.blPulse("Fire"); },
+  route_cool: (g) => { g.blPar("Route", "cool"); g.blPulse("Fire"); },
+  route_neutral: (g) => { g.blPar("Route", "neutral"); g.blPulse("Fire"); },
+  empty_palette: (g) => g.blPulse("Fire"),
+  invalid_value: (g) => g.blPulse("Fire"),
+  restore_data: (g) => g.blPulse("Fire"),
+  // ---------------------------------------------------------------- Kapitel 6 CALL PATH und RECORD
+  expand_branch: (g) => { g.tapRow((h) => h.kind === "tourbranch"); g.key("Enter"); },
+  record_target: seenOnly,
+  record_continuous: (g) => g.record("duration"),
+  record_start: (g) => g.record("start"),
+  record_fire: (g) => g.blPulse("Fire"),
+  record_stop: (g) => g.record("stop"),
+  record_warm: (g) => { g.record("prev"); g.record("next"); g.seen(); },
+  record_cool: (g) => { g.blPar("Route", "cool"); g.record("start"); g.blPulse("Fire"); g.record("stop"); },
+  record_guard: (g) => { g.record("start"); g.blPulse("Fire"); g.record("stop"); },
+  record_hold: (g) => { g.record("start"); g.blPulse("Fire"); g.record("hold"); },
+  record_mini: (g) => g.record("mini"),
+  record_full: (g) => { g.record("mini"); g.record("full"); },
+  record_history: (g) => { g.record("start"); g.blPulse("Fire"); g.blPulse("Fire"); g.record("stop"); g.record("prev"); g.record("next"); g.seen(); },
+  continuous: (g) => g.record("duration"),
+  state_record: (g) => { g.csPar("Recordstate", true); g.record("start"); g.blPulse("Fire"); g.record("stop"); },
+  record_copy: (g) => { g.record("start"); g.blPulse("Fire"); g.record("stop"); g.record("copy"); },
+  // ---------------------------------------------------------------- Kapitel 7 Tabellen
+  table_open: (g) => g.tab("table"),
+  table_filter: (g) => g.type("cool"),
+  table_sort: (g) => { g.type(""); g.tableSort(1); },
+  table_edit: (g) => g.tableEdit(1, 1, "0.42"),
+  table_effect: (g) => g.blPulse("Fire"),
+  table_undo: (g) => { g.tableEdit(2, 1, "0.2"); g.tdUndo(); g.seen(); },
+  table_reference: (g) => { g.tableTap(1, 1); g.seen(); },
+  table_copy_row: (g) => { g.tableMenu(1, 1); g.menu("Zeile als Dict"); g.seen(); },
+  table_copy_column: (g) => { g.tableMenu(1, 1); g.menu("Spalte als Liste"); g.seen(); },
+  table_csv: (g) => { g.tableMenu(1, 1); g.menu("Tabelle als CSV"); g.seen(); },
+  table_insert: (g) => { g.tableMenu(1, 1); g.menu("Zeile einfügen"); g.seen(); },
+  table_delete: (g) => { g.tableMenu(2, 1); g.menu("Zeile löschen"); g.seen(); },
+  table_columns: (g) => { g.tableMenu(1, 3); g.menu("Spalte einfügen"); g.tableMenu(1, 4); g.menu("Spalte löschen"); g.seen(); },
+  table_sort_write: (g) => { g.tableSort(0); g.tableMenu(1, 1); g.menu("Sortierung in den DAT"); g.enter(); g.seen(); },
+  table_goto: (g) => { g.enter("[2,1]"); g.seen(); },
+  table_dups: (g) => { g.tableMenu(1, 1); g.menu("Duplikate"); g.seen(); },
+  data_cell: (g) => { g.tableTap(1, 2); g.data("op_relative"); },
+  // ---------------------------------------------------------------- Kapitel 8 Fehler
+  error_create: (g) => { g.setError(); g.tab("errors"); },
+  error_detail: (g) => g.tapRow("error_probe"),
+  error_report: (g) => { g.tapRow("error_probe"); g.key("Ctrl+C"); },
+  constant: (g) => { g.modifier("alt"); g.tapRow("error_probe"); },
+  error_restore: (g) => g.restoreError(),
+  // ---------------------------------------------------------------- Kapitel 9 Review
+  audit: (g) => { g.tab("check"); g.tapRow((h) => h.kind === "lint"); },
+  audit_question: (g) => { g.tapRow((h) => h.kind === "lint"); g.key("Alt+F"); },
+  snapshot: (g) => { g.type(">snapshot"); g.enter(">snapshot"); },
+  snapshot_diff: (g) => {
+    g.enter(">snapshot");
+    g.tab("search"); g.type("demo_*"); g.tapRow((h) => h.kind === "code" && h.text.includes("def demo_")); g.editOpen();
+    g.editSet(g.cs.state.editor.text.replace("demo_before", "demo_after")); g.editApply();
+    g.tab("map"); g.enter(">snapshot");
+    g.doubleTapRow((h) => h.kind === "mapfile" && h.map_index === 0); g.doubleTapRow((h) => h.kind === "mapfile" && h.map_index === 1); g.seen();
+  },
+  code_edit: (g) => { g.tapRow((h) => h.kind === "code" && h.text.includes("def demo_")); g.editOpen(); g.editSet(g.cs.state.editor.text.replace("return 3", "return 4")); g.editApply(); },
+  syntax_guard: (g) => { g.tapRow((h) => h.kind === "code" && h.text.includes("def demo_")); g.editOpen(); g.editSet(g.cs.state.editor.text.replace("():", "()")); g.editApply(); g.editCancel(); g.seen(); },
+  // ---------------------------------------------------------------- Kapitel 10 Kopieren und Export
+  copy_op: (g) => { g.tapRow((h) => h.kind === "expr"); g.key("Ctrl+C"); g.menu("op() relativ"); },
+  copy_full: (g) => { g.tapRow((h) => h.kind === "expr"); g.key("Alt+P"); },
+  copy_par: (g) => { g.filter("par"); g.tapRow((h) => h.par === "Intensity"); g.key("Ctrl+C"); g.menu("Parameter-Zugriff"); },
+  copy_chan: (g) => { g.filter("chan"); g.tapRow((h) => h.kind === "chan" && h.text === "gain"); g.key("Ctrl+C"); g.menu("Kanal-Zugriff"); },
+  copy_symbol: (g) => { g.tapRow(ctxRow("RouteEvent", ["method"])); g.key("Ctrl+C"); g.menu("Methodenaufruf"); },
+  copy_cell: (g) => { g.tableTap(1, 1); g.key("Ctrl+C"); g.menu("Zell-Zugriff"); },
+  copy_text: (g) => g.copyFieldText(),
+  reverse_spec: (g) => { g.tapRow(ctxRow("RouteEvent", ["method"])); g.key("Ctrl+R"); },
+  copy_map: (g) => g.enter(">landkarte kopieren"),
+  story: (g) => g.enter(">story"),
+  export_menu: (g) => { g.enter(">export"); g.seen(); },
+  context: (g) => { g.doubleTapRow((h) => h.kind === "button" && h.action_key === "CONTEXT"); g.seen(); },
+  data_copy: (g) => { g.tapRow((h) => h.kind === "chain" && h.path.endsWith("BranchLab/control")); g.dataCopy(); },
+  // ---------------------------------------------------------------- Kapitel 11 Bedienung
+  multi: (g) => { g.tapRow((h) => h.kind === "code" && /aurora/i.test(h.text)); g.modifier("ctrl"); g.tapRow((h, i) => h.kind === "code" && /aurora copper glow/i.test(h.text)); },
+  tabs: (g) => g.key("Ctrl+Right"),
+  zoom: (g) => { g.key("Ctrl+Plus"); g.key("Alt+0"); g.seen(); },
+  look: (g) => g.look(),
+  help: (g) => { g.altHelp("chain"); g.seen(); },
+  window: (g) => { g.window("max"); g.window("normal"); g.window("min"); g.window("normal"); g.seen(); },
+  history: (g) => { g.tapRow((h) => h.kind === "chain" && h.path.endsWith("level_expr")); g.key("Ctrl+Enter"); g.tapRow((h) => h.kind === "chain" && h.path.endsWith("control")); g.key("Ctrl+Enter"); g.key("Ctrl+Alt+Left"); g.key("Ctrl+Alt+Right"); g.seen(); },
+  esc: (g) => { g.key("Ctrl+P"); g.key("Esc"); g.seen(); },
+  editor: (g) => { g.tapRow(ctxRow("RouteEvent", ["method"])); g.detail("editor"); g.seen(); },
+  regex: (g) => { g.csPar("Regex", true); g.type("aurora.*copper"); },
+  case: (g) => { g.csPar("Casesensitive", true); g.type("AURORA"); },
+  limit: (g) => g.csPar("Maxresults", 2),
+  index_age: (g) => g.csPar("Maxindexage", 30),
+  tables_setting: (g) => g.csPar("Includetables", false),
+  followsearch: (g) => { g.csPar("Followsearch", true); g.key("Down"); },
+  followrefs: (g) => g.csPar("Followrefs", true),
+  followselection: (g) => g.netSelect("BranchLab/control"),
+  recordseconds: (g) => { g.csPar("Recordseconds", 8); g.tab("record"); },
+  framenoise: (g) => g.csPar("Recordframenoise", true),
+  callgraph: (g) => { g.csPar("Showcallgraph", true); g.tapRow(ctxRow("RouteEvent", ["method"])); },
+  system_scope: (g) => { g.csPar("Includeui", false); g.csPar("Includesys", false); },
+  pin: (g) => g.enter(">ziel /project1/CodeSearch_Tutorial/BranchLab"),
+  unpin: (g) => g.enter(">ziel aus"),
+  learn: (g) => { g.enter(">lernen an"); g.tapRow(ctxRow("RouteEvent", ["method"])); g.detail("reveal"); },
+  // ---------------------------------------------------------------- Kapitel 13 Transfer
+  flowlens: (g) => { g.openFlowLens(); g.seen(); },
+  readpath_marks: (g) => { g.readOrderMarks(); g.seen(); },
+  transfer: (g) => { g.tab("record"); g.record("start"); g.blPulse("Fire"); g.record("stop"); },
+  limits: seenOnly,
+  finish: seenOnly,
+  // ---------------------------------------------------------------- Kapitel 14 Schnellsuche
+  quick2_open: (g) => { g.key("Ctrl+P"); g.quickType("ApplyPreset"); },
+  quick2_filter: (g) => g.quickFilter("code"),
+  quick2_select: (g) => g.quickTap((h) => h.kind === "code" && h.text.includes("ApplyPreset")),
+  quick2_jump: (g) => g.quickDoubleTap((h) => h.kind === "code" && h.text.includes("ApplyPreset")),
+  quick2_field: (g) => { g.quickType("_writeColor"); g.quickEnter(); },
+  quick2_close: (g) => g.quickEsc(),
+  quick2_again: (g) => { g.key("Ctrl+P"); g.quickType("RouteEvent"); g.quickEnter(); },
+  quick2_main: (g) => g.quickMenuMain((h) => h.kind === "code" && h.text.includes("RouteEvent")),
+  quick2_mini: (g) => { g.record("mini"); g.record("full"); g.seen(); },
+  // ---------------------------------------------------------------- Kapitel 19 Deep Dive Dataflow
+  trace_value: (g) => { g.blPar("Intensity", 0.4); g.blPulse("Fire"); },
+  trace_push_pull: (g) => { g.key("Ctrl+P"); g.quickType("_send"); g.seen(); },
+  // ---------------------------------------------------------------- Kapitel 20 Faelle selbst untersuchen
+  deep_record_warm: (g) => { g.record("start"); g.blPulse("Fire"); g.record("stop"); },
+  deep_record_cool: (g) => { g.record("start"); g.blPulse("Fire"); g.record("stop"); },
+  deep_record_neutral: (g) => { g.record("start"); g.blPulse("Fire"); g.record("stop"); },
+  deep_record_guard: (g) => { g.record("start"); g.blPulse("Fire"); g.record("stop"); },
+  deep_record_invalid: (g) => { g.record("start"); g.blPulse("Fire"); g.record("stop"); },
+  deep_record_recovered: (g) => { g.record("start"); g.blPulse("Fire"); g.record("stop"); },
+  deep_scope_calls: (g) => { g.tapRow(ctxRow("ApplyPreset", ["symbol"])); g.seen(); },
+  deep_finish: (g) => { g.tapRow(ctxRow("ApplyPreset", ["method"])); g.key("Ctrl+I"); },
+  // ---------------------------------------------------------------- Kapitel 21 WARUM
+  why_intro: seenOnly,
+  why_record_blocked: (g) => { g.record("start"); g.blPulse("Fire"); g.record("stop"); },
+  why_open: (g) => g.record("why"),
+  why_sentence: seenOnly,
+  why_detail: (g) => g.tapRow((h) => h.kind === "whystep" && h.text.includes("✗ STOPP _warm")),
+  why_jump: (g) => { g.tapRow((h) => h.kind === "whystep" && h.text.includes("✗ STOPP _warm")); g.detail("ampel"); g.key("Esc"); g.seen(); },
+  why_tree: seenOnly,
+  why_lever: (g) => { g.tapRow((h) => h.kind === "whystep" && h.text.includes("✗ STOPP")); g.detail("lever"); g.enter(); },
+  why_retrigger: (g) => { g.tapRow((h) => h.kind === "whystep" && h.text.includes("STOPP")); g.detail("retrigger"); },
+  why_alternatives: seenOnly,
+  why_question: (g) => { g.tapRow((h) => h.kind === "why" || h.kind === "whystep"); g.detail("question"); },
+  why_history: (g) => { g.doubleTapRow((h) => h.kind === "whyhistory"); g.seen(); },
+  why_back: (g) => g.key("Esc"),
+  new_focus_here: (g) => { g.rowMenu((h) => h.kind === "chain" && h.path.endsWith("switch_route")); g.menu("FOCUS HIERHER"); },
+  new_expr_dialog: (g) => { g.tapRow((h) => h.anchor); g.detail("expr", "index"); g.key("Esc"); g.seen(); },
+  new_address: (g) => { g.address("ext"); g.address("parent"); g.address("all"); g.seen(); },
+  new_word: (g) => g.type("*tick*"),
+  new_splitter: seenOnly,
+  new_viewer_front: (g) => { g.rowMenu((h) => h.kind === "chain"); g.menu("VIEWER ÖFFNEN"); g.key("Esc"); g.seen(); },
+  why_transfer: seenOnly,
+  // ---------------------------------------------------------------- Kapitel 22 STRUCTURE 2.0
+  s2_sections: seenOnly,
+  s2_intern: (g) => g.tapRow(ctxRow("_warm", ["method"])),
+  s2_chain: (g) => g.tapRow((h) => h.detail === "KETTE" && h.ctx === "onParFire"),
+  s2_center: (g) => { g.tapRow(ctxRow("_send", ["method"])); g.seen(); },
+  s2_par: (g) => { g.tapRow(ctxRow("evalStatus", ["parstate"])); g.seen(); },
+  s2_state_values: (g) => { g.tapRow(ctxRow("_branch", ["state"])); g.seen(); },
+  s2_blocks: (g) => { g.tapRow(ctxRow("RouteEvent", ["method"])); g.detail("block", "AKTIONEN"); },
+  s2_review: (g) => g.doubleTapRow((h) => h.kind === "button" && h.action_key === "REVIEW"),
+  s2_system: (g) => { g.doubleTapRow((h) => h.kind === "button" && h.action_key === "SYSTEM"); g.seen(); },
+  t2_doors: (g) => g.tab("entries"),
+  t2_chain: (g) => { g.tapRow((h) => h.kind === "entry" && h.ctx === "onParFire"); g.seen(); },
+  t2_watch_now: (g) => { g.tapRow((h) => h.kind === "entry" && h.path.endsWith("watch_control")); g.seen(); },
+  // ---------------------------------------------------------------- Kapitel 23 ROUTE
+  r_open: (g) => { g.tapRow(ctxRow("RouteEvent", ["method"])); g.key("Ctrl+Shift+I"); },
+  r_ganz: (g) => { g.tapRow(ctxRow("RouteEvent", ["method"])); g.key("Ctrl+Shift+I"); },
+  r_schritt: (g) => { g.tapRow(ctxRow("RouteEvent", ["method"])); g.key("Ctrl+Shift+I"); for (let i = 0; i < 5; i += 1) g.key("Left"); g.key("Right"); },
+  r_faden: (g) => { g.tapRow(ctxRow("_send", ["method"])); g.key("Ctrl+Shift+I"); g.key("Ctrl+G"); g.doubleTapRow((h) => h.kind === "routearg" && h.param === "name"); },
+  r_gabel: (g) => { g.tapRow(ctxRow("_send", ["method"])); g.key("Ctrl+Shift+I"); },
+  r_luecke: (g) => { g.tapRow(ctxRow("PaletteExportieren", ["method"])); g.key("Ctrl+Shift+I"); },
+  // ---------------------------------------------------------------- Kapitel 24 FlowLens
+  fl_open: (g) => { g.openFlowLens(); g.seen(); },
+  fl_kabel: (g) => { g.openFlowLens(); g.flowlens("story"); g.flowlens("hidden"); g.flowlens("hidden"); g.seen(); },
+  fl_expression: (g) => { g.openFlowLens(); g.flowlens("select", "BranchLab/level_expr"); g.workspace(); },
+  fl_python: (g) => { g.openFlowLens(); g.flowlens("select", "BranchLab/BranchLabExt"); g.workspace(); g.seen(); },
+  fl_story: (g) => { g.openFlowLens(); g.flowlens("select", "BranchLab/feedback_prev"); g.seen(); },
+  fl_zurueck: (g) => { g.workspace(); g.openFlowLens(); g.flowlens("select", "BranchLab/feedback_prev"); g.flowlens("codesearch"); g.flowlens("colors"); g.flowlens("colors"); g.seen(); },
+  // ---------------------------------------------------------------- Kapitel 25-31 State-Atlas und LLM-Werkzeuge
+  invest_states_open: (g) => g.enter(">states"),
+  invest_states_fire: (g) => g.slPulse("Fire"),
+  invest_states_mutate: (g) => g.slPulse("Mutate"),
+  invest_states_notify: (g) => g.slPulse("Notify"),
+  invest_states_replace: (g) => g.slPulse("Replacesamevalue"),
+  invest_states_shadow: (g) => g.slPulse("Clearchild"),
+  invest_states_expression: (g) => g.slPulse("Useexpression"),
+  invest_states_constant: (g) => g.slPulse("Useconstant"),
+  invest_states_startup: (g) => g.slPulse("Startup"),
+  invest_states_runtime_reset: (g) => g.slPulse("Runtimereset"),
+  invest_states_reinit: (g) => g.slPulse("Reinit"),
+  invest_states_storage_reset: (g) => g.slPulse("Storagereset"),
+  invest_context_capture: (g) => g.enter(">fall gut"),
+  invest_context_sample: (g) => g.enter(">beispiel anfrage"),
+  invest_context_answer: (g) => g.enter(">nachfrage"),
+  invest_context_envoy: (g) => g.copyPrompt(),
+  invest_runs_good_fire: (g) => g.slPulse("Fire"),
+  invest_runs_good_capture: (g) => g.enter(">fall gut"),
+  invest_runs_fault_on: (g) => g.slPar("Doublefire", true),
+  invest_runs_bad_fire: (g) => g.slPulse("Fire"),
+  invest_runs_bad_capture: (g) => g.enter(">fall anders"),
+  invest_runs_compare: (g) => g.enter(">vergleich"),
+  invest_explanation_sample: (g) => g.enter(">beispiel antwort"),
+  invest_explanation_import: (g) => g.enter(">antwort"),
+  invest_preview_sample: (g) => g.enter(">beispiel vorschau"),
+  invest_preview_result: (g) => g.enter(">vorschau"),
+  invest_visual_before: (g) => g.enter(">bildfall"),
+  invest_visual_change: (g) => g.slPulse("Fire"),
+  invest_visual_after: (g) => g.enter(">bildfall"),
+  invest_repro_fault: (g) => g.slPar("Doublefire", true),
+  invest_repro_original: (g) => g.slPulse("Fire"),
+  invest_repro_create: (g) => g.enter(">minimalfall"),
+  invest_repro_verify: (g) => g.enter(">minimalfall prüfen"),
+  // ---------------------------------------------------------------- Kapitel 32-34 Bereich, Daten, Tasten
+  n_ctx_selection: seenOnly,
+  n_ctx_comp: (g) => g.context("comp"),
+  n_trig_columns: (g) => g.tapRow((h) => h.kind === "entry" && h.path.endsWith("frame_tick")),
+  n_trig_value: (g) => g.tapRow((h) => h.kind === "entry" && h.text.includes("alpha")),
+  n_chain_reader: (g) => { g.tapRow((h) => h.kind === "entry" && h.ctx === "onParFire"); g.detail("chain", 2); },
+  n_data_f6: (g) => { g.key("F6"); g.key("F6"); },
+  n_data_altd: (g) => g.key("Alt+D"),
+  n_def_jump: (g) => { g.tapRow(ctxRow("Fire", ["method"])); g.modifier("ctrl"); g.codeClick("_finish"); },
+  n_def_back: (g) => { g.tapRow(ctxRow("Fire", ["method"])); g.modifier("ctrl"); g.codeClick("_finish"); g.key("Alt+Left"); g.key("Alt+Right"); g.seen(); },
+  n_def_copy: (g) => { g.tapRow(ctxRow("Fire", ["method"])); g.modifier("ctrl"); g.modifier("alt"); g.codeClick("_finish"); },
+  n_float_list: (g) => g.floatList(),
+  n_float_keys: (g) => { if (!g.cs.state.floats.length) g.floatList(); g.focusFloat(g.cs.state.floats[g.cs.state.floats.length - 1].id); g.floatTapRow("'ctx': 'Fire'"); g.key("Ctrl+C"); },
+  n_float_zoom: (g) => { if (!g.cs.state.floats.length) g.floatList(); g.focusFloat(g.cs.state.floats[g.cs.state.floats.length - 1].id); g.key("Ctrl+Plus"); g.key("Ctrl+Plus"); g.key("Alt+0"); g.key("Ctrl+Plus"); },
+  n_float_esc: (g) => { if (!g.cs.state.floats.length) g.floatList(); g.focusFloat(g.cs.state.floats[g.cs.state.floats.length - 1].id); g.floatEsc(); },
+  n_keys_focus: (g) => { g.key("Down"); g.seen(); },
+  n_keys_new: seenOnly,
+  n_keys_record: (g) => { g.key("Alt+Shift+A"); g.blPulse("Fire"); g.key("Alt+Shift+A"); },
+  // ---------------------------------------------------------------- Abschluss ohne Hilfen
+  abschluss_wer_liest: (g) => { g.tab("refs"); g.tapRow((h) => h.kind === "expr" && h.path.endsWith("switch_route")); },
+  abschluss_woher_groesse: (g) => { g.tab("trace"); g.tapRow((h) => h.kind === "bind"); },
+  abschluss_strecke: (g) => { g.tab("chain"); g.tapRow((h) => h.art === "OPPAR"); },
+  abschluss_codezeile: (g) => { g.filter("code"); g.type("farbe_chop"); g.tapRow((h) => h.kind === "code" && h.text.includes("op('farbe_chop')")); },
+  abschluss_pro_frame: (g) => { g.tab("check"); g.tapRow((h) => h.kind === "hot" && h.text.includes("Tick")); },
+  abschluss_state_impact: (g) => { g.tab("map"); g.tapRow(ctxRow("_index", ["state"])); g.key("Ctrl+I"); },
+  abschluss_einstieg: (g) => { g.tab("entries"); g.tapRow((h) => h.kind === "entry" && h.ctx === "onParReset"); g.key("Ctrl+Enter"); },
+  abschluss_route: (g) => { g.tab("map"); g.tapRow(ctxRow("_writeColor", ["method"])); g.key("Ctrl+Shift+I"); },
+  abschluss_beweis_cool: (g) => { g.blPar("Route", "cool"); g.tab("record"); g.record("start"); g.blPulse("Fire"); g.record("stop"); },
+  abschluss_warum: (g) => { g.tab("record"); g.record("start"); g.blPulse("Fire"); g.record("stop"); g.record("why"); g.tapRow((h) => h.kind === "whystep" && h.text.includes("STOPP")); },
+  abschluss_tabelle: (g) => { g.tab("table"); g.tableEdit(2, 3, "0.95"); g.blPar("Route", "cool"); g.blPulse("Fire"); },
+  abschluss_zugriff: (g) => { g.filter("chan"); g.type("route"); g.tapRow((h) => h.kind === "chan" && h.text === "route"); g.key("Ctrl+C"); g.menu("Kanal-Zugriff"); },
+  abschluss_alias: (g) => { g.enter(">states"); g.slPulse("Mutate"); },
+  abschluss_bilanz: seenOnly,
+};

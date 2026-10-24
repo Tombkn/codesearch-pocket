@@ -1,0 +1,10 @@
+{
+  "_info": "Korrekturen am eingefrorenen Kurs fuer das Handy. Jede mit Grund. Gleiches Problem steckt im TD-Kurs (an Tom gemeldet).",
+  "patches": [
+    {
+      "id": "n_keys_record",
+      "set": { "prep": { "reset_lab": true } },
+      "why": "Seit #379 (prep lab.Enabled=false) bleibt Enabled aus. Fire laeuft dann nur bis RouteEvent: die neue Aufnahme hat gleich viele Aufrufe wie die letzte, die Regel record_calls 'delta' (mehr als vorher) kann nie bestehen. reset_lab schaltet Enabled wieder ein."
+    }
+  ]
+}

@@ -1,0 +1,190 @@
+{
+ "version": "9c1dc1db1d",
+ "total": 2490255,
+ "files": [
+  {
+   "path": "./",
+   "size": 3594
+  },
+  {
+   "path": "index.html",
+   "size": 3594
+  },
+  {
+   "path": "manifest.json",
+   "size": 730
+  },
+  {
+   "path": "icon.svg",
+   "size": 517
+  },
+  {
+   "path": "icon-180.png",
+   "size": 530
+  },
+  {
+   "path": "icon-192.png",
+   "size": 551
+  },
+  {
+   "path": "icon-512.png",
+   "size": 1649
+  },
+  {
+   "path": "icon-maskable-512.png",
+   "size": 1653
+  },
+  {
+   "path": "css/app.css",
+   "size": 33469
+  },
+  {
+   "path": "js/app.js",
+   "size": 29684
+  },
+  {
+   "path": "js/core/boot.js",
+   "size": 614
+  },
+  {
+   "path": "js/core/cs.js",
+   "size": 60222
+  },
+  {
+   "path": "js/core/gestures.js",
+   "size": 18889
+  },
+  {
+   "path": "js/core/lab.js",
+   "size": 18793
+  },
+  {
+   "path": "js/core/net.js",
+   "size": 10049
+  },
+  {
+   "path": "js/core/phone.js",
+   "size": 5460
+  },
+  {
+   "path": "js/core/tour.js",
+   "size": 16565
+  },
+  {
+   "path": "js/core/util.js",
+   "size": 4727
+  },
+  {
+   "path": "js/core/views/codeviews.js",
+   "size": 41039
+  },
+  {
+   "path": "js/core/views/common.js",
+   "size": 2280
+  },
+  {
+   "path": "js/core/views/miscviews.js",
+   "size": 24330
+  },
+  {
+   "path": "js/core/views/netviews.js",
+   "size": 20216
+  },
+  {
+   "path": "js/core/views/search.js",
+   "size": 11302
+  },
+  {
+   "path": "js/ui/cswin.js",
+   "size": 21490
+  },
+  {
+   "path": "js/ui/dom.js",
+   "size": 4149
+  },
+  {
+   "path": "js/ui/layers.js",
+   "size": 40470
+  },
+  {
+   "path": "js/ui/offline.js",
+   "size": 4187
+  },
+  {
+   "path": "js/ui/tourcard.js",
+   "size": 6457
+  },
+  {
+   "path": "data/course.json",
+   "size": 713319
+  },
+  {
+   "path": "data/net.json",
+   "size": 98957
+  },
+  {
+   "path": "data/code.json",
+   "size": 84979
+  },
+  {
+   "path": "data/ui.json",
+   "size": 107888
+  },
+  {
+   "path": "data/features.json",
+   "size": 57320
+  },
+  {
+   "path": "img/05_flow.webp",
+   "size": 58654
+  },
+  {
+   "path": "img/06_table.webp",
+   "size": 37472
+  },
+  {
+   "path": "img/07_triggers.webp",
+   "size": 73856
+  },
+  {
+   "path": "img/08_structure.webp",
+   "size": 91402
+  },
+  {
+   "path": "img/10_callpath.webp",
+   "size": 50900
+  },
+  {
+   "path": "img/12_audit.webp",
+   "size": 98068
+  },
+  {
+   "path": "img/13_readorder.webp",
+   "size": 70876
+  },
+  {
+   "path": "img/codesearch-search.webp",
+   "size": 56026
+  },
+  {
+   "path": "img/flowlens_branchlab_nur_kabel.webp",
+   "size": 160346
+  },
+  {
+   "path": "img/flowlens_branchlab_raw.webp",
+   "size": 190236
+  },
+  {
+   "path": "img/flowlens_branchlab_story.webp",
+   "size": 150004
+  },
+  {
+   "path": "offline.json",
+   "size": 2742
+  }
+ ],
+ "single": {
+  "path": "CodeSearch-Pocket-offline.html",
+  "size": 2835228
+ }
+}

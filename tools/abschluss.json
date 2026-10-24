@@ -1,0 +1,234 @@
+{
+  "_info": "Abschluss-Kapitel des Handy-Kurses: Transfer ohne Hilfen. Wird hinten angehaengt (Fortschritt haengt an der id). Jede Aufgabe nennt die FRAGE, nicht den Tab. 'hint' ist die Loesung (Knopf 'Loesung zeigen').",
+  "chapters": ["Abschluss: ohne Hilfen – jetzt du allein"],
+  "lessons": [
+    {
+      "id": "abschluss_wer_liest", "chapter": 0, "title": "1 · Wer merkt es?",
+      "action": "Du willst control umbenennen. Finde heraus, wer control liest, und markiere die Zeile, über die switch_route den Kanal route bekommt.",
+      "expected": "Die markierte Zeile zeigt switch_route.par.index ← op('control')['route'].",
+      "meaning": "Vor einem Umbenennen zählt, wer den Op liest – nicht, was er selbst liest.",
+      "why": "So findest du jede Stelle, die beim Umbenennen bricht.",
+      "limit": "Dynamische Pfade (op('../' + name)) findet kein statischer Blick.",
+      "next_step": "Jede gefundene Stelle nach dem Umbenennen prüfen.",
+      "glossary": "Leser = Stelle, die den Op per Kabel, Parameter oder Code nennt.",
+      "hint": "USED BY (Strg+Umschalt+K) für control öffnen, unter Expressions die Zeile switch_route antippen.",
+      "rules": [
+        {"key": "mode", "value": "refs", "op": "eq", "hint": "Noch nicht der Tab, der die Leser zeigt."},
+        {"key": "selected", "value": "switch_route", "op": "contains", "hint": "Noch nicht die Zeile von switch_route markiert."}
+      ],
+      "mode": "search", "start": "search", "target": "BranchLab/control", "scope": "BranchLab", "query": "", "prep": {}, "observed": false, "keep": false, "nohelp": true
+    },
+    {
+      "id": "abschluss_woher_groesse", "chapter": 0, "title": "2 · Woher kommt der Wert?",
+      "action": "blur_soft wird weicher, obwohl niemand an blur_soft dreht. Finde heraus, woher sein Parameter size den Wert bekommt, und markiere genau diese Quelle.",
+      "expected": "Markiert ist die BIND-Zeile: size ⟷ parent.BranchLab.par.Softness.",
+      "meaning": "Ein Wert, der sich von allein ändert, hat eine Quelle im Parameter: Expression, Export oder Bind.",
+      "why": "Ein rätselhafter Wert wird erst erklärbar, wenn du seine direkte Quelle siehst.",
+      "limit": "Zeigt nur die direkte Quelle; die ganze Strecke zeigt ein anderer Tab.",
+      "next_step": "Die Quelle selbst prüfen: wer setzt BranchLab.Softness?",
+      "glossary": "BIND = zwei Parameter sind gekoppelt, Änderungen gehen in beide Richtungen.",
+      "hint": "USES (Alt+Shift+K) auf blur_soft, unter QUELLE die BIND-Zeile antippen.",
+      "rules": [
+        {"key": "mode", "value": "trace", "op": "eq", "hint": "Noch nicht der Tab, der zeigt, was DIESER Op liest."},
+        {"key": "selected_kind", "value": "bind", "op": "eq", "hint": "Noch nicht die richtige Quellenzeile markiert."}
+      ],
+      "mode": "search", "start": "search", "target": "BranchLab/SoftBranch/blur_soft", "scope": "BranchLab", "query": "", "prep": {}, "observed": false, "keep": false, "nohelp": true
+    },
+    {
+      "id": "abschluss_strecke", "chapter": 0, "title": "3 · Über welche Station?",
+      "action": "Die Farbe aus ColorEngine landet in merge_image – ohne direktes Kabel aus ColorEngine. Lies die ganze Strecke und markiere die Station, an der ein Parameter fest auf ColorEngine/out1 zeigt.",
+      "expected": "Markiert ist die OPPAR-Station ColorEngine/out1 (select_color liest sie über Par top).",
+      "meaning": "Signalwege laufen auch ohne Kabel: über Parameter, die auf einen Op zeigen.",
+      "why": "So siehst du die unsichtbaren Kanten einer Strecke.",
+      "limit": "Eine statische Strecke ist keine gemessene Reihenfolge.",
+      "next_step": "Die Station im Netz ansehen: select_color.par.top.",
+      "glossary": "OPPAR = ein Parameter zeigt fest auf einen anderen Op.",
+      "hint": "FLOW auf merge_image, unter QUELLEN die Zeile mit ART OPPAR (ColorEngine/out1) antippen.",
+      "rules": [
+        {"key": "mode", "value": "chain", "op": "eq", "hint": "Noch nicht der Tab mit der ganzen Strecke."},
+        {"key": "selected", "value": "'art': 'OPPAR'", "op": "contains", "hint": "Noch nicht die Station mit der Parameter-Referenz markiert."}
+      ],
+      "mode": "search", "start": "search", "target": "BranchLab/merge_image", "scope": "BranchLab", "query": "", "prep": {}, "observed": false, "keep": false, "nohelp": true
+    },
+    {
+      "id": "abschluss_codezeile", "chapter": 0, "title": "4 · Die schreibende Zeile",
+      "action": "Im Farbmischer ändert sich farbe_chop ständig. Finde die Python-Zeile, die farbe_chop im Code holt, und markiere sie.",
+      "expected": "Markiert ist FarbmischerExt Zeile 153: chop = self.ownerComp.op('farbe_chop').",
+      "meaning": "Ein Textfund zeigt, WO ein Name im Code steht – noch nicht, ob die Zeile läuft.",
+      "why": "Du findest den Ort, an dem Code einen Op anfasst.",
+      "limit": "Ein Textfund beweist keinen Aufruf.",
+      "next_step": "Mit RECORD prüfen, ob _anwenden wirklich läuft.",
+      "glossary": "CODE = Python-Anweisung; KOMMENTAR läuft nie.",
+      "hint": "SEARCH, Kategorie ZEILEN, farbe_chop tippen; die CODE-Zeile in FarbmischerExt antippen.",
+      "rules": [
+        {"key": "selected_kind", "value": "code", "op": "eq", "hint": "Noch keine Codezeile markiert."},
+        {"key": "selected", "value": "op('farbe_chop')", "op": "contains", "hint": "Noch nicht die Zeile, die farbe_chop holt."},
+        {"key": "selected_path", "value": "FarbmischerExt", "op": "contains", "hint": "Die Zeile liegt in der Extension des Farbmischers."}
+      ],
+      "mode": "search", "start": "search", "target": "Farbmischer", "scope": "Farbmischer", "query": "", "prep": {}, "observed": false, "keep": false, "nohelp": true
+    },
+    {
+      "id": "abschluss_pro_frame", "chapter": 0, "title": "5 · Was läuft jeden Frame?",
+      "action": "Der Farbmischer kostet ständig Rechenzeit. Finde die Methode, die jeden Frame erreicht wird, in der Bau-Prüfung und markiere sie dort.",
+      "expected": "Markiert ist die HOT-Zeile Tick() unter HOT PATH.",
+      "meaning": "HOT heißt: von einem Frame-Einstieg erreichbar. Es ist kein gemessener Engpass.",
+      "why": "Du priorisierst wiederholte Arbeit, bevor du misst.",
+      "limit": "Ob es wirklich teuer ist, sagt erst eine Messung.",
+      "next_step": "Prüfen, ob Tick früh zurückkehrt (if self._mix >= 1.0: return).",
+      "glossary": "Hot Path = Code, der pro Frame läuft.",
+      "hint": "AUDIT am Farbmischer, unter HOT PATH die Zeile Tick antippen.",
+      "rules": [
+        {"key": "mode", "value": "check", "op": "eq", "hint": "Noch nicht der Tab mit der Bau-Prüfung."},
+        {"key": "selected_kind", "value": "hot", "op": "eq", "hint": "Noch nicht die Zeile unter HOT PATH."},
+        {"key": "selected", "value": "Tick", "op": "contains", "hint": "Noch nicht die Methode, die pro Frame läuft."}
+      ],
+      "mode": "map", "start": "map", "target": "Farbmischer", "scope": "Farbmischer", "query": "", "prep": {}, "observed": false, "keep": false, "nohelp": true
+    },
+    {
+      "id": "abschluss_state_impact", "chapter": 0, "title": "6 · Was hängt an diesem State?",
+      "action": "Du willst _index im Farbmischer anders speichern. Zeige alles, was an _index hängt.",
+      "expected": "IMPACT ist offen für _index: Leser und Schreiber stehen darin.",
+      "meaning": "Vor einer Symboländerung brauchst du alle Stellen, die das Symbol lesen oder schreiben.",
+      "why": "So siehst du, welche Methoden du mitändern musst.",
+      "limit": "Dynamischer Zugriff über Namen fehlt oder steht nur als ≈.",
+      "next_step": "Jeden Schreiber im Code lesen.",
+      "glossary": "IMPACT = was an einer Methode oder einem State hängt.",
+      "hint": "STRUCTURE am Farbmischer, unter STATE _index antippen, Strg+I.",
+      "rules": [
+        {"key": "mode", "value": "impact", "op": "eq", "hint": "Noch nicht der Tab, der zeigt, was an einem Symbol hängt."},
+        {"key": "impact", "value": "_index", "op": "contains", "hint": "Noch nicht für _index geöffnet."}
+      ],
+      "mode": "search", "start": "search", "target": "Farbmischer", "scope": "Farbmischer", "query": "", "prep": {}, "observed": false, "keep": false, "nohelp": true
+    },
+    {
+      "id": "abschluss_einstieg", "chapter": 0, "title": "7 · Wie kommt TD hinein?",
+      "action": "Jemand pulst am BranchLab den Parameter Reset. Zeige die mögliche Aufrufkette ab genau diesem Einstieg.",
+      "expected": "CALL PATH läuft ab onParReset: Reset → ApplyPreset → _writeColor.",
+      "meaning": "Einstiege sind die Türen von TD in deinen Code; die Aufrufkette zeigt, was dahinter laufen KANN.",
+      "why": "Du erkennst den Weg von einem Klick bis zur Wirkung.",
+      "limit": "Statisch: zeigt mögliche Wege, keine gelaufenen.",
+      "next_step": "Mit RECORD den Reset-Klick aufnehmen.",
+      "glossary": "Einstieg = Stelle, an der TD deinen Code aufruft (Pulse, Frame, Taste …).",
+      "hint": "TRIGGERS am BranchLab, Zeile „Pulse an Par Reset“ antippen, Strg+Enter.",
+      "rules": [
+        {"key": "mode", "value": "tour", "op": "eq", "hint": "Noch nicht der Tab mit der Aufrufkette."},
+        {"key": "tour_entry", "value": "onParReset", "op": "contains", "hint": "Die Kette beginnt noch nicht am Reset-Einstieg."}
+      ],
+      "mode": "search", "start": "search", "target": "BranchLab", "scope": "BranchLab", "query": "", "prep": {}, "observed": false, "keep": false, "nohelp": true
+    },
+    {
+      "id": "abschluss_route", "chapter": 0, "title": "8 · Wer ruft das – bis ganz oben?",
+      "action": "_writeColor in ColorEngine schreibt die Farbe. Zeige den Rückweg von _writeColor bis zum Auslöser in TD.",
+      "expected": "ROUTE ist offen: oben der Auslöser (Pulse an Par Fire), unten _writeColor als START.",
+      "meaning": "Die Route geht Aufrufer für Aufrufer zurück, auch über eine andere Extension.",
+      "why": "Vor einer Änderung siehst du, welcher Klick am Ende dort ankommt.",
+      "limit": "Bei mehreren Aufrufern zeigt GANZ einen gewählten Weg (GEWÄHLT, weil:).",
+      "next_step": "Die Gabel lesen: welche anderen Aufrufer gibt es?",
+      "glossary": "ROUTE = Rückweg einer Methode bis zum Auslöser.",
+      "hint": "STRUCTURE an ColorEngine, _writeColor antippen, Strg+Umschalt+I.",
+      "rules": [
+        {"key": "route.open", "value": true, "op": "eq", "hint": "Der Rückweg ist noch nicht offen."},
+        {"key": "route.anchor", "value": "_writeColor", "op": "contains", "hint": "Der Rückweg startet noch nicht bei _writeColor."}
+      ],
+      "mode": "search", "start": "search", "target": "BranchLab/ColorEngine", "scope": "BranchLab/ColorEngine", "query": "", "prep": {}, "observed": false, "keep": false, "nohelp": true
+    },
+    {
+      "id": "abschluss_beweis_cool", "chapter": 0, "title": "9 · Beweise den Zweig",
+      "action": "Behauptung: Mit Route = cool läuft _cool und nicht _warm. Beweise es mit dem, was wirklich lief.",
+      "expected": "Eine beendete Aufnahme enthält _cool und kein _warm; branch steht auf cool.",
+      "meaning": "Statische Wege zeigen Möglichkeiten; nur eine Aufnahme zeigt, was lief.",
+      "why": "Ein Beweis statt einer Vermutung.",
+      "limit": "Zeigt nur Python-Aufrufe im Aufnahmebereich.",
+      "next_step": "Das Ergebnis mit CALL PATH vergleichen.",
+      "glossary": "RECORD = Aufnahme tatsächlich ausgeführter Python-Aufrufe.",
+      "hint": "Lab-Parameter: Route = cool. RECORD: START, Fire, STOP.",
+      "rules": [
+        {"key": "recording", "value": false, "op": "eq", "hint": "Die Aufnahme läuft noch oder fehlt."},
+        {"key": "record_text", "value": "_cool", "op": "contains", "hint": "In der Aufnahme fehlt _cool."},
+        {"key": "record_text", "value": "_warm", "op": "not_contains", "hint": "Die Aufnahme enthält noch _warm – neue Aufnahme nötig."},
+        {"key": "branch", "value": "cool", "op": "eq", "hint": "Der Zweig steht noch nicht auf cool."}
+      ],
+      "mode": "record", "start": "search", "target": "BranchLab", "scope": "BranchLab", "query": "", "prep": {"reset_lab": true}, "observed": false, "keep": false, "nohelp": true
+    },
+    {
+      "id": "abschluss_warum", "chapter": 0, "title": "10 · Warum passiert nichts?",
+      "action": "Fire schreibt keine Farbe mehr. Finde die Code-Zeile, an der der Weg endet, und markiere die Zeile, die das Ende anzeigt.",
+      "expected": "WARUM zeigt ✗ STOPP mit der Ampel in Zeile 40 (not self.evalEnabled).",
+      "meaning": "WARUM legt Landkarte (was laufen könnte) und Dashcam (was lief) übereinander.",
+      "why": "Du findest die Ursache, nicht nur das Symptom.",
+      "limit": "Werte werden jetzt gelesen, nicht im Moment des Klicks.",
+      "next_step": "Den Hebel (Enabled) umlegen und erneut auslösen.",
+      "glossary": "Ampel = if/return vor der Aufrufstelle.",
+      "hint": "RECORD: START, Fire, STOP, dann WARUM ▸; die Zeile ✗ STOPP antippen.",
+      "rules": [
+        {"key": "view", "value": "why", "op": "eq", "hint": "Die Erklärungsansicht über der Aufnahme ist noch nicht offen."},
+        {"key": "selected", "value": "STOPP", "op": "contains", "hint": "Noch nicht die Zeile mit dem Ende des Wegs markiert."}
+      ],
+      "mode": "record", "start": "search", "target": "BranchLab", "scope": "BranchLab", "query": "", "prep": {"reset_lab": true, "lab.Enabled": false}, "observed": false, "keep": false, "nohelp": true
+    },
+    {
+      "id": "abschluss_tabelle", "chapter": 0, "title": "11 · Daten statt Code",
+      "action": "Die Farbe cool soll mehr Blau bekommen: b = 0.95. Ändere den Wert direkt in den Daten und löse danach die Route cool aus.",
+      "expected": "palette cool/b = 0.95; nach Fire mit Route cool meldet ColorEngine cool.",
+      "meaning": "Manche Wirkung steckt nicht im Code, sondern in einer Tabelle, die der Code liest.",
+      "why": "Du änderst Verhalten ohne eine Zeile Python.",
+      "limit": "Die Tabelle erklärt nicht, wann der Code sie liest.",
+      "next_step": "Mit WER NUTZT GENAU DIESE ZELLE den Leser prüfen.",
+      "glossary": "Table DAT = Tabelle; Zellen sind Text, der Code wandelt sie in Zahlen.",
+      "hint": "TABLE für ColorEngine/palette, Zelle cool/b doppelt tippen, 0.95. Lab-Parameter: Route cool, Fire.",
+      "rules": [
+        {"key": "cell:BranchLab/ColorEngine/palette|cool|b", "value": "0.95", "op": "eq", "hint": "Der Wert in der Tabelle stimmt noch nicht."},
+        {"key": "branch", "value": "cool", "op": "eq", "hint": "Die Route cool wurde noch nicht ausgelöst."},
+        {"key": "writes", "op": "delta", "hint": "Es wurde noch keine neue Farbe geschrieben."}
+      ],
+      "mode": "table", "start": "search", "target": "BranchLab/ColorEngine/palette", "scope": "BranchLab", "query": "", "prep": {"reset_lab": true}, "observed": false, "keep": false, "nohelp": true
+    },
+    {
+      "id": "abschluss_zugriff", "chapter": 0, "title": "12 · Den Zugriff kopieren",
+      "action": "Du brauchst im eigenen Code den Wert des Kanals route aus control. Lass dir den fertigen Python-Zugriff kopieren.",
+      "expected": "In der Zwischenablage steht op('control')['route'].",
+      "meaning": "CodeSearch kopiert je Zeile den passenden Zugriff: Op, Parameter, Kanal, Zelle, Methode.",
+      "why": "Kein Abtippen, kein falscher Pfad.",
+      "limit": "Ein relatives op(...) hängt vom Ausführungsort ab.",
+      "next_step": "Prüfen, von wo dein Code ihn ausführt.",
+      "glossary": "Kanal-Zugriff = op('chop')['name'].",
+      "hint": "SEARCH, Kategorie KANÄLE, route tippen; die Zeile route antippen, Strg+C → Kanal-Zugriff.",
+      "rules": [
+        {"key": "clipboard", "value": "['route']", "op": "contains", "hint": "In der Zwischenablage steht noch kein Kanal-Zugriff auf route."}
+      ],
+      "mode": "search", "start": "search", "target": "BranchLab", "scope": "BranchLab", "query": "", "prep": {}, "observed": false, "keep": false, "nohelp": true
+    },
+    {
+      "id": "abschluss_alias", "chapter": 0, "title": "13 · Zwei Namen, ein Objekt",
+      "action": "Im StateLab ändert sich _alias mit, obwohl niemand _alias schreibt. Mach im State-Überblick sichtbar, dass beide Namen auf dasselbe Objekt zeigen – nach einer Änderung des Listeninhalts.",
+      "expected": "State-Atlas offen; _shared[0] = 1 und _alias[0] = 1, gleiches Objekt.",
+      "meaning": "Zwei Namen können auf dieselbe Liste zeigen. Ändert sich der Inhalt, sehen beide die Änderung.",
+      "why": "Du erklärst ein Verhalten, das im Code wie Zauberei aussieht.",
+      "limit": "Der Atlas liest nur einen begrenzten Satz von States.",
+      "next_step": "Mit „Neue Liste gleicher Inhalt“ die Verbindung trennen.",
+      "glossary": "Alias = zweiter Name für dasselbe Objekt.",
+      "hint": ">states tippen und Enter; Lab-Parameter: Listeninhalt ändern (Mutate).",
+      "rules": [
+        {"key": "investigation.view", "value": "states", "op": "eq", "hint": "Der State-Überblick ist noch nicht offen."},
+        {"key": "investigation.lab.alias_first", "value": 1, "op": "eq", "hint": "Der Listeninhalt wurde noch nicht geändert."},
+        {"key": "investigation.lab.alias_shared", "value": true, "op": "eq", "hint": "Die beiden Namen zeigen nicht mehr auf dasselbe Objekt – neu vorbereiten."}
+      ],
+      "mode": "map", "start": "search", "target": "StateLab", "scope": "StateLab", "query": "", "prep": {"investigation.prepare": true}, "observed": false, "keep": false, "nohelp": true
+    },
+    {
+      "id": "abschluss_bilanz", "chapter": 0, "title": "14 · Deine Bilanz",
+      "action": "Schreib dir für jede Frage den Tab auf, ohne nachzusehen: Woher hat ein Op seinen Wert? Wer liest ihn? Über welche Stationen läuft das Signal? Was hängt an einer Methode? Was lief wirklich? Warum lief ein Zweig nicht? Vergleiche danach mit ATLAS › SPICKZETTEL. Dann Gesehen und Prüfen.",
+      "expected": "Alle sechs Antworten stimmen mit dem Spickzettel überein.",
+      "meaning": "Wer zu jeder Frage den Tab weiß, benutzt CodeSearch, statt es zu bedienen.",
+      "why": "Das ist der Sinn des ganzen Kurses.",
+      "limit": "Ein Spickzettel ersetzt nicht das Lesen der Fundstelle.",
+      "next_step": "An einem eigenen COMP ausprobieren.",
+      "glossary": "USES · USED BY · FLOW · IMPACT · RECORD · WARUM.",
+      "hint": "USES · USED BY · FLOW · IMPACT · RECORD · WARUM (RECORD › WARUM ▸).",
+      "rules": [
+        {"key": "observed", "value": true, "op": "eq", "hint": "Erst vergleichen, dann „Gesehen“."}
+      ],
+      "mode": "search", "start": "search", "target": "BranchLab", "scope": "BranchLab", "query": "", "prep": {}, "observed": true, "keep": false, "nohelp": true
+    }
+  ]
+}
