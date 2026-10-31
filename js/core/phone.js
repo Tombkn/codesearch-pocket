@@ -47,12 +47,13 @@ export function phoneSteps(lesson) {
   const text = String(lesson.action || "");
   const steps = [];
   const add = (s) => { if (!steps.includes(s)) steps.push(s); };
+  const tabHelp = lesson.id === 'help' || (/\bAlt\b/i.test(text) && /\bTab\b|Tab-Hilfe|eingeblendete Hilfe/i.test(text));
   if (/Rechtsklick|Kontextmen/i.test(text)) add("Rechtsklick = die Zeile lange gedrückt halten → Menü.");
   if (/Doppelklick|Doppelklicke/i.test(text)) add("Doppelklick = zweimal schnell tippen.");
   if (/Strg\s*\+\s*Alt\s*\+\s*Klick|Strg\+Alt und klicke|Halte Strg\+Alt/i.test(text)) add("Strg+Alt+Klick = in der Tastenleiste STRG und ALT antippen, dann das Wort im Code antippen.");
   else if (/(Ctrl|Strg)\s*\+\s*Klick|Halte Strg und klicke/i.test(text)) add("Strg+Klick = in der Tastenleiste STRG antippen, dann tippen.");
   if (/Alt\s*\+\s*Klick/i.test(text)) add("Alt+Klick = in der Tastenleiste ALT antippen, dann die Zeile tippen.");
-  if (/Halte Alt/i.test(text)) add("Alt halten = ALT in der Tastenleiste antippen, dann den Tab antippen: die Hilfe erscheint.");
+  if (tabHelp) add("Tab-Hilfe am iPhone: den genannten Tab lange gedrückt halten. Mit Maus und Tastatur: Maus zuerst über den Tab, dann Alt allein drücken.");
   const keys = keysFor(text).filter((k) => !["STRG", "Left", "Right", "Down", "Up"].includes(k));
   if (keys.length) add(`Tasten: ⌨ öffnet die Tastenleiste – ${keys.join(" · ")} (hervorgehoben).`);
   if (/[←→↑↓]|Pfeiltasten/.test(text)) add("Pfeile: in der Tastenleiste ← → ↑ ↓.");
@@ -64,13 +65,14 @@ export function phoneSteps(lesson) {
   if (firePress.test(text) && !/Lab-Parameter/i.test(text)) add("Fire pulsen = Karte → Lab-Parameter → FIRE (oder TD → PARAMETER).");
   if (firePress.test(text) && /Lab-Parameter/i.test(text)) add("Dort FIRE antippen; mit ✕ zurück zu CodeSearch.");
   if (/CS-Parameter|CodeSearch-Parameter|Parametern|Schalte .* (ein|aus)|Setze (Maxresults|Maxindexage|Recordseconds)/i.test(text)) add("CodeSearch-Einstellungen = Knopf „CS-Parameter“ auf der Karte.");
-  if (/Tooltip|Maus über|Fahre mit der Maus|zeige auf|Zeige auf/i.test(text)) add("Tooltip = die ART-Zelle (links in der Zeile) antippen.");
+  if (!tabHelp && /Tooltip|Maus über|Fahre mit der Maus|zeige auf|Zeige auf/i.test(text)) add("Tooltip = die ART-Zelle (links in der Zeile) antippen.");
   if (/Griff|Verschiebe|Maximieren|Minimieren|ziehe/i.test(text)) add("Fenster: — ▢ ✕ oben rechts im CodeSearch-Titel; der Griff zwischen Liste und Detail lässt sich ziehen.");
   if (/[Tt]ippe\b|\btippe\b|ins Feld|in das .*Feld|Suchfeld/.test(text)) add("Tippen = ins Feld oben im CodeSearch-Fenster. >Befehle mit ⏎ bestätigen; Suchwörter ohne ⏎.");
   if (/Markiere|markiere|Waehle|Wähle|wähle|klicke/.test(text) && !steps.length) add("Markieren/Klicken = Zeile antippen.");
   if (/Codex/.test(text)) add("„Codex-Aufgabe kopieren“ legt den Auftrag in die Zwischenablage des Handys.");
   if (/FlowLens|FLOWLENS/.test(text)) add("FLOWLENS ↗ steht in der Kontextleiste unter den Tabs (bei FLOW und den Code-Tabs).");
   if (/BEARBEITEN|UEBERNEHMEN|ÜBERNEHMEN/.test(text)) add("BEARBEITEN steht oben im DETAIL einer Codezeile; im Editor ÜBERNEHMEN oder ABBRECHEN.");
+  if (/\bLOOK\b/.test(text)) add("LOOK oben im Titel antippen → einen Look aus Dunkel, Hell oder Hoher Kontrast wählen. Die Farbproben helfen beim Vergleichen.");
   if (/Gesehen/.test(text)) add("„Gesehen“ erst, wenn du es wirklich gelesen hast – dann „Prüfen“.");
   return steps;
 }

@@ -3,6 +3,7 @@
 import { $, esc, updateHtml } from "./dom.js";
 import { abs, rel, baseName, fmtNum } from "../core/util.js";
 import { DATA_LABELS } from "../core/cs.js";
+import { applyLook } from "./looks.js";
 
 const GROUP_TABS = { both: ["search", "trace", "refs", "impact", "errors"], net: ["chain", "table"], code: ["map", "entries", "tour", "record", "check"] };
 const CODE_TABS = new Set(["map", "entries", "tour", "record", "check"]);
@@ -49,7 +50,7 @@ export function renderTitle(ctx) {
     <span class="focus"><b>FOCUS</b> ${esc(name)} · ${esc(type)} · bleibt</span>
     <span class="sp"></span>
     <button class="quickbtn" data-act="quick" title="Schnellsuche (Ctrl+P)">quick ⌕</button>
-    <button class="look" data-act="look" title="LOOK: nur Farben">LOOK · ${esc(cs.cs.Look)}</button>
+    <button class="look" data-act="look" title="Look wählen: Farben und Lesbarkeit" aria-haspopup="dialog">LOOK · ${esc(cs.ui.CODESEARCH_LOOKS?.[cs.cs.Look]?.[0] || cs.cs.Look)} ▾</button>
     <button class="wbtn" data-act="win-min" title="Minimieren">—</button>
     <button class="wbtn" data-act="win-max" title="Maximieren / Zurück">▢</button>
     <button class="wbtn" data-act="win-close" title="Schließen (Esc)">✕</button>`);
@@ -98,8 +99,9 @@ export function renderContext(ctx) {
   const box = $("#cs-context");
   const parts = [];
   if (CODE_TABS.has(s.mode) || s.mode === "chain" || s.mode === "entries") {
-    parts.push(`<button class="chip ${s.context === "selection" ? "on" : ""}" data-ctx="selection">AUSWAHL</button>`);
-    parts.push(`<button class="chip ${s.context === "comp" ? "on" : ""}" data-ctx="comp">DIESE COMP</button>`);
+    parts.push(`<div class="context-switch" role="group" aria-label="Analyse-Kontext wählen">
+      ${[['selection', 'AUSWAHL', 'Kontext: ausgewählter Operator'], ['comp', 'DIESE COMP', 'Kontext: das offene Netzwerk']].map(([key, label, title]) => `<button type="button" class="context-button" data-ctx="${key}" aria-pressed="${s.context === key}" title="${title}"><span class="context-check" aria-hidden="true">${s.context === key ? '✓' : ''}</span><span>${label}</span></button>`).join('')}
+    </div>`);
     parts.push(`<button class="chip" data-act="flowlens">FLOWLENS ↗</button>`);
   }
   if (CODE_TABS.has(s.mode)) {
@@ -117,6 +119,17 @@ export function renderField(ctx) {
   const { cs, ui } = ctx;
   const s = cs.state;
   const input = $("#cs-input");
+  const target = CODE_TABS.has(s.mode) ? cs.codeTargetPath() : s.focus;
+  const comp = cs.net.datComp.get(target) ?? target;
+  const owner = cs.net.op(comp);
+  const extensions = cs.net.extensionSources(comp);
+  updateHtml($("#cs-target"), extensions.length ? `
+    <div class="target-owner"><span class="target-label">${CODE_TABS.has(s.mode) ? "ANALYSEZIEL" : "FOCUS"}</span>
+      <strong>${esc(owner?.name || comp)}</strong><span class="target-type">${esc(owner?.type || "")}</span>
+      ${CODE_TABS.has(s.mode) && cs.cs.Analysistarget ? '<span class="target-pin">📌 gepinnt</span>' : ""}</div>
+    <div class="extension-list">${extensions.map((ext) => `<button class="extension-source" data-act="extension-menu" data-comp="${esc(comp)}" data-slot="${ext.slot}" aria-haspopup="dialog" title="${esc(ext.available ? `Code öffnen: ${abs(ext.path)}` : ext.reason)}">
+      <span class="ext-kind">EXTENSION</span> <strong>${esc(ext.name)}</strong><span>${ext.available ? "Code öffnen ▾" : "Quelle prüfen ▾"}</span></button>`).join("")}</div>
+    <span class="target-path">${esc(abs(comp))}</span>` : "");
   $("#cs-mode-label").textContent = s.view === "path" ? "READ ORDER" : ((ui.TAB_LABELS || {})[s.mode] || s.mode).toUpperCase();
   input.placeholder = s.mode === "table" ? "filtern … oder [zeile,spalte] + ⏎" : ((ui.MODE_HINTS || {})[s.mode] || "suchen …");
   const value = s.mode === "search" ? (s.fieldDraft || s.query) : (s.mode === "table" ? s.table.query : s.fieldDraft || "");
@@ -204,6 +217,7 @@ export function renderList(ctx) {
   const { cs, ui } = ctx;
   const s = cs.state;
   const box = $("#cs-list");
+  box.classList.toggle('guide-view', s.view === 'guide');
   if (s.mode === "table") { updateHtml(box, tableHtml(cs)); return; }
   const cols = cs.columns();
   const head = `<div class="colhead"><span>${esc(cols[0])}</span><span>${esc(cols[1])} · ${esc(cols[2])} / ${esc(cols[3])}</span></div>`;
@@ -349,7 +363,7 @@ export function renderStatus(ctx) {
   if (!s.mainopen) $("#cs-closed-why").textContent = s.status || "CodeSearch ist zu (Esc oder ✕). Shift+K oder der Knopf öffnet es wieder – Arbeitsplatz auf der Karte richtet die Station neu ein.";
   win.classList.toggle("min", s.window === "min");
   win.classList.toggle("max", s.window === "max");
-  document.body.dataset.look = cs.cs.Look;
+  if (ctx.appliedLook !== cs.cs.Look) { applyLook(document.body, ui, cs.cs.Look); ctx.appliedLook = cs.cs.Look; }
   win.style.zoom = String(s.zoom);
 }
 

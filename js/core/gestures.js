@@ -32,11 +32,17 @@ export class Gestures {
     this.cs.emit();
   }
   openFlowLens(target = null) {
-    const fl = this.cs.state.flowlens;
+    const cs = this.cs, s = cs.state;
+    if (s.record.recording) { s.status = "FlowLens nach der Aufnahme öffnen · zuerst STOP."; return cs.emit(); }
+    const focus = cs.net.op(s.focus);
+    const owner = s.context === 'comp' ? s.paneOwner : (focus?.family === 'COMP' ? s.focus : focus?.parent);
+    const path = target == null ? owner : rel(target);
+    if (!path || !cs.net.isComp(path)) { s.status = "FlowLens braucht einen Inhalts-COMP als Ziel."; return cs.emit(); }
+    const fl = s.flowlens;
     fl.open = true;
-    fl.target = target || abs(this.cs.state.paneOwner || "BranchLab");
-    fl.selected = this.cs.state.focus;
-    this.cs.emit();
+    fl.target = abs(path);
+    fl.selected = s.focus;
+    cs.emit();
   }
 
   // ------------------------------------------------------------------ TD-Seite (Netz, Parameter, Timeline)
@@ -121,6 +127,52 @@ export class Gestures {
     this.cs.emit();
   }
   look() { this.cs.toggleLook(); }
+  lookMenu() {
+    const cs = this.cs;
+    const looks = Object.entries(cs.ui.CODESEARCH_LOOKS || {});
+    if (!looks.length) return this.look();
+    const groupOf = (palette) => /contrast|kontrast/i.test(palette[0]) ? 'Hoher Kontrast' : (palette[8] ? 'Hell' : 'Dunkel');
+    const groups = ['Dunkel', 'Hell', 'Hoher Kontrast'];
+    looks.sort((a, b) => groups.indexOf(groupOf(a[1])) - groups.indexOf(groupOf(b[1])));
+    cs.state.menu = { title: "Look wählen · Farben und Lesbarkeit", items: looks.map(([key, palette]) => ({
+      label: `${cs.cs.Look === key ? "●" : "○"} ${palette[0]}`, group: groupOf(palette),
+      swatches: [palette[1], palette[2], palette[7]],
+      run: () => { cs.cs.Look = key; cs.emit(); },
+    })) };
+    cs.emit();
+  }
+  extensionMenu(comp, slot) {
+    const cs = this.cs;
+    cs.state.menu = null;
+    const source = cs.net.extensionSources(comp).find((item) => item.slot === Number(slot));
+    if (!source) { cs.state.status = "Die Extension ist an diesem COMP nicht mehr vorhanden."; return cs.emit(); }
+    const validSource = () => {
+      const current = cs.net.extensionSources(comp).find((item) => item.slot === source.slot);
+      if (!current?.available || current.path !== source.path) {
+        cs.state.dialog = { title: "Extension-Quelle hat sich geändert", lines: ["Öffne das Extension-Menü erneut. Der alte Menüeintrag öffnet keinen anderen DAT."] };
+        cs.emit(); return false;
+      }
+      return true;
+    };
+    if (!source.available) {
+      cs.state.dialog = { title: `${source.name} · Quelle nicht verfügbar`, lines: [abs(comp), source.reason, "Prüfe am Laptop im COMP die Seite Extensions und dort den Object-Ausdruck dieses Slots."] };
+      return cs.emit();
+    }
+    cs.state.menu = { title: `${source.name} · Code öffnen`, description: `Source-DAT: ${abs(source.path)}`, items: [
+      { label: "DAT öffnen · Code hier lesen", run: () => {
+        if (validSource()) { cs.state.viewer = { path: source.path, line: null }; cs.emit(); }
+      } },
+      { label: "Externer Editor · am Laptop", run: () => {
+        if (!validSource()) return;
+        cs.state.dialog = { title: "Externer Editor · TouchDesigner am Laptop", lines: [
+          `Source-DAT: ${abs(source.path)}`,
+          "Am Laptop öffnet diese Auswahl den Text-Editor, den du in TouchDesigner unter Preferences für DATs eingestellt hast.",
+          "Pocket läuft eigenständig im iPhone-Browser und kann diesen Laptop-Editor nicht starten. Mit „DAT öffnen“ liest du hier denselben Übungscode.",
+        ] }; cs.emit();
+      } },
+    ] };
+    cs.emit();
+  }
   overview(kind) { this.cs.state.overview = this.cs.state.overview === kind ? "" : kind; this.cs.state.selected = -1; this.cs.rebuild(); }
   context(kind) { this.cs.state.context = kind; this.cs.state.selected = -1; this.cs.rebuild(); }
   window(action) { this.cs.state.window = action; this.cs.emit(); }
@@ -195,6 +247,8 @@ export class Gestures {
   key(name) {
     const cs = this.cs;
     const s = cs.state;
+    this.mods = { ctrl: false, alt: false, shift: false };
+    if (s.help?.source === 'tab-hover') s.help = null;
     switch (name) {
       case "Esc": return cs.escape();
       case "Enter": return this.enter();

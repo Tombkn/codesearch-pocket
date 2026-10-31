@@ -29,7 +29,7 @@ for name in ("cs_core.py", "cs_state.py", "cs_workbench.py", "tutorial_adapter.p
     FILES[name] = f"src/stateatlas/{name}"
 for name in ("FEATURES_EINFACH.md", "FEATURE_01_STATE_ATLAS.md", "FEATURE_02_NACHFRAGE.md", "FEATURE_03_VERGLEICH.md", "FEATURE_04_AUSSAGEN.md", "FEATURE_05_VORSCHAU.md", "FEATURE_06_BILDFALL.md", "FEATURE_07_REPRO.md", "STATE_ATLAS.md", "PROTOCOL.md"):
     FILES[f"docs/{name}"] = f"docs/state-atlas/{name}"
-for name in ("trigger-perspective.md", "comp-context.md", "data-shortcuts.md", "definition-navigation.md", "floating-copies.md", "flowlens-integration.md", "deep-dive/STAERKEN_UND_GRENZEN.md"):
+for name in ("INTERFACE-1.9.1.md", "trigger-perspective.md", "comp-context.md", "data-shortcuts.md", "definition-navigation.md", "floating-copies.md", "flowlens-integration.md", "deep-dive/STAERKEN_UND_GRENZEN.md"):
     FILES[f"upstream_docs/{name}"] = f"docs/{name}"
 
 

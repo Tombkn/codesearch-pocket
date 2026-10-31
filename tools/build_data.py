@@ -114,10 +114,11 @@ def walk(ops: list, parent: str, out: list) -> None:
             entry["iop"] = {s["shortcut"]: s["op"] for s in seq["iop"]
                             if isinstance(s, dict) and s.get("shortcut") and s.get("op")}
         if seq.get("ext"):
-            exts = [s for s in seq["ext"] if isinstance(s, dict) and s.get("name")]
+            exts = [(slot, s) for slot, s in enumerate(seq["ext"])
+                    if isinstance(s, dict) and (s.get("name") or s.get("object"))]
             if exts:
-                entry["ext"] = [{"name": s["name"], "object": s.get("object", ""), "promote": bool(s.get("promote"))}
-                                for s in exts]
+                entry["ext"] = [{"slot": slot, "name": s.get("name", ""), "object": s.get("object", ""), "promote": bool(s.get("promote"))}
+                                for slot, s in exts]
         if seq.get("const"):
             entry["chans"] = [{"name": c.get("name", f"chan{i}"), "value": c.get("value", 0)}
                               for i, c in enumerate(seq["const"]) if isinstance(c, dict)]
@@ -501,6 +502,7 @@ def load_course() -> dict:
 
 
 DOCS = [
+    ("interface", "Neu: Extension-Menü, Looks und Shortcuts", "upstream_docs/INTERFACE-1.9.1.md", None),
     ("workflows", "SignalGarden: acht komplette Analyse-Workflows", "upstream_docs/SIGNALGARDEN_WORKFLOWS.md", 36),
     ("map", "Die sieben Werkzeuge", "docs/FEATURES_EINFACH.md", 26),
     ("atlas", "1. State Atlas", "docs/FEATURE_01_STATE_ATLAS.md", 26),

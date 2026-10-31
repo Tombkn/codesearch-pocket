@@ -1,12 +1,14 @@
 # CodeSearch Pocket
 
-Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **584 Schritte in 45 Kapiteln**, ein bedienbares Übungsnetz und **Laptop-Anleitungen für alle Kapitel**. Quellenstand: **CodeSearch 1.9.0, Commit [9a9dac1](https://github.com/Tombkn/td-codesearch/tree/9a9dac1f21a86050073c9f7b729e33597b3e87e5)**, abgeglichen am 31.10.2026.
+Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **584 Schritte in 45 Kapiteln**, ein bedienbares Übungsnetz und **Laptop-Anleitungen für alle Kapitel**. Quellenstand: **CodeSearch 1.9.1, Commit [b5ebfe3](https://github.com/Tombkn/td-codesearch/tree/b5ebfe3b54f588eb990586a5bb8a446bed52c691)**, abgeglichen am 31.10.2026.
 
 [Veröffentlichte Handyseite](https://tombkn.github.io/codesearch-pocket/)
 
+**Neu in der Oberfläche:** DAT-farbige Extension-Menüs, 16 direkt auswählbare Looks, Blau/Violett statt gelben UI-Markern und klar umrandete **AUSWAHL / DIESE COMP**-Buttons. FlowLens öffnet den gewählten Bereich; **?** enthält alle 27 nativen Shortcutgruppen. [Bedienung und Prüfgrenzen](docs/INTERFACE-1.9.1.md).
+
 ## Lernen und üben
 
-**Neu: SignalGarden, Kapitel 36–43.** Acht vollständige Workflows mit je zwölf Stationen an einer interaktiven Lichtinstallation. Root, Sensor, Scenes und Palette arbeiten als vier Extensions zusammen. Du verfolgst Eingaben bis zur Farbe, prüfst Hysterese, doppelte Aufrufe, kaputte Tabellendaten und laufenden State. Jede Station enthält konkrete Laptop- und iPhone-Schritte, erwartete Beobachtung und eine Gegenprobe oder Grenze. [Alle 96 Stationen lesen](https://github.com/Tombkn/td-codesearch/blob/9a9dac1f21a86050073c9f7b729e33597b3e87e5/docs/SIGNALGARDEN_WORKFLOWS.md) · [Prüfbericht](docs/WORKFLOWS-2026-10-31.md).
+**Neu: SignalGarden, Kapitel 36–43.** Acht vollständige Workflows mit je zwölf Stationen an einer interaktiven Lichtinstallation. Root, Sensor, Scenes und Palette arbeiten als vier Extensions zusammen. Du verfolgst Eingaben bis zur Farbe, prüfst Hysterese, doppelte Aufrufe, kaputte Tabellendaten und laufenden State. Jede Station enthält konkrete Laptop- und iPhone-Schritte, erwartete Beobachtung und eine Gegenprobe oder Grenze. [Alle 96 Stationen lesen](https://github.com/Tombkn/td-codesearch/blob/b5ebfe3b54f588eb990586a5bb8a446bed52c691/docs/SIGNALGARDEN_WORKFLOWS.md) · [Prüfbericht](docs/WORKFLOWS-2026-10-31.md).
 
 Die acht Themen: Orientierung → komplette Extension → Datenfluss → State → Aufrufwege → Fehlersuche → Änderungen prüfen → eigenständige Projektanalyse. Beim erneuten Kapitelstart oder Laden beginnt ein Workflow mit bekannten Ausgangswerten. Alte Häkchen bleiben sichtbar; „Weiter“ braucht in diesem Durchlauf erneut „Prüfen“. Bewusstes Überspringen bleibt möglich.
 
@@ -67,6 +69,7 @@ npm test
 - `parity-tests.mjs`: Gegenfälle für Protokolle, Quellen, Mutation und Testkopien.
 - `smoke.mjs`: Aufbau der Ansichten, Detailfelder und Kopiermenüs.
 - `ui-tests.mjs`: DOM-Integration der echten App-Handler mit jsdom; Lesen/Üben, Lesestelle, Schriftgröße, Rückmeldung, JSON-Eingabe, überlagernde Fenster und Kapitelwechsel. **jsdom besitzt keine Layout- oder Touch-Engine.**
+- `ui-upgrade-tests.mjs`: Extension-Menüs, Alt-Hilfe, Shortcutkatalog und Textkontraste aller 16 Looks einschließlich der Kontext-Buttons.
 - `viewport-tests.mjs`: simulierte Ereignisse für Bildschirmtastatur, Drehung, Pinch-Zoom und Browser ohne VisualViewport. **Kein Safari-Gerätetest.**
 - `package-tests.mjs`: Start und Grundbedienung der erzeugten Einzeldatei im DOM-Test; enthaltene Dateien und Versionskennung.
 
@@ -78,7 +81,7 @@ Die Prüfung auf einem echten Android/Chrome und iPhone/Safari bleibt eine eigen
 
 ```sh
 python -m pip install -r requirements-build.txt
-python tools/upstream.py --repo ../td-codesearch --ref 9a9dac1f21a86050073c9f7b729e33597b3e87e5 --version 1.9.0 --checked 2026-10-31 --freeze
+python tools/upstream.py --repo ../td-codesearch --ref b5ebfe3b54f588eb990586a5bb8a446bed52c691 --version 1.9.0 --checked 2026-10-31 --freeze
 python tools/build_data.py
 python tools/build_offline.py
 npm test

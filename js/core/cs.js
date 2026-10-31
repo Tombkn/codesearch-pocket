@@ -1357,7 +1357,8 @@ export class CodeSearch {
 
   // ------------------------------------------------------------------ Fenster und Look
   toggleLook() {
-    const looks = (this.parDefs.Look && this.parDefs.Look.menuNames) || ["classic", "graphite", "midnight", "paper", "sand", "contrast"];
+    const imported = Object.keys(this.ui.CODESEARCH_LOOKS || {});
+    const looks = imported.length ? imported : (this.parDefs.Look && this.parDefs.Look.menuNames) || ["classic", "graphite", "midnight", "paper", "sand", "contrast"];
     const i = looks.indexOf(this.cs.Look);
     this.cs.Look = looks[(i + 1) % looks.length];
     this.emit();

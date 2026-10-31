@@ -320,18 +320,14 @@ export function buildGuide(cs) {
     h.guide_mode = mode;
     rows.push(h);
   });
-  const keys = [
-    ["Strg+P", "Schnellsuche im zweiten Fenster"], ["Strg+I", "IMPACT der markierten Methode / des States"],
-    ["Strg+Umschalt+I", "ROUTE: wer ruft das, bis zum Auslöser"], ["Strg+Enter", "neuer SELECTED / CALL PATH ab hier"],
-    ["Strg+C", "Zeile kopieren (Menü)"], ["Alt+P", "voller Pfad"], ["Alt+F", "Frage-Paket"], ["Strg+R", "Reverse-Spec"],
-    ["F6", "DATEN-Format weiterschalten"], ["Alt+D", "DETAILS an/aus"], ["Alt+← / Alt+→", "Definition zurück / vor"],
-    ["Strg+Alt+← / →", "Verlauf"], ["Strg+→ / Strg+←", "nächster / voriger Tab"], ["Strg+Plus / Alt+0", "Zoom / 100 %"],
-    ["Alt+Shift+A", "RECORD von überall starten/stoppen"], ["Esc", "zurück / Fenster schließen"],
-  ];
-  rows.push(section("TASTEN", "", keys.length, { num: "2" }));
-  keys.forEach(([key, what]) => {
-    const h = hit("guide", "", `${key}   ·   ${what}`, { detail: key });
+  const keys = ui.SHORTCUT_GUIDE || [];
+  rows.push(section("ALLE KEYBOARD SHORTCUTS", "Laptop-Belegung aus CodeSearch · Pocket: ⌨ zeigt die nachgebildeten Tasten", keys.length, { num: "2" }));
+  rows.push(notice("Tab-Hilfe am Laptop: Maus über dem Tab lassen, dann Alt allein drücken. Sobald eine weitere Taste dazukommt, hat der Shortcut Vorrang. Am iPhone: Tab lange drücken."));
+  keys.forEach((item) => {
+    const key = Array.isArray(item.keys) ? item.keys.join(" / ") : item.keys;
+    const h = hit("guide", "", `${key}   ·   ${item.action}`, { detail: item.context, ctx: item.binding });
     h.art = "TASTE";
+    h.shortcut = item;
     rows.push(h);
   });
   const commands = (ui.COMMANDS || []).filter((c) => Array.isArray(c));

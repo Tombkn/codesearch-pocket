@@ -1,6 +1,6 @@
 // Uebungsnetz + echte Code-Analyse als abfragbares Modell. Alle Pfade relativ zum Tutorial-Root ("BranchLab/control").
 
-import { abs, baseName, parentOf } from "./util.js";
+import { abs, rel, baseName, parentOf } from "./util.js";
 
 const LIFECYCLE = new Set(["__init__", "onInitTD", "onDestroyTD", "onStart", "onCreate"]);
 
@@ -30,13 +30,11 @@ export class Net {
     this.code = codeJson;
     this.extDat = new Map();   // COMP -> Extension-DAT
     this.datComp = new Map();  // Extension-DAT -> COMP
-    for (const o of netJson.ops) {
-      for (const ext of o.ext || []) {
-        const m = /op\('\.\/(\w+)'\)/.exec(ext.object || "");
-        const dat = m ? `${o.path}/${m[1]}` : null;
-        if (dat && this.ops.has(dat)) {
-          this.extDat.set(o.path, dat);
-          this.datComp.set(dat, o.path);
+    for (const o of this.ops.values()) {
+      for (const ext of this.extensionSources(o.path)) {
+        if (ext.available) {
+          if (!this.extDat.has(o.path)) this.extDat.set(o.path, ext.path);
+          this.datComp.set(ext.path, o.path);
         }
       }
     }
@@ -90,7 +88,38 @@ export class Net {
     if (!dat) return null;
     const model = this.code[dat];
     if (!model || !model.classes || !model.classes.length) return null;
-    return { dat, comp: this.datComp.get(dat), cls: model.classes[0], model };
+    const comp = this.datComp.get(dat);
+    const binding = this.extensionSources(comp).find((ext) => ext.path === dat);
+    const cls = model.classes.find((item) => item.name === binding?.className) || model.classes[0];
+    return { dat, comp, cls, model };
+  }
+
+  // Jeder Slot behält seinen eigenen Namen und Source-DAT. Dynamische Ausdrücke
+  // werden nie ausgeführt und niemals durch einen gleichnamigen DAT geraten.
+  extensionSources(comp) {
+    const owner = this.op(comp);
+    if (!owner || owner.family !== "COMP") return [];
+    return (owner.ext || []).map((ext, slot) => {
+      const match = /^\s*op\(\s*(['"])([^'"]+)\1\s*\)\.(?:module|mod)\.([A-Za-z_]\w*)\s*\(\s*me\s*\)\s*$/.exec(ext.object || "")
+        || /^\s*mod\(\s*(['"])([^'"]+)\1\s*\)\.([A-Za-z_]\w*)\s*\(\s*me\s*\)\s*$/.exec(ext.object || "");
+      let path = null;
+      if (match) {
+        const source = match[2];
+        const parts = source.startsWith("/") ? rel(source).split("/") : [...comp.split("/"), ...source.split("/")];
+        const normalized = [];
+        let outside = source.startsWith("/") && rel(source).startsWith("/");
+        for (const part of parts) {
+          if (part === "." || part === "") continue;
+          if (part === "..") { if (normalized.length) normalized.pop(); else outside = true; }
+          else normalized.push(part);
+        }
+        if (!outside) path = normalized.join("/");
+      }
+      const dat = path ? this.op(path) : null;
+      const available = Boolean(dat && dat.family === "DAT" && typeof dat.text === "string");
+      return { comp, slot: ext.slot ?? slot, name: ext.name || match?.[3] || `Extension ${slot + 1}`, className: match?.[3] || "", path, available,
+        reason: available ? "" : (match ? "Source-DAT fehlt im Übungsprojekt" : "Source-DAT ist aus diesem Ausdruck nicht eindeutig auflösbar") };
+    });
   }
 
   // Python-DAT-Modell (Klassen oder Modul-Funktionen)

@@ -4,10 +4,11 @@ import { $, esc, md, updateHtml } from "./dom.js";
 import { laptopOverview } from "./learningview.js";
 import { abs, rel, baseName, fmtNum } from "../core/util.js";
 import { artOf, pathText, codeHtml } from "./cswin.js";
+import { rgb } from "./looks.js";
 
 // ------------------------------------------------------------------ TD-Seite
 const FAMILY_FILL = { TOP: "#5b3f86", CHOP: "#2f6b37", SOP: "#2c4f86", DAT: "#7a3d68", COMP: "#4c5260", MAT: "#7a6a2a", POP: "#2a6b6b" };
-const EDGE_COLOR = { wire: "#56c8e6", expr: "#e8a24a", oppar: "#e8a24a", watch: "#e07bd0", callbacks: "#e07bd0", export: "#6fd27b", bind: "#a98cf0", code: "#e07bd0" };
+const EDGE_COLOR = { wire: "#56c8e6", expr: "#9ba6ed", oppar: "#9ba6ed", watch: "#e07bd0", callbacks: "#e07bd0", export: "#6fd27b", bind: "#a98cf0", code: "#e07bd0" };
 
 export function renderTD(ctx) {
   const { cs, td } = ctx;
@@ -88,7 +89,7 @@ function netHtml(ctx) {
       <button data-act="td-undo" title="Strg+Z im TD-Hauptfenster">Strg+Z</button>
       <button data-act="td-down" title="↓ im TD-Netzwerk">↓</button></div>
     <div class="netwrap"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${shapes.join("")}</svg></div>
-    ${sel != null ? netSelHtml(ctx, sel) : `<div class="netsel">Op antippen = markieren · Doppeltippen auf einen COMP = hineingehen · Kabel durchgezogen, versteckte Kanten gestrichelt (EXPR/PAR-REF amber, EXPORT grün, BIND lila, Wächter magenta).</div>`}`;
+    ${sel != null ? netSelHtml(ctx, sel) : `<div class="netsel">Op antippen = markieren · Doppeltippen auf einen COMP = hineingehen · Kabel durchgezogen, versteckte Kanten gestrichelt (EXPR/PAR-REF blauviolett, EXPORT grün, BIND lila, Wächter magenta).</div>`}`;
 }
 
 function netSelHtml(ctx, path) {
@@ -433,11 +434,15 @@ export function renderFlowLens(ctx) {
   const maxD = Math.max(1, ...depth.values());
   const stageOf = (p) => Math.min(4, Math.floor((depth.get(p) / maxD) * 4.999));
   const names = ["ORIGIN", "SHAPE", "STEP", "COMBINE", "RESULT"];
-  const card = (o) => `<button class="fl-card ${fl.selected === o.path ? "sel" : ""}" data-fl="${esc(o.path)}" data-key="fl-${esc(o.path)}"><div class="r">${roleOf(cs, o.path)}</div><div class="n">${esc(o.name)}</div><div class="v">${esc(o.type)} · ${esc(liveValue(cs, o.path))}</div></button>`;
+  const familyColor = { TOP: 'purple', CHOP: 'green', SOP: 'blue', DAT: 'dat-fg', COMP: 'muted', MAT: 'yellow', POP: 'cyan' };
+  const card = (o) => `<button class="fl-card ${fl.selected === o.path ? "sel" : ""}" style="--family-color:var(--${familyColor[o.family] || 'muted'})" data-fl="${esc(o.path)}" data-key="fl-${esc(o.path)}"><div class="r">${roleOf(cs, o.path)}</div><div class="n">${esc(o.name)}</div><div class="v">${esc(o.type)} · ${esc(liveValue(cs, o.path))}</div></button>`;
   let map;
   if (fl.story) {
     const connected = kids.filter((k) => edges.some((e) => e.src === k.path || e.dst === k.path));
-    map = `<div class="fl-stages">${names.map((n, i) => `<div class="fl-stage"><h3>${String(i + 1).padStart(2, "0")} ${n}</h3>${connected.filter((k) => stageOf(k.path) === i).map(card).join("")}</div>`).join("")}</div>`;
+    const unconnected = kids.filter((k) => !connected.includes(k));
+    map = (connected.length ? `<div class="fl-stages">${names.map((n, i) => `<div class="fl-stage"><h3>${String(i + 1).padStart(2, "0")} ${n}</h3>${connected.filter((k) => stageOf(k.path) === i).map(card).join("")}</div>`).join("")}</div>` : '')
+      + (unconnected.length ? `<div class="fl-unconnected"><h3>OHNE VERBINDUNG IM GEWÄHLTEN AUSSCHNITT · kein Beweis, dass diese Ops unbenutzt sind</h3><div class="fl-grid">${unconnected.map(card).join('')}</div></div>` : '')
+      + (!kids.length ? '<p>Dieser COMP enthält keine darstellbaren Operatoren. Wähle im übergeordneten Netzwerk einen anderen COMP.</p>' : '');
   } else {
     map = `<div class="fl-grid">${kids.map(card).join("")}</div>`;
   }
@@ -456,15 +461,17 @@ export function renderFlowLens(ctx) {
       <h3>IF BYPASSED</h3><p>${esc(outE.length ? `${[...new Set(outE.map((e) => baseName(e.dst)))].join(", ")} verlieren den Beitrag von ${o.name}.` : "niemand verliert etwas – keine Wirkung im Ziel")}</p>
       <h3>LIVE</h3><p class="v">${esc(liveValue(cs, sel))}</p>`;
   }
-  layer.innerHTML = `<div class="lhead"><h1>FLOWLENS</h1>
+  const targetChanged = ctx.flowLensTarget !== target;
+  updateHtml(layer, `<div class="lhead"><h1>FLOWLENS</h1>
       <button data-fla="story" class="on">${fl.story ? "STORY" : "RAW NETWORK"}</button>
       <button data-fla="hidden" class="${fl.hidden ? "on" : ""}">Show Hidden Links</button>
       <button data-fla="colors" class="${fl.colors ? "on" : ""}">FARBE ${fl.colors ? "AUS" : "AN"}</button>
       <button data-fla="codesearch">CODESEARCH →</button>
       <button data-fla="close">✕</button></div>
     <div class="fl-status">Ziel ${esc(abs(target))} · fixiert · ${esc(status)}</div>
-    <div class="fl-legend"><span class="e-wire">CYAN KABEL</span><span class="e-par">AMBER PARAM / OP REF</span><span class="e-code">MAGENTA CALLBACK / CODE</span><span class="e-export">GREEN EXPORT</span><span class="e-bind">PURPLE BIND</span><span class="e-loop">ROT LOOP</span></div>
-    <div class="fl-map">${map}</div><div class="fl-micro">${micro}</div>`;
+    <div class="fl-legend"><span class="e-wire">KABEL</span><span class="e-par">PARAM / OP REF</span><span class="e-code">CALLBACK / CODE</span><span class="e-export">EXPORT</span><span class="e-bind">BIND</span><span class="e-loop">LOOP</span></div>
+    <div class="fl-map ${fl.colors ? 'fl-colors' : ''}" data-scroll-key="flowlens-map">${map}</div><div class="fl-micro" data-scroll-key="flowlens-detail">${micro}</div>`, targetChanged);
+  ctx.flowLensTarget = target;
 }
 
 // ------------------------------------------------------------------ Popup (Dialog, Menue, Viewer, Editor, Hilfe, Tooltip, Vergleich)
@@ -486,7 +493,8 @@ export function renderPopup(ctx) {
     html = `<div class="box"><div class="bh"><span class="t">${esc(s.dialog.title)}</span></div><div class="bb">${esc(s.dialog.lines.join("\n"))}</div>
       <div class="bf"><button data-pop="esc">Esc</button>${s.dialog.confirm ? `<button class="ok" data-pop="enter">Enter · übernehmen</button>` : `<button class="ok" data-pop="esc">OK</button>`}</div></div>`;
   } else if (s.menu) {
-    html = `<div class="box"><div class="bh"><span class="t">${esc(s.menu.title)}</span><button data-pop="esc">✕</button></div><div class="bb" style="padding:0">${s.menu.items.map((it, i) => `<button class="mi" data-menu="${i}">${esc(it.label)}</button>`).join("")}</div></div>`;
+    html = `<div class="box menu-box" role="dialog" aria-modal="true" aria-label="${esc(s.menu.title)}"><div class="bh"><span class="t">${esc(s.menu.title)}</span><button data-pop="esc" aria-label="Menü schließen">✕</button></div>
+      ${s.menu.description ? `<div class="menu-description">${esc(s.menu.description)}</div>` : ""}<div class="bb" style="padding:0">${s.menu.items.map((it, i) => `${it.group && it.group !== s.menu.items[i - 1]?.group ? `<h2 class="menu-group">${esc(it.group)}</h2>` : ''}<button class="mi" data-menu="${i}">${it.swatches ? `<span class="look-swatches" aria-hidden="true">${it.swatches.map((color) => `<i style="background:${rgb(color)}"></i>`).join("")}</span>` : ""}${esc(it.label)}</button>`).join("")}</div></div>`;
   } else if (s.viewer) {
     const dat = s.viewer.path;
     html = `<div class="box"><div class="bh"><span class="t">VIEWER · ${esc(abs(dat))}${s.viewer.line ? ` · Zeile ${s.viewer.line}` : ""}</span><button data-pop="esc">✕ Esc</button></div>
@@ -499,6 +507,7 @@ export function renderPopup(ctx) {
     html = `<div class="box"><div class="bh"><span class="t">TABS VERGLEICHEN</span><button data-pop="compare-close">✕</button></div><div class="bb">${esc(compareText(ctx))}</div></div>`;
   }
   box.classList.toggle("show", Boolean(html));
+  box.classList.toggle("hover-help", s.help?.source === 'tab-hover');
   const changed = updateHtml(box, html);
   if (s.editor && changed) {
     const ta = $("#editor-text");

@@ -1,6 +1,6 @@
 # SignalGarden: acht Workflows für iPhone und Laptop
 
-Referenz: CodeSearch 1.9.0, Commit `9a9dac1f21a86050073c9f7b729e33597b3e87e5`. Pocket: 584 Stationen / 45 Kapitel; native Tour: 558 / 43. Neue Strecke: Kapitel 36–43, je zwölf Stationen. Die ersten 462 nativen Lektionen bleiben in ihrer bisherigen Reihenfolge; die bisherigen 26 Pocket-Ergänzungen folgen nach den neuen Workflows.
+Referenz: CodeSearch 1.9.1, Commit `b5ebfe3b54f588eb990586a5bb8a446bed52c691`. Pocket: 584 Stationen / 45 Kapitel; native Tour: 558 / 43. Neue Strecke: Kapitel 36–43, je zwölf Stationen. Die ersten 462 nativen Lektionen bleiben in ihrer bisherigen Reihenfolge; die bisherigen 26 Pocket-Ergänzungen folgen nach den neuen Workflows.
 
 | Kapitel | Workflow | Konkretes Ergebnis |
 |---|---|---|
@@ -13,7 +13,7 @@ Referenz: CodeSearch 1.9.0, Commit `9a9dac1f21a86050073c9f7b729e33597b3e87e5`. P
 | 42 | Änderungen prüfen | Geänderte Schwelle vergleichen, Belege kopieren und einen zusätzlichen Writer in der Vorschau erkennen |
 | 43 | Eigenständige Analyse | Ohne eingeblendete Lösung untersuchen, eigenen Bericht schreiben, Methode auf ein fremdes Projekt übertragen |
 
-Der [vollständige Kurs](https://github.com/Tombkn/td-codesearch/blob/9a9dac1f21a86050073c9f7b729e33597b3e87e5/docs/SIGNALGARDEN_WORKFLOWS.md) enthält Auftrag, getrennte Laptop-/iPhone-Schritte, erwartete Beobachtung und Gegenprobe für jede Station. Eine Anleitung für ein fremdes Projekt ist kein automatischer Nachweis, dieses Projekt vollständig zu verstehen.
+Der [vollständige Kurs](https://github.com/Tombkn/td-codesearch/blob/b5ebfe3b54f588eb990586a5bb8a446bed52c691/docs/SIGNALGARDEN_WORKFLOWS.md) enthält Auftrag, getrennte Laptop-/iPhone-Schritte, erwartete Beobachtung und Gegenprobe für jede Station. Eine Anleitung für ein fremdes Projekt ist kein automatischer Nachweis, dieses Projekt vollständig zu verstehen.
 
 ## Bedienen und wiederholen
 
@@ -28,8 +28,8 @@ Nach Reload oder neuem Kapitelstart wird der Workflow am Anfang vorbereitet. His
 - Alle 584 Stationen wurden mit Gestenfunktionen durchlaufen: keine Fehler und keine Station, die unmittelbar nach der Vorbereitung schon bestanden war.
 - Zwölf gemeinsame SignalGarden-Szenarien prüfen den JavaScript-Nachbau. Die native Seite hat dieselben zwölf Szenarien zusätzlich in TouchDesigner 2025.33230 unter Windows ausgeführt.
 - Sieben gezielte Workflow-Gegenproben und fünf Fortschrittstests prüfen Scope, frische Aufnahmen, Wiederaufnahme und bestehende Lesestellen.
-- Acht Pointer-Tests prüfen die Auslösung und Unterdrückung von Aktionen. 25 App-DOM-Checks prüfen echte App-Handler, Eingaben, Lesen/Üben, erhaltene DOM-Knoten und Scrollpositionen. jsdom besitzt weder Layout noch native Touch-Physik.
-- Native Release-Dateien wurden in einem zweiten sauberen TouchDesigner-Prozess aus einem anderen Projektordner geladen. Zehn Quellen stimmten überein; beide Komponenten hatten 0 Errors/Warnings. [Nativer Prüfbericht](https://github.com/Tombkn/td-codesearch/blob/9a9dac1f21a86050073c9f7b729e33597b3e87e5/docs/SIGNALGARDEN_VALIDATION.md).
+- Acht Pointer-Tests prüfen die Auslösung und Unterdrückung von Aktionen. 40 App-DOM-Checks prüfen echte App-Handler, Eingaben, Lesen/Üben, erhaltene DOM-Knoten und Scrollpositionen. jsdom besitzt weder Layout noch native Touch-Physik.
+- Native Release-Dateien wurden in einem zweiten sauberen TouchDesigner-Prozess aus einem anderen Projektordner geladen. Zehn Quellen stimmten überein; beide Komponenten hatten 0 Errors/Warnings. [Nativer Prüfbericht](https://github.com/Tombkn/td-codesearch/blob/b5ebfe3b54f588eb990586a5bb8a446bed52c691/docs/SIGNALGARDEN_VALIDATION.md).
 
 **Offen:** echter iPhone/Safari-Test von Scroll-Trägheit, Bildschirmtastatur, Pinch-Zoom, Offline-Neustart und durchgehend flüssiger Bedienung; Android/Chrome-Gerätetest; macOS; vollständiger manueller Durchlauf aller 96 neuen nativen Stationen. Der Browser-Connector war nicht verfügbar; die native Browsersteuerung zeigte nach Eingaben keine verlässlich geänderte Seite. Daraus wird kein Browsernachweis abgeleitet.
 

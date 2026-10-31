@@ -13,6 +13,7 @@ for (const name of ["window", "document", "navigator", "location"]) {
 }
 window.__POCKET_DATA__ = Object.fromEntries(["course.json", "net.json", "code.json", "ui.json", "features.json"]
   .map((name) => [name, JSON.parse(readFileSync(new URL(`data/${name}`, root), "utf8"))]));
+if (process.env.POCKET_UI_FIXTURE) Object.assign(window.__POCKET_DATA__['ui.json'], JSON.parse(readFileSync(process.env.POCKET_UI_FIXTURE, 'utf8')));
 window.localStorage.setItem("codesearch-pocket-intro", "1");
 globalThis.requestAnimationFrame = (fn) => setTimeout(fn, 0);
 window.requestAnimationFrame = globalThis.requestAnimationFrame;
@@ -213,6 +214,104 @@ try {
   check('Selbständiger Workflow zeigt keine Lösung vor Hinweis', () => {
     assert.equal(document.querySelector('#tour-body .expected'), null);
     assert.equal(document.querySelector('#tour-body .phone'), null);
+  });
+  await click('#tour-body [data-tour=workspace]');
+  const command = async (text) => {
+    const field = $('#cs-input'); field.value = text;
+    field.dispatchEvent(new window.Event('input', { bubbles: true }));
+    await click('#cs-enter');
+  };
+  await command('>karte SignalGarden/Sensor');
+  check('Analyseziel, COMP und Extension haben getrennte lesbare Ziele', () => {
+    assert.match($('#cs-target .target-owner').textContent, /Sensor/);
+    assert.match($('#cs-target .extension-source').textContent, /SensorExt/);
+    assert.match($('#cs-target .target-path').textContent, /SignalGarden\/Sensor/);
+  });
+  check('Kontextwahl sind zwei getrennte Buttons mit eindeutigem aktivem Zustand', () => {
+    assert.equal(document.querySelectorAll('#cs-context .context-switch .context-button').length, 2);
+    assert.equal($('[data-ctx=selection]').getAttribute('aria-pressed'), 'true');
+    assert.equal($('[data-ctx=comp]').getAttribute('aria-pressed'), 'false');
+    assert.match($('[data-ctx=selection]').textContent, /✓.*AUSWAHL/);
+  });
+  await click('[data-ctx=comp]');
+  check('DIESE COMP wechselt über den App-Handler den aktiven Button', () => {
+    assert.equal($('[data-ctx=comp]').getAttribute('aria-pressed'), 'true');
+    assert.equal($('[data-ctx=selection]').getAttribute('aria-pressed'), 'false');
+    assert.match($('[data-ctx=comp]').textContent, /✓.*DIESE COMP/);
+  });
+  await click('[data-ctx=selection]');
+  check('AUSWAHL setzt den aktiven Kontext wieder zurück', () => {
+    assert.equal($('[data-ctx=selection]').getAttribute('aria-pressed'), 'true');
+    assert.equal($('[data-ctx=comp]').getAttribute('aria-pressed'), 'false');
+  });
+  await click('.extension-source');
+  check('Extension-Menü benennt den Source-DAT und die beiden echten Optionen', () => {
+    assert.match($('#popup .menu-description').textContent, /SignalGarden\/Sensor\/SensorExt/);
+    assert.match($('#popup [data-menu="0"]').textContent, /DAT öffnen/);
+    assert.match($('#popup [data-menu="1"]').textContent, /am Laptop/);
+  });
+  await click('#popup [data-menu="0"]');
+  check('DAT öffnen zeigt über den echten App-Handler den vollständigen Source-Code', () => {
+    assert.match($('#popup .t').textContent, /SensorExt/);
+    assert.match($('#popup .code').textContent, /class SensorExt/);
+  });
+  await click('#popup [data-pop=esc]');
+  await click('.extension-source');
+  await click('#popup [data-menu="1"]');
+  check('Externer Editor erklärt die Laptop-Preferences ohne einen iPhone-Start vorzutäuschen', () => {
+    assert.match($('#popup .bb').textContent, /Preferences/);
+    assert.match($('#popup .bb').textContent, /nicht starten/);
+  });
+  await click('#popup [data-pop=esc]');
+  await click('[data-act=flowlens]');
+  check('FlowLens-Klick öffnet die Analyse des ausgewählten Sensor-COMPs', () => {
+    assert.ok($('#layer-flowlens').classList.contains('show'));
+    assert.match($('#layer-flowlens .fl-status').textContent, /SignalGarden\/Sensor/);
+    assert.match($('#layer-flowlens .fl-unconnected').textContent, /SensorExt/);
+  });
+  const flowMap = $('#layer-flowlens .fl-map'); flowMap.scrollTop = 130; flowMap.scrollLeft = 75;
+  await click('#layer-flowlens .fl-status');
+  check('FlowLens erhält die Ansicht bei unverändertem Render', () => {
+    assert.equal($('#layer-flowlens .fl-map'), flowMap);
+    assert.equal(flowMap.scrollTop, 130); assert.equal(flowMap.scrollLeft, 75);
+  });
+  await click('[data-fla=colors]');
+  check('FlowLens-Farbknopf ändert die Markierung und erhält die Lesestelle', () => {
+    assert.ok($('#layer-flowlens .fl-map').classList.contains('fl-colors'));
+    assert.equal($('#layer-flowlens .fl-map').scrollTop, 130);
+    assert.equal($('#layer-flowlens .fl-map').scrollLeft, 75);
+  });
+  await click('[data-fla=close]');
+  await click('[data-act=look]');
+  check('Look-Auswahl enthält alle 16 importierten Paletten mit Farbproben', () => {
+    assert.equal(document.querySelectorAll('#popup [data-menu]').length, 16);
+    assert.equal(document.querySelectorAll('#popup .look-swatches').length, 16);
+    assert.deepEqual([...document.querySelectorAll('#popup .menu-group')].map((item) => item.textContent), ['Dunkel', 'Hell', 'Hoher Kontrast']);
+  });
+  [...document.querySelectorAll('#popup [data-menu]')].find((button) => button.textContent.includes('Mist')).click(); await delay(15);
+  check('Mist wird vollständig angewendet und bleibt beim nächsten Render erhalten', () => {
+    assert.equal(document.body.dataset.look, 'mist');
+    assert.equal(document.body.style.colorScheme, 'light');
+    assert.equal(document.body.style.getPropertyValue('--win'), 'rgb(247, 252, 255)');
+  });
+  $('[data-mode="map"]').dispatchEvent(new window.MouseEvent('pointerover', { bubbles: true }));
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Alt', altKey: true, bubbles: true, cancelable: true }));
+  await delay(210);
+  check('Maus über Tab plus Alt allein öffnet die Erklärung', () => assert.match($('#popup .t').textContent, /STRUCTURE/));
+  const altD = new window.KeyboardEvent('keydown', { key: 'd', altKey: true, bubbles: true, cancelable: true });
+  document.dispatchEvent(altD); await delay(20);
+  check('Alt+D schließt Tab-Hilfe und führt trotzdem DETAILS aus', () => {
+    assert.equal(altD.defaultPrevented, true);
+    assert.equal($('#popup').classList.contains('show'), false);
+    assert.ok($('[data-act=data-back]'));
+  });
+  document.dispatchEvent(new window.KeyboardEvent('keyup', { key: 'Alt', bubbles: true }));
+  await click('[data-act=help]');
+  check('Fragezeichen zeigt sämtliche nativen Keyboard Shortcuts mit Kontext', () => {
+    assert.match($('#cs-list').textContent, /ALLE KEYBOARD SHORTCUTS/);
+    assert.match($('#cs-list').textContent, /Ctrl\+S/);
+    assert.match($('#cs-list').textContent, /F11/);
+    assert.match($('#cs-list').textContent, /Alt\+D/);
   });
   assert.deepEqual(runtimeErrors, [], 'Keine unbehandelten App-Fehler');
   console.log(JSON.stringify({ passed, engine: "jsdom", layout: "nicht geprüft", nativeTouch: "nicht geprüft" }));

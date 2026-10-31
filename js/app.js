@@ -9,6 +9,7 @@ import { renderTour } from "./ui/tourcard.js";
 import { renderTD, renderCourse, renderAtlas, renderFlowLens, renderPopup, renderQuick, renderFloats, renderOffline } from "./ui/layers.js";
 import { offline, loadManifest, checkStatus, complete, downloadAll, persist, watchInstall, install } from "./ui/offline.js";
 import { bindViewport } from "./ui/viewport.js";
+import { bindTabHelp } from "./ui/tabhelp.js";
 
 const KEYS_ALL = ["Enter", "Esc", "Ctrl+C", "Ctrl+Enter", "Ctrl+I", "Ctrl+Shift+I", "Ctrl+P", "Alt+P", "Alt+F", "Ctrl+R", "F6", "Alt+D",
   "Ctrl+G", "Left", "Right", "Up", "Down", "Ctrl+Right", "Ctrl+Left", "Alt+Left", "Alt+Right", "Ctrl+Alt+Left", "Ctrl+Alt+Right",
@@ -190,10 +191,7 @@ function wire(ctx) {
     if (!t) return;
     const d = t.dataset;
     if (d.scope) return g.scope(d.scope);
-    if (d.mode) {
-      if (g.mods.alt) { g.mods.alt = false; return g.altHelp(d.mode); }
-      return g.tab(d.mode);
-    }
+    if (d.mode) { g.mods.alt = false; return g.tab(d.mode); }
     if (d.ctx) return g.context(d.ctx);
     if (d.overview) return g.overview(d.overview);
     if (d.filter) return g.filter(d.filter);
@@ -219,7 +217,8 @@ function wire(ctx) {
     switch (d.act) {
       case "json": ctx.popup.json = true; return undefined;
       case "quick": return g.key("Ctrl+P");
-      case "look": return g.look();
+      case "look": return g.lookMenu();
+      case "extension-menu": return g.extensionMenu(d.comp, Number(d.slot));
       case "win-min": return g.window(cs.state.window === "min" ? "normal" : "min");
       case "win-max": return g.window(cs.state.window === "max" ? "normal" : "max");
       case "win-close": cs.state.mainopen = false; return cs.emit();
@@ -250,6 +249,13 @@ function wire(ctx) {
   }));
   // READ ORDER lange druecken = ReadPath-Marken (Shift+Klick)
   tapper($("#cs-tabs"), "[data-act=readorder]", { tap: () => {}, long: act(() => { g.readOrderMarks(); toast(`ReadPath-Marken ${cs.state.readMarks ? "an" : "aus"}`); }) });
+  tapper($("#cs-tabs"), "[data-mode]", { tap: () => {}, long: act((el) => g.altHelp(el.dataset.mode)) });
+  bindTabHelp($("#cs-tabs"), {
+    allowed: () => !ctx.tourOpen && !ctx.td.open && !Object.values(ctx.layers).some((value) => value === true)
+      && !cs.state.menu && !cs.state.dialog && !cs.state.viewer && !cs.state.editor,
+    show: (mode) => { g.altHelp(mode); cs.state.help.source = 'tab-hover'; },
+    hide: () => { if (cs.state.help?.source === 'tab-hover') { cs.state.help = null; cs.emit(); } },
+  });
 
   // Trefferliste: tippen, doppelt tippen, lange druecken; ART-Zelle = Tooltip
   tapper($("#cs-list"), "[data-row]", {
@@ -531,8 +537,9 @@ function wire(ctx) {
     if (ev.defaultPrevented) return undefined;
     if (ev.target.tagName === "INPUT" || ev.target.tagName === "TEXTAREA" || ev.target.tagName === "SELECT") return undefined;
     // Im Lesetext und in überlagerten Seiten bleiben Pfeile/Enter beim Browser.
-    if (ctx.tourOpen || ctx.td.open || Object.values(ctx.layers).some((value) => value === true) || $("#popup").classList.contains("show")) return undefined;
-    if (ev.target.closest("button, summary") && (ev.key === "Enter" || ev.key === " ")) return undefined;
+    if (ctx.tourOpen || ctx.td.open || Object.values(ctx.layers).some((value) => value === true)
+      || (cs.state.help?.source !== 'tab-hover' && (cs.state.menu || cs.state.dialog || cs.state.viewer || cs.state.editor || cs.state.help || ctx.popup.tooltip || ctx.popup.json || ctx.popup.compare))) return undefined;
+    if (ev.target.closest?.("button, summary") && (ev.key === "Enter" || ev.key === " ")) return undefined;
     const parts = [];
     if (ev.ctrlKey || ev.metaKey) parts.push("Ctrl");
     if (ev.altKey) parts.push("Alt");

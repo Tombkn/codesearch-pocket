@@ -1,7 +1,7 @@
 {
   "repo": "Tombkn/td-codesearch",
-  "commit": "9a9dac1f21a86050073c9f7b729e33597b3e87e5",
-  "version": "1.9.0",
+  "commit": "b5ebfe3b54f588eb990586a5bb8a446bed52c691",
+  "version": "1.9.1",
   "checked": "2026-10-31",
   "lesson_count": 558,
   "files": {
@@ -11,11 +11,11 @@
     },
     "upstream_docs/SIGNALGARDEN_WORKFLOWS.md": {
       "path": "docs/SIGNALGARDEN_WORKFLOWS.md",
-      "sha256": "100e72a778ec1cfa23666e950f9c91bac747aa9ef99c67a55851e91647e25def"
+      "sha256": "c2ebcaae79aef4f403826b22573f1d6bd1d93a987619b8a72316f426d8fd4621"
     },
     "CodeSearchExt.py": {
       "path": "src/CodeSearchExt.py",
-      "sha256": "14e0ee2d0d80c65eef153080929f6e51b024410dce4587cbb2626fb0d044af94"
+      "sha256": "4490301a02af7c6eaf2151298f7f64ffddfaf06128c31ce3f03374a5a2bda97d"
     },
     "CodeModelExt.py": {
       "path": "src/CodeModelExt.py",
@@ -23,11 +23,11 @@
     },
     "CodeSearch.tdn": {
       "path": "src/tdn/CodeSearch.tdn",
-      "sha256": "e5e1e998a5f67036c20965213fadde2f783cdaed4abb752df3f889fadf7a3b29"
+      "sha256": "15f4514774978ffe7c198bd7d84c8a5a8eddde8683013becaac97120fdf5be2d"
     },
     "CodeSearch_Tutorial.tdn": {
       "path": "src/tdn/CodeSearch_Tutorial.tdn",
-      "sha256": "a6c3c1423d8174d69c07f10986e1eab0d8e30a88976b443ca191291e04d78071"
+      "sha256": "b7d62c8bae6af5e797b579054908d21e27ca527f5b1e43957af46249f423cbb8"
     },
     "TourExt.py": {
       "path": "src/tutorial/TourExt.py",
@@ -35,7 +35,7 @@
     },
     "lessons.json": {
       "path": "src/tutorial/lessons.json",
-      "sha256": "c21a9ff3647d31d02b4633fd5510bd1ef92fe1b7720394fb6462a1702a600700"
+      "sha256": "27b5f7f086bf30f5b2943c01c091a48d365008b8318d2177bbfb68ad1c61376c"
     },
     "marker_catalogue.json": {
       "path": "src/tutorial/marker_catalogue.json",
@@ -109,6 +109,10 @@
       "path": "docs/state-atlas/PROTOCOL.md",
       "sha256": "3c2c0a97d15f8d2e6caea1eff1e7f4b68ad189276d508d0247eb69afeba77d38"
     },
+    "upstream_docs/INTERFACE-1.9.1.md": {
+      "path": "docs/INTERFACE-1.9.1.md",
+      "sha256": "9d9a36fa4a3fd6635a9d934c7b13b5e2b9f988324f95ec017bcabbd462d6620a"
+    },
     "upstream_docs/trigger-perspective.md": {
       "path": "docs/trigger-perspective.md",
       "sha256": "117908888eddb5c73a0db9588984aadb3879bb59941868b65f699e2be2adbb85"
@@ -131,7 +135,7 @@
     },
     "upstream_docs/flowlens-integration.md": {
       "path": "docs/flowlens-integration.md",
-      "sha256": "ed60021a840b078ef752f03526be32d9cf596b5eda76a48ba440c1dd11a8e18f"
+      "sha256": "e171b4ead38a586ca7834c70c48705851f649204f751edc988f79a6490c039ec"
     },
     "upstream_docs/deep-dive/STAERKEN_UND_GRENZEN.md": {
       "path": "docs/deep-dive/STAERKEN_UND_GRENZEN.md",

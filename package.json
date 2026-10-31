@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tools/verify.mjs && node tools/progress-tests.mjs && node tools/signalgarden-tests.mjs && node tools/workflow-tests.mjs && node tools/gesture-tests.mjs && node tools/parity-tests.mjs && node tools/smoke.mjs && node tools/ui-tests.mjs && node tools/viewport-tests.mjs && node tools/package-tests.mjs",
+    "test": "node tools/verify.mjs && node tools/progress-tests.mjs && node tools/signalgarden-tests.mjs && node tools/workflow-tests.mjs && node tools/gesture-tests.mjs && node tools/parity-tests.mjs && node tools/smoke.mjs && node tools/ui-tests.mjs && node tools/ui-upgrade-tests.mjs && node tools/viewport-tests.mjs && node tools/package-tests.mjs",
     "test:ui": "node tools/ui-tests.mjs",
     "build": "python tools/build_data.py && python tools/build_offline.py"
   },
