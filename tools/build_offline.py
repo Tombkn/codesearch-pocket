@@ -130,7 +130,8 @@ def build_single() -> int:
     if n != 1:
         raise SystemExit("index.html: Modul-Skript nicht gefunden")
     out = ROOT / SINGLE
-    out.write_text(html, encoding="utf-8")
+    # GitHub liefert LF aus; Windows-Zeilenenden dürfen die Downloadgröße nicht verfälschen.
+    out.write_text(html, encoding="utf-8", newline="\n")
     return out.stat().st_size
 
 
@@ -212,7 +213,7 @@ def main() -> None:
 
     html = re.sub(r'(href="css/app\.css)(\?v=[\w-]+)?"', rf'\1?v={version}"', html)
     html = re.sub(r'(src="js/app\.js)(\?v=[\w-]+)?"', rf'\1?v={version}"', html)
-    (ROOT / "index.html").write_text(html, encoding="utf-8")
+    (ROOT / "index.html").write_text(html, encoding="utf-8", newline="\n")
 
     index_size = len(content("index.html"))
     entries = [{"path": "./", "size": index_size}, {"path": "index.html", "size": index_size}]
@@ -229,10 +230,10 @@ def main() -> None:
         size = len(json.dumps(manifest, indent=1).encode())
         manifest["files"][-1]["size"] = size
         manifest["total"] = sum(e["size"] for e in manifest["files"])
-    (ROOT / "offline.json").write_text(json.dumps(manifest, indent=1), encoding="utf-8")
+    (ROOT / "offline.json").write_text(json.dumps(manifest, indent=1), encoding="utf-8", newline="\n")
 
     sw = SW_TEMPLATE.replace("__VERSION__", version).replace("__FILES__", json.dumps([e["path"] for e in entries], indent=2))
-    (ROOT / "sw.js").write_text(sw, encoding="utf-8")
+    (ROOT / "sw.js").write_text(sw, encoding="utf-8", newline="\n")
     print(json.dumps({"version": version, "files": len(entries), "MB": round(manifest["total"] / 1048576, 2),
                       "single_MB": round(single_size / 1048576, 2)}))
 

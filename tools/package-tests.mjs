@@ -19,7 +19,8 @@ check("Manifest enthält alle Dateien mit richtigen Größen", () => {
     assert.equal(normalized(file.path === "./" ? "index.html" : file.path).length, file.size, file.path);
   }
   assert.equal(manifest.total, manifest.files.reduce((total, file) => total + file.size, 0));
-  assert.equal(read(manifest.single.path).length, manifest.single.size);
+  // Git normalisiert Textdateien: die veröffentlichte Größe muss auch bei CRLF-Checkouts stimmen.
+  assert.equal(normalized(manifest.single.path).length, manifest.single.size);
 });
 const index = read("index.html").toString("utf8");
 const single = read(manifest.single.path).toString("utf8");
