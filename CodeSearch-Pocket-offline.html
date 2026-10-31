@@ -425,6 +425,98 @@ table.grid td.idx { color: var(--dim); cursor: default; }
 #layer-offline .md a { color: var(--accent); word-break: break-all; }
 #btn-offline.on { color: var(--green, #6fd27b); }
 
+/* iPhone: sichtbarer Bereich statt verdeckter Fläche hinter Tastatur/Browserleisten.
+   Safe Areas gelten auch links/rechts im Querformat. Pinch-Zoom bleibt nativ. */
+:root {
+  --viewport-height: 100vh;
+  --viewport-height: 100dvh;
+  --viewport-top: 0px;
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --reader-font: 17px;
+}
+:root.reader-large { --reader-font: 20px; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+.app { position: fixed; top: var(--viewport-top); left: 0; right: 0; height: var(--viewport-height); overflow: hidden; padding-left: var(--safe-l); padding-right: var(--safe-r); }
+.topbar .tb { min-width: 44px; flex-shrink: 0; }
+.tb-title { min-width: 0; }
+.reading #btn-td, .reading #btn-keys { display: none; }
+#app.reading ~ .quick, #app.reading ~ .floats { visibility: hidden; }
+.tour.open { top: calc(var(--viewport-top) + var(--topbar-h) + var(--safe-t)); bottom: auto; height: calc(var(--viewport-height) - var(--topbar-h) - var(--safe-t)); padding-inline: var(--safe-l) var(--safe-r); }
+.tour-grip { text-align: center; min-height: 46px; }
+.tour-head { padding: 10px 18px 6px; }
+.tour-head h2 { font-size: 20px; line-height: 1.3; }
+.tour-head .eyebrow { color: var(--muted); font-size: 10.5px; letter-spacing: .03em; flex-wrap: wrap; }
+.tour-head .chap { color: var(--muted); font-size: 12px; margin-top: 6px; letter-spacing: 0; }
+.reader-options { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
+.reader-options button { min-height: 44px; padding: 8px 12px; color: var(--cyan); border: 1px solid var(--line2); border-radius: 6px; flex-shrink: 0; }
+.tour.mini .reader-options { display: none; }
+.tour-body { padding: 10px 18px 28px; scroll-padding-block: 18px; }
+.tour.open .tour-body, .tour.open .tblk p, .tour.open .tblk li, .tour.open .lesson-purpose p { font-size: var(--reader-font); line-height: 1.65; }
+.tour-body .l { font-size: 12px; font-weight: 700; letter-spacing: .05em; color: var(--accent); }
+.tour-body h3 { margin: 0 0 6px; font-size: 18px; }
+.tour-body p { overflow-wrap: anywhere; white-space: pre-wrap; }
+.lesson-purpose { margin: 0 0 20px; }
+.lesson-purpose p { margin: 6px 0 0; }
+.tour-body .tblk { margin-top: 20px; }
+.tour-body .now { padding: 16px; border: 1px solid var(--line2); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--tour2); }
+.tour-body .phone { background: none; border: 0; padding: 0; }
+.tour-body .phone ul { margin: 8px 0 0; padding-left: 21px; }
+.tour-body .phone li { margin-bottom: 10px; }
+.tour-body .quickbtns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.tour-body .quickbtns button, .tbtns button { min-height: 44px; padding: 10px 12px; border: 1px solid var(--line2); border-radius: 6px; background: var(--panel); color: var(--text); font-size: 14px; }
+.practice-start { display: block; width: 100%; min-height: 50px; margin-top: 16px; padding: 12px; border: 1px solid var(--accent); border-radius: 7px; background: var(--tour2); color: var(--accent); font-size: 16px; font-weight: 650; }
+.tour-body .expected { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.tour-body .next-guidance, .tour.open .tblk .next-guidance { color: var(--muted); font-size: 14px; line-height: 1.55; margin-top: 10px; }
+.tour-body .lesson-hint { padding: 14px; border: 1px solid var(--cyan); border-radius: 6px; background: var(--tour2); }
+.tour-body .feedback { padding: 16px; border-radius: 6px; }
+.tour-body summary { display: list-item; min-height: 44px; padding-block: 8px; font-size: 15px; line-height: 1.45; }
+.tour-body details { padding-block: 8px; }
+.lesson-purpose details { margin-top: 8px; }
+.tour-body .check-details summary { font-size: 13px; color: var(--muted); }
+.tour-body .check-details li { font-size: 13px; }
+.tour-actions { gap: 6px; padding: 8px 10px; }
+.tour-actions button { min-height: 48px; padding: 7px 2px; font-size: 14px; }
+.tour-actions button:disabled { opacity: .35; cursor: default; }
+.tour-actions .next.locked { opacity: .65; }
+button:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.layer, .popup { top: var(--viewport-top); bottom: auto; height: var(--viewport-height); padding-left: var(--safe-l); padding-right: var(--safe-r); }
+.lhead { flex-shrink: 0; }
+.lhead button, .netbar button, .parsheet .pulse, .parsheet .tog { min-height: 44px; }
+.lbody { overscroll-behavior-y: contain; }
+.learning-guide { font-size: var(--reader-font); line-height: 1.65; }
+.popup .box { max-height: calc(var(--viewport-height) - var(--safe-t) - 12px); border-radius: 12px 12px 0 0; min-height: 0; }
+.popup .bh, .popup .bf { flex-shrink: 0; }
+.popup .bb { min-height: 0; overscroll-behavior-y: contain; font-size: 15px; }
+.popup .bh button, .popup .bf button { min-height: 44px; }
+.popup textarea, #json-text, #editor-text { font-size: 16px; min-height: 140px; height: clamp(140px, 32dvh, 320px); }
+.parsheet input[type=number], .parsheet input[type=text], .parsheet select, #cs-input, .quick .qf input { font-size: 16px; min-height: 40px; }
+.quick, .quick.low { top: calc(var(--viewport-top) + var(--safe-t) + var(--topbar-h)); max-height: calc(var(--viewport-height) - var(--safe-t) - var(--topbar-h) - 12px); left: max(6px, var(--safe-l)); right: max(6px, var(--safe-r)); }
+.quick.low { bottom: auto; }
+.quick .qh, .quick .qf, .quick .qc, .quick .qs { flex-shrink: 0; }
+.floats { top: calc(var(--viewport-top) + var(--safe-t) + var(--topbar-h)); right: max(6px, var(--safe-r)); width: min(calc(100% - var(--safe-l) - var(--safe-r) - 12px), 420px); max-height: calc(var(--viewport-height) - var(--safe-t) - var(--topbar-h) - 12px); overflow-y: auto; }
+.float { flex-shrink: 0; max-height: min(340px, calc(var(--viewport-height) * .55)); }
+.float .fh { flex-shrink: 0; }
+.float .fh button { min-height: 44px; min-width: 44px; }
+.float .fb { min-height: 0; overscroll-behavior-y: contain; }
+.keyboard-open body { --safe-b: 0px; }
+.compact-viewport .tour-head .chap, .compact-viewport .tour-head .eyebrow, .compact-viewport .reader-options > span { display: none; }
+.compact-viewport .tour-head h2 { font-size: 16px; }
+.compact-viewport .tour-head { padding-block: 4px; display: flex; align-items: center; gap: 10px; }
+.compact-viewport .tour-head h2 { flex: 1; }
+.compact-viewport .tour.mini .tour-head { display: none; }
+.keyboard-open .tour.mini .tour-actions { display: none; }
+.keyboard-open .cs-scopes, .keyboard-open .cs-data, .keyboard-open .cs-groups, .keyboard-open .cs-crumb { display: none; }
+@media (max-width: 420px) {
+  .app:not(.reading) .tb-prog { display: none; }
+  .tour-head { padding-inline: 14px; }
+  .tour-body { padding-inline: 14px; }
+}
+@media (pointer: coarse) {
+  .tab, .key, .json-button { min-height: 44px; }
+  .quick .qh button, .quick .qf button { min-height: 44px; min-width: 44px; }
+}
+
 </style>
 </head>
 <body data-look="classic">
@@ -7207,17 +7299,13 @@ return { lessonEvidence, transferCard, laptopOverview };
 })();
 // ---- js/ui/tourcard.js
 __m["js/ui/tourcard.js"] = (() => {
-// Tour-Karte: JETZT DU, AM HANDY, DARAUF ACHTEN, Rueckmeldung, Knoepfe, Bedeutung, Grenzen, Begriffe.
-
+// Lesekarte: Zweck verstehen, selbst handeln, Ergebnis prüfen. Zusatzwerkzeuge bleiben aufklappbar.
 const { $, esc, updateHtml } = __m["js/ui/dom.js"];
 const { phoneSteps } = __m["js/core/phone.js"];
 const { transferCard, lessonEvidence } = __m["js/ui/learningview.js"];
 const MODE_LABEL = { refs: "USED BY", trace: "USES", chain: "FLOW", map: "STRUCTURE", entries: "TRIGGERS", tour: "CALL PATH", check: "AUDIT" };
 const OP_TEXT = { eq: "=", contains: "enthält", not_contains: "enthält nicht", gt: ">", near: "≈", delta: "gestiegen auf", changed: "geändert auf" };
 
-function ruleOp(rule) { return OP_TEXT[rule.op || "eq"] || rule.op; }
-
-// Wert so, wie Pruefen ihn liest (Python-Schreibweise)
 function pyValue(value) {
   if (value === true) return "True";
   if (value === false) return "False";
@@ -7226,71 +7314,99 @@ function pyValue(value) {
   return String(value);
 }
 
+function button([key, label, special]) {
+  return `<button data-tour="${key}" class="${special ? "special" : ""}">${esc(label)}</button>`;
+}
+
 function renderTour(ctx) {
-  const { tour, ui } = ctx;
+  const { tour } = ctx;
   const lesson = tour.lesson();
   const index = tour.step;
   const count = tour.lessons.length;
-  const p = tour.progress();
+  const progress = tour.progress();
   const done = tour.done[lesson.id];
   const changed = ctx.renderedLessonId !== lesson.id;
-  $("#tb-prog").textContent = `${p.total - p.open}/${p.total}`;
-  $("#tb-title").textContent = `${String(lesson.chapter + 1).padStart(2, "0")} · ${tour.chapters[lesson.chapter] || ""}`;
-  updateHtml($("#tour-head"), `
-    <div class="eyebrow"><span>MITMACH-TOUR ${String(index + 1).padStart(3, "0")} / ${count}</span><span class="sp"></span><span>${done ? (done === "confirmed" ? "✓ selbst bestätigt" : "✓ Modell geprüft") : (tour.skipped.has(lesson.id) ? "übersprungen" : "offen")}</span></div>
-    <div class="chap">${String(lesson.chapter + 1).padStart(2, "0")}  ${esc(tour.chapters[lesson.chapter] || "")}</div>
-    <h2>${esc(lesson.title)}</h2>`);
+  const chapterLessons = tour.lessons.filter((item) => item.chapter === lesson.chapter);
+  const chapterStep = chapterLessons.findIndex((item) => item.id === lesson.id) + 1;
   const nohelp = Boolean(lesson.nohelp);
+  const reveal = !nohelp || tour.hint || done;
+  const result = ctx.lastCheck?.id === lesson.id ? ctx.lastCheck : null;
   const steps = nohelp ? [] : phoneSteps(lesson);
-  const fb = tour.feedback || "";
-  const fbClass = fb.startsWith("ZUSTAND GEPRÜFT") || fb.startsWith("VON DIR") ? "ok" : (fb.startsWith("NOCH OFFEN") ? "bad" : "");
-  const checks = ctx.lastCheck && ctx.lastCheck.id === lesson.id ? ctx.lastCheck.results : null;
-  const buttons = [
+  $("#tb-prog").textContent = `${progress.total - progress.open}/${progress.total}`;
+  $("#tb-title").textContent = "CodeSearch Pocket";
+  updateHtml($("#tour-head"), `
+    <div class="eyebrow"><span>MITMACH-TOUR ${index + 1} / ${count}</span><span class="sp"></span><span>${done ? (done === "confirmed" ? "✓ selbst bestätigt" : "✓ Modell geprüft") : (tour.skipped.has(lesson.id) ? "übersprungen" : "offen")}</span></div>
+    <div class="chap">${lesson.chapter + 1} · ${esc(tour.chapters[lesson.chapter] || "")}</div>
+    <h2>${esc(lesson.title)}</h2>
+    <div class="reader-options"><span>Schritt ${chapterStep} von ${chapterLessons.length} im Kapitel</span>
+      <button data-tour="read-size" aria-pressed="${Boolean(ctx.readerLarge)}" aria-label="${ctx.readerLarge ? "Leseschrift auf normale Größe stellen" : "Leseschrift vergrößern"}">${ctx.readerLarge ? "Aa Normal" : "Aa Größer"}</button></div>`);
+
+  const tools = [
     ["workspace", "Arbeitsplatz"], ["labparams", "Lab-Parameter"], ["params", "Parameter"], ["csparams", "CS-Parameter"],
-    ["compare", "Tabs vergleichen"], ["chapters", "Kapitel"], ["hint", nohelp ? (tour.hint ? "Lösung verbergen" : "Lösung zeigen") : (tour.hint ? "Hinweis aus" : "Hinweis")], ["skip", "Überspringen"], ["pause", "Pause / Ende"],
+    ...(!nohelp ? [["compare", "Tabs vergleichen"]] : []), ["chapters", "Kapitel"],
+    ["hint", nohelp ? (tour.hint ? "Lösung verbergen" : "Lösung zeigen") : (tour.hint ? "Hinweis verbergen" : "Hinweis")],
+    ["skip", "Überspringen"], ["pause", "Pause / Ende"],
   ];
-  if (nohelp) buttons.splice(buttons.findIndex(([k]) => k === "compare"), 1);
-  if (lesson.id === "error_create") buttons.push(["error", "Fehler setzen", true]);
-  if (lesson.chapter === 8) buttons.push(["restore", "Fehler zurück", true]);
-  if (lesson.id === "flowlens" || lesson.chapter === 24) buttons.push(["flowlens", "FlowLens", true]);
-  if (lesson.prompt) buttons.push(["prompt", "Codex-Aufgabe kopieren", true]);
-  if (lesson.chapter >= 25 && lesson.chapter !== 35) buttons.unshift(["json", "JSON bearbeiten", true]);
-  const target = `ARBEITSPLATZ  ${lesson.target}\nCODESEARCH  ${MODE_LABEL[lesson.mode] || String(lesson.mode).toUpperCase()}`;
-  // Knoepfe, die der Lektionstext nennt, direkt unter JETZT DU
-  const mentioned = [["Arbeitsplatz", "workspace"], ["Lab-Parameter", "labparams"], ["CS-Parameter", "csparams"], ["Codex-Aufgabe", "prompt"],
-    ["Fehler setzen", "error"], ["Fehler zurück", "restore"], ["„FlowLens“", "flowlens"], ["Tabs vergleichen", "compare"], ["Kapitel", "chapters"]]
-    .filter(([word, key]) => !nohelp && lesson.action.includes(word) && buttons.some(([k]) => k === key))
-    .map(([, key]) => buttons.find(([k]) => k === key));
+  if (lesson.id === "error_create") tools.push(["error", "Fehler setzen", true]);
+  if (lesson.chapter === 8) tools.push(["restore", "Fehler zurück", true]);
+  if (lesson.id === "flowlens" || lesson.chapter === 24) tools.push(["flowlens", "FlowLens", true]);
+  if (lesson.prompt) tools.push(["prompt", "Codex-Aufgabe kopieren", true]);
+  if (lesson.chapter >= 25 && lesson.chapter !== 35) tools.push(["json", "JSON bearbeiten", true]);
+  const directions = [lesson.action, ...steps].join("\n");
+  const matches = [["Arbeitsplatz", "workspace"], ["Lab-Parameter", "labparams"], ["CS-Parameter", "csparams"],
+    ["CodeSearch-Parameter", "csparams"], ["Codex-Aufgabe", "prompt"], ["Fehler setzen", "error"],
+    ["Fehler zurück", "restore"], ["FlowLens", "flowlens"], ["Tabs vergleichen", "compare"], ["JSON", "json"]];
+  const relevant = new Set(matches.filter(([word]) => !nohelp && directions.includes(word)).map(([, key]) => key));
+  const quick = tools.filter(([key]) => relevant.has(key));
+  const technicalChecks = result && reveal ? `<details data-persist="checks" class="check-details"><summary>Welche Bedingungen wurden geprüft?</summary>
+    <ul class="checks">${result.results.map((rule) => `<li><span class="d ${rule.ok ? "ok" : ""}"></span><span>${esc(rule.ok
+      ? `${rule.key} ${OP_TEXT[rule.op || "eq"] || rule.op} ${pyValue(rule.op === "delta" || rule.op === "changed" ? rule.actual : rule.value)}`
+      : (rule.hint || rule.key))}</span></li>`).join("")}</ul></details>` : "";
+  let feedback = "";
+  if (result) {
+    const title = result.passed ? (lesson.observed ? "Beobachtung selbst bestätigt" : "Der Modellzustand passt") : "Noch nicht erreicht";
+    const explanation = result.passed
+      ? (lesson.observed ? "Du hast die geforderte Beobachtung bestätigt. Das ist kein automatischer Verständnistest." : "Die Bedingungen dieser Aufgabe sind erfüllt. Vergleiche deine Beobachtung mit dem erwarteten Ergebnis.")
+      : (nohelp && !tour.hint ? "Dein Versuch erfüllt die Aufgabe noch nicht. Du kannst weiter untersuchen oder bewusst die Lösung öffnen." : `Vergleiche deinen Versuch damit: ${lesson.expected}`);
+    feedback = `<section class="tblk feedback ${result.passed ? "ok" : "bad"}" aria-label="Rückmeldung">
+      <div role="status" aria-live="polite"><h3>${title}</h3><p>${esc(explanation)}</p></div>${technicalChecks}
+      <p class="next-guidance">${result.passed ? "Wenn du die Beobachtung nachvollziehen kannst, geht es mit Weiter zur nächsten Station." : "Prüfen verändert deinen Versuch nicht. Du kannst mit einem Hinweis oder selbstständig weiterarbeiten."}</p>
+      ${!result.passed ? `<div class="quickbtns">${button(["show-hint", nohelp ? "Lösung öffnen" : "Hinweis öffnen"])}${button(["practice", "Weiter ausprobieren"])}</div>` : ""}</section>`;
+  } else if (ctx.showFeedback || tour.observed) {
+    feedback = `<section class="tblk feedback" role="status"><p>${esc(tour.feedback)}</p></section>`;
+  }
   updateHtml($("#tour-body"), `
-    ${lesson.before ? `<div class="tblk muted"><div class="l">VORHER</div><p>${esc(lesson.before)}</p></div>` : ""}
-    <div class="tblk now"><div class="l">JETZT DU</div><p>${esc(lesson.action)}</p></div>
-    ${mentioned.length ? `<div class="tblk quickbtns">${mentioned.map(([key, label]) => `<button data-tour="${key}">${esc(label)}</button>`).join("")}</div>` : ""}
-    ${steps.length ? `<div class="tblk phone"><div class="l">AM HANDY</div><ul>${steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ul></div>` : ""}
-    ${nohelp && !done ? `<div class="tblk muted"><div class="l">OHNE HILFEN</div><p>Welche Frage ist das – und welches Werkzeug beantwortet sie? Du entscheidest Tab und Zeile selbst. Prüfen sagt nur „noch nicht“. Hängst du fest: „Lösung zeigen“.</p></div>` : `<div class="tblk"><div class="l">DARAUF ACHTEN</div><p>${esc(lesson.expected)}</p></div>`}
-    ${fb ? `<div class="tblk feedback ${fbClass}"><p>${esc(fb)}</p>${checks ? `<ul class="checks">${checks.map((r) => `<li><span class="d ${r.ok ? "ok" : ""}"></span><span>${esc(r.ok ? `${r.key} ${ruleOp(r)} ${pyValue(r.op === "delta" || r.op === "changed" ? r.actual : r.value)}` : (r.hint || r.key))}</span></li>`).join("")}</ul>` : ""}</div>` : ""}
-    ${lesson.patched ? `<div class="tblk patch"><div class="l">KORRIGIERT IM HANDY-KURS</div><p>${esc(lesson.patched.join(" "))}</p></div>` : ""}
-    <div class="tbtns">${buttons.map(([key, label, special]) => `<button data-tour="${key}" class="${special ? "special" : ""}">${esc(label)}</button>`).join("")}</div>
-    <div class="tblk"><div class="l">DAS BEDEUTET</div><p>${esc(lesson.meaning || "")}</p></div>
-    <div class="tblk"><div class="l">HIER GLÄNZT ES</div><p>${esc(lesson.why || "")}</p></div>
-    <div class="tblk muted"><div class="l">DAFÜR REICHT ES NICHT</div><p>${esc(lesson.limit || "")}\nNächster Schritt: ${esc(lesson.next_step || "")}</p></div>
-    <div class="tblk muted"><div class="l">ZIEL</div><p>${esc(target)}</p></div>
-    ${lessonEvidence(lesson)}
-    ${transferCard(lesson)}
-    ${tour.hint ? `<div class="tblk"><div class="l">${nohelp ? "LÖSUNG" : "HINWEIS"}</div><p>${esc(lesson.hint || "")}</p></div>` : ""}
-    <div class="tblk muted"><div class="l">AGENDA – BEGRIFFE &amp; METHODEN</div><p>${esc(lesson.glossary || "")}</p></div>`, changed);
-  const nextLocked = !done;
+    ${reveal ? `<section class="lesson-purpose"><div class="l">1 · VERSTEHEN</div><p>${esc(lesson.why || lesson.meaning || "")}</p>
+      ${lesson.meaning && lesson.meaning !== lesson.why ? `<details data-persist="meaning"><summary>Den Zusammenhang verstehen</summary><p>${esc(lesson.meaning)}</p></details>` : ""}</section>` : `<section class="lesson-purpose"><div class="l">OHNE HILFEN</div><p>Du wählst Werkzeug und Vorgehen selbst. Eine Lösung erscheint erst, wenn du sie bewusst öffnest.</p></section>`}
+    ${lesson.before ? `<div class="tblk before"><div class="l">VORHER</div><p>${esc(lesson.before)}</p></div>` : ""}
+    <section class="tblk now"><div class="l">${nohelp ? "DEIN AUFTRAG" : "2 · SELBST AUSPROBIEREN"}</div><p>${esc(lesson.action)}</p></section>
+    ${steps.length ? `<div class="tblk phone"><div class="l">SO GEHT ES AM HANDY</div><ul>${steps.map((step) => `<li>${esc(step)}</li>`).join("")}</ul></div>` : ""}
+    ${quick.length ? `<div class="quickbtns">${quick.map(button).join("")}</div>` : ""}
+    <button class="practice-start" data-tour="practice">Jetzt selbst ausprobieren →</button>
+    ${reveal ? `<section class="tblk expected"><div class="l">3 · DARAN ERKENNST DU ES</div><p>${esc(lesson.expected)}</p><p class="next-guidance">Nach deinem Versuch unten Prüfen drücken.${lesson.observed ? " Gesehen ist deine eigene Bestätigung nach dem Lesen." : ""}</p></section>` : ""}
+    ${tour.hint ? `<section class="tblk lesson-hint"><div class="l">${nohelp ? "LÖSUNG" : "HINWEIS"}</div><p>${esc(lesson.hint || "")}</p></section>` : ""}
+    ${feedback}
+    <details data-persist="tools" class="lesson-tools"><summary>Arbeitsplatz und weitere Werkzeuge</summary><div class="tbtns">${tools.map(button).join("")}</div></details>
+    <details data-persist="limits"><summary>Grenzen und nächster Schritt</summary><p>${esc(lesson.limit || "")}</p><p>${esc(lesson.next_step || "")}</p>
+      <p class="evidence-note">Arbeitsplatz: ${esc(lesson.target)} · CodeSearch: ${esc(MODE_LABEL[lesson.mode] || String(lesson.mode).toUpperCase())}</p></details>
+    ${lessonEvidence(lesson)}${transferCard(lesson)}
+    <details data-persist="glossary"><summary>Agenda – Begriffe &amp; Methoden</summary><p>${esc(lesson.glossary || "")}</p></details>
+    ${lesson.patched ? `<details data-persist="patch" class="patch"><summary>Korrektur gegenüber der Laptop-Lektion</summary><p>${esc(lesson.patched.join(" "))}</p></details>` : ""}`, changed);
+
   updateHtml($("#tour-actions"), `
-    <button data-tour="back">‹ Zurück</button>
-    ${lesson.observed ? `<button class="seen ${tour.observed ? "done" : ""}" data-tour="seen">${tour.observed ? "✓ Gesehen" : "Gesehen"}</button>` : `<button data-tour="hint">${nohelp ? "Lösung" : "Hinweis"}</button>`}
+    <button data-tour="back" ${index === 0 ? "disabled" : ""}>‹ Zurück</button>
+    ${lesson.observed ? `<button class="seen ${tour.observed ? "done" : ""}" aria-pressed="${tour.observed}" data-tour="seen">${tour.observed ? "✓ Gesehen" : "Gesehen"}</button>` : `<button data-tour="hint">${nohelp ? "Lösung" : "Hinweis"}</button>`}
     <button class="check" data-tour="check">Prüfen</button>
-    <button class="next ${nextLocked ? "locked" : ""}" data-tour="next">${index < count - 1 ? "Weiter ›" : "Am Ende"}</button>`);
+    <button class="next ${done ? "" : "locked"}" data-tour="next" aria-disabled="${!done}">${index < count - 1 ? "Weiter ›" : "Am Ende"}</button>`);
   ctx.renderedLessonId = lesson.id;
   if (ctx.showFeedback) {
-    // Nur nach ausdrücklichem Prüfen zur Rückmeldung springen, nie beim Lesen.
     $("#tour-body .feedback")?.scrollIntoView({ block: "nearest" });
     ctx.showFeedback = false;
   }
-  void ui;
+  if (ctx.showHint) {
+    $("#tour-body .lesson-hint")?.scrollIntoView({ block: "nearest" });
+    ctx.showHint = false;
+  }
 }
 
 return { renderTour };
@@ -7827,7 +7943,7 @@ function renderQuick(ctx) {
 function renderFloats(ctx) {
   const { cs, ui } = ctx;
   const s = cs.state;
-  $("#floats").innerHTML = s.floats.map((f) => {
+  updateHtml($("#floats"), s.floats.map((f) => {
     const focus = s.floatFocus === f.id;
     let body;
     if (f.code) body = codeHtml(cs, f.code.dat, f.code.line, { from: f.code.line, to: f.code.end || f.code.line + 10 });
@@ -7835,7 +7951,7 @@ function renderFloats(ctx) {
       ? `<button class="hit section" data-frow="${i}" data-fid="${f.id}"><span class="art">${esc(h.num || "")}</span><span class="main"><span class="ttl">${esc(h.text)}</span></span></button>`
       : `<button class="hit ${i === f.selected ? "sel" : ""}" data-frow="${i}" data-fid="${f.id}"><span class="art">${esc(artOf(ui, h))}</span><span class="main"><div class="txt">${esc(h.ctx ? `${h.ctx}   ${h.text}` : h.text)}</div></span></button>`)).join("");
     return `<div class="float ${focus ? "focus" : ""}" data-float="${f.id}" style="font-size:${f.zoom * 100}%"><div class="fh"><span class="t" data-ffocus="${f.id}">${esc(f.title)}${f.zoom !== 1 ? ` · ${Math.round(f.zoom * 100)} %` : ""}</span><button data-fclose="${f.id}">Esc ✕</button></div><div class="fb">${body}</div></div>`;
-  }).join("");
+  }).join(""));
 }
 
 // ------------------------------------------------------------------ Offline
@@ -8029,6 +8145,49 @@ function mb(bytes) {
 
 return { offline, loadManifest, checkStatus, complete, downloadAll, persist, watchInstall, install, mb };
 })();
+// ---- js/ui/viewport.js
+__m["js/ui/viewport.js"] = (() => {
+// Safari kann die Bildschirmtastatur über den Layout-Viewport legen.
+// Nur den sichtbaren Bereich übernehmen; Pinch-Zoom niemals zurückskalieren.
+function bindViewport(win = window) {
+  const viewport = win.visualViewport;
+  const root = win.document.documentElement;
+  let frame = 0;
+  const update = () => {
+    frame = 0;
+    const editing = win.document.activeElement?.matches("input, textarea, select, [contenteditable=true]");
+    // Auch unter Pinch-Zoom muss ein beendetes Tippen die Bedienleiste freigeben.
+    if (!editing) root.classList.remove("keyboard-open");
+    if (viewport && Math.abs((viewport.scale || 1) - 1) > 0.05) return;
+    const height = viewport?.height || win.innerHeight;
+    if (!Number.isFinite(height) || height <= 0) return;
+    const top = Math.max(0, viewport?.offsetTop || 0);
+    root.style.setProperty("--viewport-height", `${height}px`);
+    root.style.setProperty("--viewport-top", `${top}px`);
+    root.classList.toggle("compact-viewport", height < 500);
+    root.classList.toggle("keyboard-open", Boolean(editing && win.innerHeight - height > 80));
+  };
+  const schedule = () => {
+    if (!frame) frame = win.requestAnimationFrame(update);
+  };
+  viewport?.addEventListener("resize", schedule);
+  viewport?.addEventListener("scroll", schedule);
+  win.addEventListener("resize", schedule);
+  win.document.addEventListener("focusin", schedule);
+  win.document.addEventListener("focusout", schedule);
+  update();
+  return () => {
+    if (frame) win.cancelAnimationFrame(frame);
+    viewport?.removeEventListener("resize", schedule);
+    viewport?.removeEventListener("scroll", schedule);
+    win.removeEventListener("resize", schedule);
+    win.document.removeEventListener("focusin", schedule);
+    win.document.removeEventListener("focusout", schedule);
+  };
+}
+
+return { bindViewport };
+})();
 // ---- js/app.js
 __m["js/app.js"] = (() => {
 // CodeSearch Pocket - Rahmen: Daten laden, zeichnen, jede Beruehrung auf genau eine Geste (core/gestures.js) abbilden.
@@ -8041,6 +8200,7 @@ const { renderCS } = __m["js/ui/cswin.js"];
 const { renderTour } = __m["js/ui/tourcard.js"];
 const { renderTD, renderCourse, renderAtlas, renderFlowLens, renderPopup, renderQuick, renderFloats, renderOffline } = __m["js/ui/layers.js"];
 const { offline, loadManifest, checkStatus, complete, downloadAll, persist, watchInstall, install } = __m["js/ui/offline.js"];
+const { bindViewport } = __m["js/ui/viewport.js"];
 const KEYS_ALL = ["Enter", "Esc", "Ctrl+C", "Ctrl+Enter", "Ctrl+I", "Ctrl+Shift+I", "Ctrl+P", "Alt+P", "Alt+F", "Ctrl+R", "F6", "Alt+D",
   "Ctrl+G", "Left", "Right", "Up", "Down", "Ctrl+Right", "Ctrl+Left", "Alt+Left", "Alt+Right", "Ctrl+Alt+Left", "Ctrl+Alt+Right",
   "Ctrl+Plus", "Alt+0", "Alt+Shift+A", "Shift+K", "Alt+Shift+K", "Ctrl+Shift+K", "Ctrl+Z"];
@@ -8048,6 +8208,7 @@ const KEY_LABEL = { Left: "←", Right: "→", Up: "↑", Down: "↓", "Ctrl+Rig
   "Ctrl+Alt+Left": "Strg+Alt+←", "Ctrl+Alt+Right": "Strg+Alt+→", Enter: "⏎ Enter" };
 
 async function main() {
+  bindViewport();
   // Einzel-Datei: die Daten stecken schon in der Seite (window.__POCKET_DATA__), sonst aus data/ laden
   const packed = window.__POCKET_DATA__;
   const fetchJson = (name) => (packed ? Promise.resolve(packed[name])
@@ -8064,7 +8225,9 @@ async function main() {
     offline, storage,
     popup: { tooltip: null, compare: false },
     lastCheck: null, keysOpen: false, tourOpen: true, fieldFocused: false,
+    readerLarge: false, readerScroll: 0,
   };
+  try { ctx.readerLarge = storage?.getItem("codesearch-pocket-reader-size") === "large"; } catch { /* Ansicht bleibt lokal. */ }
 
   // Kopieren landet auch in der Zwischenablage des Handys
   const innerCopy = cs.copy.bind(cs);
@@ -8089,14 +8252,11 @@ async function main() {
   try { introSeen = storage && storage.getItem("codesearch-pocket-intro") === "1"; } catch { introSeen = false; }
   if (!introSeen) {
     ctx.popup.tooltip = { title: "SO GEHT'S AM HANDY", text: [
-      "OBEN das CodeSearch-Fenster – dieselben Tabs, Spalten, Tooltips und Befehle wie in TouchDesigner.",
-      "LESEN: Die Mitmach-Tour nutzt den ganzen Bildschirm. Wische im Text hoch oder runter. „Zur Übung“ öffnet das CodeSearch-Fenster; „Lektion lesen“ bringt dich an dieselbe Textstelle zurück.",
-      "TD (oben links) ist TouchDesigner: NETZ mit Kabeln und versteckten Kanten, PARAMETER (Fire, Route, …), TIMELINE.",
-      "⌨ öffnet die Tastenleiste: Strg/Alt/⇧ einmal antippen, dann tippen = Strg+Klick usw. Die Tasten der Station leuchten.",
-      "Zeile antippen = markieren · doppelt = Enter · lange drücken = Rechtsklick · ART-Zelle antippen = Tooltip.",
-      "Prüfen liest den Zustand der Handy-Simulation. Einige Regeln können bereits erfüllt sein. „Gesehen“ ist deine Bestätigung und kein automatischer Verständnisnachweis. Die Laptop-Karte nennt die zusätzliche praktische Prüfung.",
-      "Hinten wartet ein Abschluss-Kapitel ohne Hilfen. ATLAS hat Spickzettel, Doku, Bilder des echten Fensters und alle Begriffe.",
-      "⇩ oben rechts speichert den ganzen Kurs auf dem Handy – danach läuft er auch im Flugmodus. Steht dort ✓ offline, ist alles da.",
+      "1 · VERSTEHEN: Lies, wofür du die Funktion brauchst, und den nächsten Handgriff. Mit Aa stellst du die Leseschrift größer.",
+      "2 · AUSPROBIEREN: „Zur Übung“ wechselt ins nachgebildete CodeSearch. Tippen markiert eine Zeile, Doppeltippen öffnet sie. TD zeigt das Übungsnetz und seine Parameter; ⌨ öffnet die Tastenleiste.",
+      "3 · PRÜFEN: Nach deinem Handgriff liest „Prüfen“ den Modellzustand. „Gesehen“ ist deine eigene Lesebestätigung. Ein Häkchen beweist noch keinen sicheren Umgang am Laptop.",
+      "„Lektion lesen“ bringt dich an deine Lesestelle zurück. Hinweise und Werkzeuge kannst du passend zur Aufgabe öffnen. ATLAS → AM LAPTOP enthält den Einstieg ins echte Projekt.",
+      "Auf dem iPhone: Safari → Teilen → Zum Home-Bildschirm. Über ⇩ einmal alle Dateien speichern und den Offline-Start anschließend selbst testen.",
     ].join("\n\n") };
     try { if (storage) storage.setItem("codesearch-pocket-intro", "1"); } catch { /* egal */ }
   }
@@ -8109,8 +8269,15 @@ async function main() {
 }
 
 function renderAll(ctx) {
+  const wasReading = $("#tour").classList.contains("open");
+  const sameLesson = ctx.renderedLessonId === ctx.tour.lesson().id;
+  if (!sameLesson) ctx.readerScroll = 0;
+  else if (wasReading) ctx.readerScroll = $("#tour-body").scrollTop;
+  document.documentElement.classList.toggle("reader-large", ctx.readerLarge);
   $("#tour").classList.toggle("open", ctx.tourOpen);
   $("#tour").classList.toggle("mini", !ctx.tourOpen);
+  // Auch wenn display:none die DOM-Scrollposition verliert, bleibt die Lesestelle erhalten.
+  if (ctx.tourOpen && !wasReading) $("#tour-body").scrollTop = ctx.readerScroll;
   const keepScroll = $("#cs-list").scrollTop;
   renderCS(ctx);
   $("#cs-list").scrollTop = keepScroll;
@@ -8142,11 +8309,11 @@ function renderAll(ctx) {
   renderQuick(ctx);
   renderFloats(ctx);
   renderOffline(ctx);
-  $("#tour").classList.toggle("open", ctx.tourOpen);
-  $("#tour").classList.toggle("mini", !ctx.tourOpen);
   $("#app").classList.toggle("reading", ctx.tourOpen);
   $("#cs").inert = ctx.tourOpen;
   $("#keys").inert = ctx.tourOpen;
+  $("#quick").inert = ctx.tourOpen;
+  $("#floats").inert = ctx.tourOpen;
   $("#tour-grip").textContent = ctx.tourOpen ? "Zur Übung →" : "↑ Lektion lesen";
   $("#tour-grip").setAttribute("aria-expanded", String(ctx.tourOpen));
   $("#keys").classList.toggle("show", ctx.keysOpen);
@@ -8348,10 +8515,17 @@ function wire(ctx) {
     if (!t) return undefined;
     switch (t.dataset.tour) {
       case "back": ctx.lastCheck = null; ctx.tourOpen = true; return g.back();
-      case "next": ctx.lastCheck = null; g.next(); ctx.tourOpen = true; return undefined;
+      case "next": ctx.lastCheck = null; if (!g.next()) ctx.showFeedback = true; ctx.tourOpen = true; return undefined;
       case "check": { ctx.lastCheck = g.check(); ctx.tourOpen = true; ctx.showFeedback = true; return undefined; }
       case "seen": return g.seen();
-      case "hint": ctx.tourOpen = true; return g.hint();
+      case "hint": ctx.tourOpen = true; ctx.showHint = true; return g.hint();
+      case "show-hint": ctx.tourOpen = true; ctx.showHint = true; if (!tour.hint) g.hint(); return undefined;
+      case "practice": ctx.tourOpen = false; return undefined;
+      case "read-size": {
+        ctx.readerLarge = !ctx.readerLarge;
+        try { ctx.storage?.setItem("codesearch-pocket-reader-size", ctx.readerLarge ? "large" : "normal"); } catch { /* Kein Speicher nötig. */ }
+        return undefined;
+      }
       case "skip": ctx.lastCheck = null; ctx.tourOpen = true; return g.skip();
       case "workspace": ctx.tourOpen = false; return g.workspace();
       case "labparams": ctx.td.open = true; ctx.td.tab = "par"; ctx.td.sheet = tour.lesson().target.startsWith("StateLab") ? "StateLab" : (tour.lesson().target.startsWith("Farbmischer") ? "Farbmischer" : "BranchLab"); return undefined;
@@ -8371,6 +8545,7 @@ function wire(ctx) {
   });
   $("#tour-body").addEventListener("click", tourClick);
   $("#tour-actions").addEventListener("click", tourClick);
+  $("#tour-head").addEventListener("click", tourClick);
 
   // ---------------------------------------------------------------- TD-Seite
   const tdLayer = $("#layer-td");

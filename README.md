@@ -6,9 +6,9 @@ Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **488 Schritte in 37 K
 
 ## Lernen und üben
 
-1. Die **Lernansicht** öffnet sich groß. Im Text hoch und runter wischen; die Aktionsknöpfe bleiben erreichbar.
-2. **Zur Übung →** wechselt ins nachgebildete CodeSearch. **Lektion lesen** bringt dich an deine Lesestelle zurück. Eine neue Lektion beginnt oben.
-3. **Prüfen** liest den Zustand der Simulation. Es führt den geforderten Handgriff nicht für dich aus.
+1. Die **Lernansicht** öffnet sich groß. **Aa Größer** schaltet von 17 auf 20 Pixel Leseschrift; die Wahl bleibt lokal gespeichert. Die Karte trennt **Verstehen → selbst ausprobieren → daran erkennst du es**. Vertiefungen und zusätzliche Werkzeuge sind aufklappbar.
+2. **Zur Übung →** oder **Jetzt selbst ausprobieren →** wechselt ins nachgebildete CodeSearch. **Lektion lesen** bringt dich an deine Lesestelle zurück. Eine neue Lektion beginnt oben. Offene Such- und Lesefenster verschwinden während des Lesens aus dem Weg und bleiben für die Übung erhalten.
+3. **Prüfen** liest den Zustand der Simulation. Es führt den geforderten Handgriff nicht für dich aus. Ein Fehlversuch bietet einen Hinweis und den Rückweg zum eigenen Versuch. Die einzelnen Prüfbedingungen lassen sich zusätzlich aufklappen.
 4. **Am Laptop anwenden** erklärt pro Kapitel einen konkreten Fall: vorher → Aktion → nachher, drei Arbeitsschritte, sichtbare Prüfung und Grenze.
 5. **ATLAS → AM LAPTOP** enthält acht Schritte für Installation, tatsächliche Projektpfade, erste Aufnahmen, Re-Init und Save/Reload sowie den kompletten Kapitelplan.
 
@@ -59,10 +59,11 @@ npm test
 - `verify.mjs`: alle 488 Stationen über Gestenfunktionen; **kein Browser-Touchtest**.
 - `parity-tests.mjs`: Gegenfälle für Protokolle, Quellen, Mutation und Testkopien.
 - `smoke.mjs`: Aufbau der Ansichten, Detailfelder und Kopiermenüs.
-- `ui-tests.mjs`: DOM-Integration der echten App-Handler mit jsdom; Lesen/Üben, Lesestelle, Rückmeldung, JSON-Eingabe und Kapitelwechsel. **jsdom besitzt keine Layout- oder Touch-Engine.**
+- `ui-tests.mjs`: DOM-Integration der echten App-Handler mit jsdom; Lesen/Üben, Lesestelle, Schriftgröße, Rückmeldung, JSON-Eingabe, überlagernde Fenster und Kapitelwechsel. **jsdom besitzt keine Layout- oder Touch-Engine.**
+- `viewport-tests.mjs`: simulierte Ereignisse für Bildschirmtastatur, Drehung, Pinch-Zoom und Browser ohne VisualViewport. **Kein Safari-Gerätetest.**
 - `package-tests.mjs`: Start und Grundbedienung der erzeugten Einzeldatei im DOM-Test; enthaltene Dateien und Versionskennung.
 
-Die Prüfung auf einem echten Android/Chrome und iPhone/Safari bleibt eine eigene Abnahme. Sie wurde bei diesem Update nicht ausgeführt. Der Computer-Use-Zugang stoppte die Browserbedienung wegen fehlender URL-Policy-Unterstützung für den Windows-Browser. [Prüfbericht und Gerätetest](docs/AUDIT-2026-10-31.md)
+Die Prüfung auf einem echten Android/Chrome und iPhone/Safari bleibt eine eigene Abnahme. Sie wurde bei diesen Updates nicht ausgeführt. Der Computer-Use-Zugang war bei der ersten Prüfung wegen fehlender URL-Policy-Unterstützung blockiert; beim iPhone-Nachtrag war der Browserhost nicht verfügbar. [Quellenabgleich und Gerätetest](docs/AUDIT-2026-10-31.md) · [iPhone-Anpassungen und Prüfgrenzen](docs/IPHONE-2026-10-31.md)
 
 ## Quellen reproduzierbar bauen
 

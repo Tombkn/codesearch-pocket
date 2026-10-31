@@ -42,11 +42,45 @@ try {
   body.scrollTop = 231;
   $("details[data-persist=transfer]").open = true;
   await click("#tour-grip");
+  // Gegenfall: ausgeblendeter Scrollcontainer verliert seine eigene Position.
+  body.scrollTop = 0;
   await click("#tour-grip");
   check("Lesestelle und DOM-Knoten beim Wechsel Lesen/Üben erhalten", () => {
     assert.equal(body.scrollTop, 231);
     assert.equal($("#tour-body .now"), textNode);
     assert.equal($("details[data-persist=transfer]").open, true);
+  });
+
+  check("Lernkarte trennt Zweck, eigene Handlung und Beobachtung", () => {
+    assert.match($(".lesson-purpose").textContent, /VERSTEHEN/);
+    assert.match($(".now").textContent, /SELBST AUSPROBIEREN/);
+    assert.match($(".expected").textContent, /DARAN ERKENNST DU ES/);
+    assert.equal($("details[data-persist=tools]").open, false);
+  });
+  await click("[data-tour=read-size]");
+  check("Große Schrift verändert weder Station noch vorhandenen Fortschritt", () => {
+    assert.ok(document.documentElement.classList.contains("reader-large"));
+    assert.equal($("[data-tour=read-size]").getAttribute("aria-pressed"), "true");
+    assert.equal(window.localStorage.getItem("codesearch-pocket-reader-size"), "large");
+    assert.equal($("#tour-body .now"), textNode);
+    assert.equal(body.scrollTop, 231);
+  });
+  await click("#tour-actions [data-tour=next]");
+  check("Gesperrtes Weiter erklärt den nächsten Schritt statt still nichts zu tun", () => {
+    assert.equal($("#tour-body .now").textContent, textNode.textContent);
+    assert.match($(".feedback").textContent, /Erst Prüfen/);
+    assert.equal($(".feedback").dataset.scrollRequested, "true");
+  });
+  await click("#tour-actions [data-tour=check]");
+  check("Fehlversuch hat einen verständlichen Rückweg und keine offenen Prüf-Interna", () => {
+    assert.match($(".feedback").textContent, /Noch nicht erreicht/);
+    assert.equal($("details[data-persist=checks]").open, false);
+    assert.ok($(".feedback [data-tour=practice]"));
+  });
+  await click(".feedback [data-tour=show-hint]");
+  await click(".feedback [data-tour=show-hint]");
+  check("Ein angeforderter Hinweis wird direkt sichtbar gemacht", () => {
+    assert.equal($(".lesson-hint").dataset.scrollRequested, "true");
   });
 
   const arrow = new window.KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true });
@@ -83,6 +117,33 @@ try {
   check("JSON-Dialog übernimmt tatsächlich die editierte Eingabe", () => assert.equal($("#json-text").value, textarea.value));
   await click("[data-pop=json-cancel]");
 
+  await click("#btn-keys");
+  await click('[data-key="Down"]');
+  await click("#btn-keys");
+  await click("[data-act=float-list]");
+  const floatBody = $("#floats .fb");
+  floatBody.scrollTop = 125;
+  await click("[data-act=quick]");
+  $("#quick-input").value = "StateLab";
+  $("#quick-input").dispatchEvent(new window.Event("input", { bubbles: true }));
+  await delay(15);
+  await click("#tour-grip");
+  check("Lesen nimmt Such- und Lesefenster aus dem Fokus, ohne sie zu schließen", () => {
+    assert.equal($("#quick").inert, true);
+    assert.equal($("#floats").inert, true);
+    assert.ok($("#quick").classList.contains("show"));
+    assert.equal($("#floats .fb"), floatBody);
+  });
+  await click("#tour-grip");
+  check("Zur Übung kehrt mit Suchtext und Lesefenster an die Arbeitsstelle zurück", () => {
+    assert.equal($("#quick").inert, false);
+    assert.equal($("#floats").inert, false);
+    assert.equal($("#quick-input").value, "StateLab");
+    assert.equal($("#floats .fb").scrollTop, 125);
+  });
+  await click("[data-q=esc]");
+  await click("[data-fclose]");
+
   await click("#btn-atlas");
   await click("[data-atlas=laptop]");
   check("Laptop-Start und sämtliche Kapitel sind zugänglich", () => {
@@ -100,6 +161,8 @@ try {
   check("Abschlusskarte verrät keine Vorher/Aktion/Nachher-Lösung", () => {
     assert.equal(document.querySelector("#tour-body .transfer-grid"), null);
     assert.match($("#tour-body").textContent, /OHNE HILFEN/);
+    assert.equal(document.querySelector("#tour-body .expected"), null);
+    assert.equal(document.querySelector("#tour-body details[data-persist=meaning]"), null);
   });
   await click("#tour-body [data-tour=laptop]");
   await click("[data-learn-chapter='26']");

@@ -8,6 +8,7 @@ import { renderCS } from "./ui/cswin.js";
 import { renderTour } from "./ui/tourcard.js";
 import { renderTD, renderCourse, renderAtlas, renderFlowLens, renderPopup, renderQuick, renderFloats, renderOffline } from "./ui/layers.js";
 import { offline, loadManifest, checkStatus, complete, downloadAll, persist, watchInstall, install } from "./ui/offline.js";
+import { bindViewport } from "./ui/viewport.js";
 
 const KEYS_ALL = ["Enter", "Esc", "Ctrl+C", "Ctrl+Enter", "Ctrl+I", "Ctrl+Shift+I", "Ctrl+P", "Alt+P", "Alt+F", "Ctrl+R", "F6", "Alt+D",
   "Ctrl+G", "Left", "Right", "Up", "Down", "Ctrl+Right", "Ctrl+Left", "Alt+Left", "Alt+Right", "Ctrl+Alt+Left", "Ctrl+Alt+Right",
@@ -16,6 +17,7 @@ const KEY_LABEL = { Left: "←", Right: "→", Up: "↑", Down: "↓", "Ctrl+Rig
   "Ctrl+Alt+Left": "Strg+Alt+←", "Ctrl+Alt+Right": "Strg+Alt+→", Enter: "⏎ Enter" };
 
 async function main() {
+  bindViewport();
   // Einzel-Datei: die Daten stecken schon in der Seite (window.__POCKET_DATA__), sonst aus data/ laden
   const packed = window.__POCKET_DATA__;
   const fetchJson = (name) => (packed ? Promise.resolve(packed[name])
@@ -32,7 +34,9 @@ async function main() {
     offline, storage,
     popup: { tooltip: null, compare: false },
     lastCheck: null, keysOpen: false, tourOpen: true, fieldFocused: false,
+    readerLarge: false, readerScroll: 0,
   };
+  try { ctx.readerLarge = storage?.getItem("codesearch-pocket-reader-size") === "large"; } catch { /* Ansicht bleibt lokal. */ }
 
   // Kopieren landet auch in der Zwischenablage des Handys
   const innerCopy = cs.copy.bind(cs);
@@ -57,14 +61,11 @@ async function main() {
   try { introSeen = storage && storage.getItem("codesearch-pocket-intro") === "1"; } catch { introSeen = false; }
   if (!introSeen) {
     ctx.popup.tooltip = { title: "SO GEHT'S AM HANDY", text: [
-      "OBEN das CodeSearch-Fenster – dieselben Tabs, Spalten, Tooltips und Befehle wie in TouchDesigner.",
-      "LESEN: Die Mitmach-Tour nutzt den ganzen Bildschirm. Wische im Text hoch oder runter. „Zur Übung“ öffnet das CodeSearch-Fenster; „Lektion lesen“ bringt dich an dieselbe Textstelle zurück.",
-      "TD (oben links) ist TouchDesigner: NETZ mit Kabeln und versteckten Kanten, PARAMETER (Fire, Route, …), TIMELINE.",
-      "⌨ öffnet die Tastenleiste: Strg/Alt/⇧ einmal antippen, dann tippen = Strg+Klick usw. Die Tasten der Station leuchten.",
-      "Zeile antippen = markieren · doppelt = Enter · lange drücken = Rechtsklick · ART-Zelle antippen = Tooltip.",
-      "Prüfen liest den Zustand der Handy-Simulation. Einige Regeln können bereits erfüllt sein. „Gesehen“ ist deine Bestätigung und kein automatischer Verständnisnachweis. Die Laptop-Karte nennt die zusätzliche praktische Prüfung.",
-      "Hinten wartet ein Abschluss-Kapitel ohne Hilfen. ATLAS hat Spickzettel, Doku, Bilder des echten Fensters und alle Begriffe.",
-      "⇩ oben rechts speichert den ganzen Kurs auf dem Handy – danach läuft er auch im Flugmodus. Steht dort ✓ offline, ist alles da.",
+      "1 · VERSTEHEN: Lies, wofür du die Funktion brauchst, und den nächsten Handgriff. Mit Aa stellst du die Leseschrift größer.",
+      "2 · AUSPROBIEREN: „Zur Übung“ wechselt ins nachgebildete CodeSearch. Tippen markiert eine Zeile, Doppeltippen öffnet sie. TD zeigt das Übungsnetz und seine Parameter; ⌨ öffnet die Tastenleiste.",
+      "3 · PRÜFEN: Nach deinem Handgriff liest „Prüfen“ den Modellzustand. „Gesehen“ ist deine eigene Lesebestätigung. Ein Häkchen beweist noch keinen sicheren Umgang am Laptop.",
+      "„Lektion lesen“ bringt dich an deine Lesestelle zurück. Hinweise und Werkzeuge kannst du passend zur Aufgabe öffnen. ATLAS → AM LAPTOP enthält den Einstieg ins echte Projekt.",
+      "Auf dem iPhone: Safari → Teilen → Zum Home-Bildschirm. Über ⇩ einmal alle Dateien speichern und den Offline-Start anschließend selbst testen.",
     ].join("\n\n") };
     try { if (storage) storage.setItem("codesearch-pocket-intro", "1"); } catch { /* egal */ }
   }
@@ -77,8 +78,15 @@ async function main() {
 }
 
 function renderAll(ctx) {
+  const wasReading = $("#tour").classList.contains("open");
+  const sameLesson = ctx.renderedLessonId === ctx.tour.lesson().id;
+  if (!sameLesson) ctx.readerScroll = 0;
+  else if (wasReading) ctx.readerScroll = $("#tour-body").scrollTop;
+  document.documentElement.classList.toggle("reader-large", ctx.readerLarge);
   $("#tour").classList.toggle("open", ctx.tourOpen);
   $("#tour").classList.toggle("mini", !ctx.tourOpen);
+  // Auch wenn display:none die DOM-Scrollposition verliert, bleibt die Lesestelle erhalten.
+  if (ctx.tourOpen && !wasReading) $("#tour-body").scrollTop = ctx.readerScroll;
   const keepScroll = $("#cs-list").scrollTop;
   renderCS(ctx);
   $("#cs-list").scrollTop = keepScroll;
@@ -110,11 +118,11 @@ function renderAll(ctx) {
   renderQuick(ctx);
   renderFloats(ctx);
   renderOffline(ctx);
-  $("#tour").classList.toggle("open", ctx.tourOpen);
-  $("#tour").classList.toggle("mini", !ctx.tourOpen);
   $("#app").classList.toggle("reading", ctx.tourOpen);
   $("#cs").inert = ctx.tourOpen;
   $("#keys").inert = ctx.tourOpen;
+  $("#quick").inert = ctx.tourOpen;
+  $("#floats").inert = ctx.tourOpen;
   $("#tour-grip").textContent = ctx.tourOpen ? "Zur Übung →" : "↑ Lektion lesen";
   $("#tour-grip").setAttribute("aria-expanded", String(ctx.tourOpen));
   $("#keys").classList.toggle("show", ctx.keysOpen);
@@ -316,10 +324,17 @@ function wire(ctx) {
     if (!t) return undefined;
     switch (t.dataset.tour) {
       case "back": ctx.lastCheck = null; ctx.tourOpen = true; return g.back();
-      case "next": ctx.lastCheck = null; g.next(); ctx.tourOpen = true; return undefined;
+      case "next": ctx.lastCheck = null; if (!g.next()) ctx.showFeedback = true; ctx.tourOpen = true; return undefined;
       case "check": { ctx.lastCheck = g.check(); ctx.tourOpen = true; ctx.showFeedback = true; return undefined; }
       case "seen": return g.seen();
-      case "hint": ctx.tourOpen = true; return g.hint();
+      case "hint": ctx.tourOpen = true; ctx.showHint = true; return g.hint();
+      case "show-hint": ctx.tourOpen = true; ctx.showHint = true; if (!tour.hint) g.hint(); return undefined;
+      case "practice": ctx.tourOpen = false; return undefined;
+      case "read-size": {
+        ctx.readerLarge = !ctx.readerLarge;
+        try { ctx.storage?.setItem("codesearch-pocket-reader-size", ctx.readerLarge ? "large" : "normal"); } catch { /* Kein Speicher nötig. */ }
+        return undefined;
+      }
       case "skip": ctx.lastCheck = null; ctx.tourOpen = true; return g.skip();
       case "workspace": ctx.tourOpen = false; return g.workspace();
       case "labparams": ctx.td.open = true; ctx.td.tab = "par"; ctx.td.sheet = tour.lesson().target.startsWith("StateLab") ? "StateLab" : (tour.lesson().target.startsWith("Farbmischer") ? "Farbmischer" : "BranchLab"); return undefined;
@@ -339,6 +354,7 @@ function wire(ctx) {
   });
   $("#tour-body").addEventListener("click", tourClick);
   $("#tour-actions").addEventListener("click", tourClick);
+  $("#tour-head").addEventListener("click", tourClick);
 
   // ---------------------------------------------------------------- TD-Seite
   const tdLayer = $("#layer-td");

@@ -1,5 +1,4 @@
-// Tour-Karte: JETZT DU, AM HANDY, DARAUF ACHTEN, Rueckmeldung, Knoepfe, Bedeutung, Grenzen, Begriffe.
-
+// Lesekarte: Zweck verstehen, selbst handeln, Ergebnis prüfen. Zusatzwerkzeuge bleiben aufklappbar.
 import { $, esc, updateHtml } from "./dom.js";
 import { phoneSteps } from "../core/phone.js";
 import { transferCard, lessonEvidence } from "./learningview.js";
@@ -7,9 +6,6 @@ import { transferCard, lessonEvidence } from "./learningview.js";
 const MODE_LABEL = { refs: "USED BY", trace: "USES", chain: "FLOW", map: "STRUCTURE", entries: "TRIGGERS", tour: "CALL PATH", check: "AUDIT" };
 const OP_TEXT = { eq: "=", contains: "enthält", not_contains: "enthält nicht", gt: ">", near: "≈", delta: "gestiegen auf", changed: "geändert auf" };
 
-function ruleOp(rule) { return OP_TEXT[rule.op || "eq"] || rule.op; }
-
-// Wert so, wie Pruefen ihn liest (Python-Schreibweise)
 function pyValue(value) {
   if (value === true) return "True";
   if (value === false) return "False";
@@ -18,69 +14,97 @@ function pyValue(value) {
   return String(value);
 }
 
+function button([key, label, special]) {
+  return `<button data-tour="${key}" class="${special ? "special" : ""}">${esc(label)}</button>`;
+}
+
 export function renderTour(ctx) {
-  const { tour, ui } = ctx;
+  const { tour } = ctx;
   const lesson = tour.lesson();
   const index = tour.step;
   const count = tour.lessons.length;
-  const p = tour.progress();
+  const progress = tour.progress();
   const done = tour.done[lesson.id];
   const changed = ctx.renderedLessonId !== lesson.id;
-  $("#tb-prog").textContent = `${p.total - p.open}/${p.total}`;
-  $("#tb-title").textContent = `${String(lesson.chapter + 1).padStart(2, "0")} · ${tour.chapters[lesson.chapter] || ""}`;
-  updateHtml($("#tour-head"), `
-    <div class="eyebrow"><span>MITMACH-TOUR ${String(index + 1).padStart(3, "0")} / ${count}</span><span class="sp"></span><span>${done ? (done === "confirmed" ? "✓ selbst bestätigt" : "✓ Modell geprüft") : (tour.skipped.has(lesson.id) ? "übersprungen" : "offen")}</span></div>
-    <div class="chap">${String(lesson.chapter + 1).padStart(2, "0")}  ${esc(tour.chapters[lesson.chapter] || "")}</div>
-    <h2>${esc(lesson.title)}</h2>`);
+  const chapterLessons = tour.lessons.filter((item) => item.chapter === lesson.chapter);
+  const chapterStep = chapterLessons.findIndex((item) => item.id === lesson.id) + 1;
   const nohelp = Boolean(lesson.nohelp);
+  const reveal = !nohelp || tour.hint || done;
+  const result = ctx.lastCheck?.id === lesson.id ? ctx.lastCheck : null;
   const steps = nohelp ? [] : phoneSteps(lesson);
-  const fb = tour.feedback || "";
-  const fbClass = fb.startsWith("ZUSTAND GEPRÜFT") || fb.startsWith("VON DIR") ? "ok" : (fb.startsWith("NOCH OFFEN") ? "bad" : "");
-  const checks = ctx.lastCheck && ctx.lastCheck.id === lesson.id ? ctx.lastCheck.results : null;
-  const buttons = [
+  $("#tb-prog").textContent = `${progress.total - progress.open}/${progress.total}`;
+  $("#tb-title").textContent = "CodeSearch Pocket";
+  updateHtml($("#tour-head"), `
+    <div class="eyebrow"><span>MITMACH-TOUR ${index + 1} / ${count}</span><span class="sp"></span><span>${done ? (done === "confirmed" ? "✓ selbst bestätigt" : "✓ Modell geprüft") : (tour.skipped.has(lesson.id) ? "übersprungen" : "offen")}</span></div>
+    <div class="chap">${lesson.chapter + 1} · ${esc(tour.chapters[lesson.chapter] || "")}</div>
+    <h2>${esc(lesson.title)}</h2>
+    <div class="reader-options"><span>Schritt ${chapterStep} von ${chapterLessons.length} im Kapitel</span>
+      <button data-tour="read-size" aria-pressed="${Boolean(ctx.readerLarge)}" aria-label="${ctx.readerLarge ? "Leseschrift auf normale Größe stellen" : "Leseschrift vergrößern"}">${ctx.readerLarge ? "Aa Normal" : "Aa Größer"}</button></div>`);
+
+  const tools = [
     ["workspace", "Arbeitsplatz"], ["labparams", "Lab-Parameter"], ["params", "Parameter"], ["csparams", "CS-Parameter"],
-    ["compare", "Tabs vergleichen"], ["chapters", "Kapitel"], ["hint", nohelp ? (tour.hint ? "Lösung verbergen" : "Lösung zeigen") : (tour.hint ? "Hinweis aus" : "Hinweis")], ["skip", "Überspringen"], ["pause", "Pause / Ende"],
+    ...(!nohelp ? [["compare", "Tabs vergleichen"]] : []), ["chapters", "Kapitel"],
+    ["hint", nohelp ? (tour.hint ? "Lösung verbergen" : "Lösung zeigen") : (tour.hint ? "Hinweis verbergen" : "Hinweis")],
+    ["skip", "Überspringen"], ["pause", "Pause / Ende"],
   ];
-  if (nohelp) buttons.splice(buttons.findIndex(([k]) => k === "compare"), 1);
-  if (lesson.id === "error_create") buttons.push(["error", "Fehler setzen", true]);
-  if (lesson.chapter === 8) buttons.push(["restore", "Fehler zurück", true]);
-  if (lesson.id === "flowlens" || lesson.chapter === 24) buttons.push(["flowlens", "FlowLens", true]);
-  if (lesson.prompt) buttons.push(["prompt", "Codex-Aufgabe kopieren", true]);
-  if (lesson.chapter >= 25 && lesson.chapter !== 35) buttons.unshift(["json", "JSON bearbeiten", true]);
-  const target = `ARBEITSPLATZ  ${lesson.target}\nCODESEARCH  ${MODE_LABEL[lesson.mode] || String(lesson.mode).toUpperCase()}`;
-  // Knoepfe, die der Lektionstext nennt, direkt unter JETZT DU
-  const mentioned = [["Arbeitsplatz", "workspace"], ["Lab-Parameter", "labparams"], ["CS-Parameter", "csparams"], ["Codex-Aufgabe", "prompt"],
-    ["Fehler setzen", "error"], ["Fehler zurück", "restore"], ["„FlowLens“", "flowlens"], ["Tabs vergleichen", "compare"], ["Kapitel", "chapters"]]
-    .filter(([word, key]) => !nohelp && lesson.action.includes(word) && buttons.some(([k]) => k === key))
-    .map(([, key]) => buttons.find(([k]) => k === key));
+  if (lesson.id === "error_create") tools.push(["error", "Fehler setzen", true]);
+  if (lesson.chapter === 8) tools.push(["restore", "Fehler zurück", true]);
+  if (lesson.id === "flowlens" || lesson.chapter === 24) tools.push(["flowlens", "FlowLens", true]);
+  if (lesson.prompt) tools.push(["prompt", "Codex-Aufgabe kopieren", true]);
+  if (lesson.chapter >= 25 && lesson.chapter !== 35) tools.push(["json", "JSON bearbeiten", true]);
+  const directions = [lesson.action, ...steps].join("\n");
+  const matches = [["Arbeitsplatz", "workspace"], ["Lab-Parameter", "labparams"], ["CS-Parameter", "csparams"],
+    ["CodeSearch-Parameter", "csparams"], ["Codex-Aufgabe", "prompt"], ["Fehler setzen", "error"],
+    ["Fehler zurück", "restore"], ["FlowLens", "flowlens"], ["Tabs vergleichen", "compare"], ["JSON", "json"]];
+  const relevant = new Set(matches.filter(([word]) => !nohelp && directions.includes(word)).map(([, key]) => key));
+  const quick = tools.filter(([key]) => relevant.has(key));
+  const technicalChecks = result && reveal ? `<details data-persist="checks" class="check-details"><summary>Welche Bedingungen wurden geprüft?</summary>
+    <ul class="checks">${result.results.map((rule) => `<li><span class="d ${rule.ok ? "ok" : ""}"></span><span>${esc(rule.ok
+      ? `${rule.key} ${OP_TEXT[rule.op || "eq"] || rule.op} ${pyValue(rule.op === "delta" || rule.op === "changed" ? rule.actual : rule.value)}`
+      : (rule.hint || rule.key))}</span></li>`).join("")}</ul></details>` : "";
+  let feedback = "";
+  if (result) {
+    const title = result.passed ? (lesson.observed ? "Beobachtung selbst bestätigt" : "Der Modellzustand passt") : "Noch nicht erreicht";
+    const explanation = result.passed
+      ? (lesson.observed ? "Du hast die geforderte Beobachtung bestätigt. Das ist kein automatischer Verständnistest." : "Die Bedingungen dieser Aufgabe sind erfüllt. Vergleiche deine Beobachtung mit dem erwarteten Ergebnis.")
+      : (nohelp && !tour.hint ? "Dein Versuch erfüllt die Aufgabe noch nicht. Du kannst weiter untersuchen oder bewusst die Lösung öffnen." : `Vergleiche deinen Versuch damit: ${lesson.expected}`);
+    feedback = `<section class="tblk feedback ${result.passed ? "ok" : "bad"}" aria-label="Rückmeldung">
+      <div role="status" aria-live="polite"><h3>${title}</h3><p>${esc(explanation)}</p></div>${technicalChecks}
+      <p class="next-guidance">${result.passed ? "Wenn du die Beobachtung nachvollziehen kannst, geht es mit Weiter zur nächsten Station." : "Prüfen verändert deinen Versuch nicht. Du kannst mit einem Hinweis oder selbstständig weiterarbeiten."}</p>
+      ${!result.passed ? `<div class="quickbtns">${button(["show-hint", nohelp ? "Lösung öffnen" : "Hinweis öffnen"])}${button(["practice", "Weiter ausprobieren"])}</div>` : ""}</section>`;
+  } else if (ctx.showFeedback || tour.observed) {
+    feedback = `<section class="tblk feedback" role="status"><p>${esc(tour.feedback)}</p></section>`;
+  }
   updateHtml($("#tour-body"), `
-    ${lesson.before ? `<div class="tblk muted"><div class="l">VORHER</div><p>${esc(lesson.before)}</p></div>` : ""}
-    <div class="tblk now"><div class="l">JETZT DU</div><p>${esc(lesson.action)}</p></div>
-    ${mentioned.length ? `<div class="tblk quickbtns">${mentioned.map(([key, label]) => `<button data-tour="${key}">${esc(label)}</button>`).join("")}</div>` : ""}
-    ${steps.length ? `<div class="tblk phone"><div class="l">AM HANDY</div><ul>${steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ul></div>` : ""}
-    ${nohelp && !done ? `<div class="tblk muted"><div class="l">OHNE HILFEN</div><p>Welche Frage ist das – und welches Werkzeug beantwortet sie? Du entscheidest Tab und Zeile selbst. Prüfen sagt nur „noch nicht“. Hängst du fest: „Lösung zeigen“.</p></div>` : `<div class="tblk"><div class="l">DARAUF ACHTEN</div><p>${esc(lesson.expected)}</p></div>`}
-    ${fb ? `<div class="tblk feedback ${fbClass}"><p>${esc(fb)}</p>${checks ? `<ul class="checks">${checks.map((r) => `<li><span class="d ${r.ok ? "ok" : ""}"></span><span>${esc(r.ok ? `${r.key} ${ruleOp(r)} ${pyValue(r.op === "delta" || r.op === "changed" ? r.actual : r.value)}` : (r.hint || r.key))}</span></li>`).join("")}</ul>` : ""}</div>` : ""}
-    ${lesson.patched ? `<div class="tblk patch"><div class="l">KORRIGIERT IM HANDY-KURS</div><p>${esc(lesson.patched.join(" "))}</p></div>` : ""}
-    <div class="tbtns">${buttons.map(([key, label, special]) => `<button data-tour="${key}" class="${special ? "special" : ""}">${esc(label)}</button>`).join("")}</div>
-    <div class="tblk"><div class="l">DAS BEDEUTET</div><p>${esc(lesson.meaning || "")}</p></div>
-    <div class="tblk"><div class="l">HIER GLÄNZT ES</div><p>${esc(lesson.why || "")}</p></div>
-    <div class="tblk muted"><div class="l">DAFÜR REICHT ES NICHT</div><p>${esc(lesson.limit || "")}\nNächster Schritt: ${esc(lesson.next_step || "")}</p></div>
-    <div class="tblk muted"><div class="l">ZIEL</div><p>${esc(target)}</p></div>
-    ${lessonEvidence(lesson)}
-    ${transferCard(lesson)}
-    ${tour.hint ? `<div class="tblk"><div class="l">${nohelp ? "LÖSUNG" : "HINWEIS"}</div><p>${esc(lesson.hint || "")}</p></div>` : ""}
-    <div class="tblk muted"><div class="l">AGENDA – BEGRIFFE &amp; METHODEN</div><p>${esc(lesson.glossary || "")}</p></div>`, changed);
-  const nextLocked = !done;
+    ${reveal ? `<section class="lesson-purpose"><div class="l">1 · VERSTEHEN</div><p>${esc(lesson.why || lesson.meaning || "")}</p>
+      ${lesson.meaning && lesson.meaning !== lesson.why ? `<details data-persist="meaning"><summary>Den Zusammenhang verstehen</summary><p>${esc(lesson.meaning)}</p></details>` : ""}</section>` : `<section class="lesson-purpose"><div class="l">OHNE HILFEN</div><p>Du wählst Werkzeug und Vorgehen selbst. Eine Lösung erscheint erst, wenn du sie bewusst öffnest.</p></section>`}
+    ${lesson.before ? `<div class="tblk before"><div class="l">VORHER</div><p>${esc(lesson.before)}</p></div>` : ""}
+    <section class="tblk now"><div class="l">${nohelp ? "DEIN AUFTRAG" : "2 · SELBST AUSPROBIEREN"}</div><p>${esc(lesson.action)}</p></section>
+    ${steps.length ? `<div class="tblk phone"><div class="l">SO GEHT ES AM HANDY</div><ul>${steps.map((step) => `<li>${esc(step)}</li>`).join("")}</ul></div>` : ""}
+    ${quick.length ? `<div class="quickbtns">${quick.map(button).join("")}</div>` : ""}
+    <button class="practice-start" data-tour="practice">Jetzt selbst ausprobieren →</button>
+    ${reveal ? `<section class="tblk expected"><div class="l">3 · DARAN ERKENNST DU ES</div><p>${esc(lesson.expected)}</p><p class="next-guidance">Nach deinem Versuch unten Prüfen drücken.${lesson.observed ? " Gesehen ist deine eigene Bestätigung nach dem Lesen." : ""}</p></section>` : ""}
+    ${tour.hint ? `<section class="tblk lesson-hint"><div class="l">${nohelp ? "LÖSUNG" : "HINWEIS"}</div><p>${esc(lesson.hint || "")}</p></section>` : ""}
+    ${feedback}
+    <details data-persist="tools" class="lesson-tools"><summary>Arbeitsplatz und weitere Werkzeuge</summary><div class="tbtns">${tools.map(button).join("")}</div></details>
+    <details data-persist="limits"><summary>Grenzen und nächster Schritt</summary><p>${esc(lesson.limit || "")}</p><p>${esc(lesson.next_step || "")}</p>
+      <p class="evidence-note">Arbeitsplatz: ${esc(lesson.target)} · CodeSearch: ${esc(MODE_LABEL[lesson.mode] || String(lesson.mode).toUpperCase())}</p></details>
+    ${lessonEvidence(lesson)}${transferCard(lesson)}
+    <details data-persist="glossary"><summary>Agenda – Begriffe &amp; Methoden</summary><p>${esc(lesson.glossary || "")}</p></details>
+    ${lesson.patched ? `<details data-persist="patch" class="patch"><summary>Korrektur gegenüber der Laptop-Lektion</summary><p>${esc(lesson.patched.join(" "))}</p></details>` : ""}`, changed);
+
   updateHtml($("#tour-actions"), `
-    <button data-tour="back">‹ Zurück</button>
-    ${lesson.observed ? `<button class="seen ${tour.observed ? "done" : ""}" data-tour="seen">${tour.observed ? "✓ Gesehen" : "Gesehen"}</button>` : `<button data-tour="hint">${nohelp ? "Lösung" : "Hinweis"}</button>`}
+    <button data-tour="back" ${index === 0 ? "disabled" : ""}>‹ Zurück</button>
+    ${lesson.observed ? `<button class="seen ${tour.observed ? "done" : ""}" aria-pressed="${tour.observed}" data-tour="seen">${tour.observed ? "✓ Gesehen" : "Gesehen"}</button>` : `<button data-tour="hint">${nohelp ? "Lösung" : "Hinweis"}</button>`}
     <button class="check" data-tour="check">Prüfen</button>
-    <button class="next ${nextLocked ? "locked" : ""}" data-tour="next">${index < count - 1 ? "Weiter ›" : "Am Ende"}</button>`);
+    <button class="next ${done ? "" : "locked"}" data-tour="next" aria-disabled="${!done}">${index < count - 1 ? "Weiter ›" : "Am Ende"}</button>`);
   ctx.renderedLessonId = lesson.id;
   if (ctx.showFeedback) {
-    // Nur nach ausdrücklichem Prüfen zur Rückmeldung springen, nie beim Lesen.
     $("#tour-body .feedback")?.scrollIntoView({ block: "nearest" });
     ctx.showFeedback = false;
   }
-  void ui;
+  if (ctx.showHint) {
+    $("#tour-body .lesson-hint")?.scrollIntoView({ block: "nearest" });
+    ctx.showHint = false;
+  }
 }

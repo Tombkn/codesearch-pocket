@@ -1,6 +1,6 @@
 // Erzeugt von tools/build_offline.py - nicht von Hand aendern.
 // Speichert beim ersten Besuch JEDE Datei des Kurses; ohne Netz kommt alles aus diesem Speicher.
-const VERSION = "1dcb79df2b";
+const VERSION = "195bfcd499";
 const CACHE = `codesearch-pocket-${VERSION}`;
 const FILES = [
   "./",
@@ -34,6 +34,7 @@ const FILES = [
   "js/ui/learningview.js",
   "js/ui/offline.js",
   "js/ui/tourcard.js",
+  "js/ui/viewport.js",
   "data/course.json",
   "data/net.json",
   "data/code.json",

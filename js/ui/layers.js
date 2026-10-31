@@ -529,7 +529,7 @@ export function renderQuick(ctx) {
 export function renderFloats(ctx) {
   const { cs, ui } = ctx;
   const s = cs.state;
-  $("#floats").innerHTML = s.floats.map((f) => {
+  updateHtml($("#floats"), s.floats.map((f) => {
     const focus = s.floatFocus === f.id;
     let body;
     if (f.code) body = codeHtml(cs, f.code.dat, f.code.line, { from: f.code.line, to: f.code.end || f.code.line + 10 });
@@ -537,7 +537,7 @@ export function renderFloats(ctx) {
       ? `<button class="hit section" data-frow="${i}" data-fid="${f.id}"><span class="art">${esc(h.num || "")}</span><span class="main"><span class="ttl">${esc(h.text)}</span></span></button>`
       : `<button class="hit ${i === f.selected ? "sel" : ""}" data-frow="${i}" data-fid="${f.id}"><span class="art">${esc(artOf(ui, h))}</span><span class="main"><div class="txt">${esc(h.ctx ? `${h.ctx}   ${h.text}` : h.text)}</div></span></button>`)).join("");
     return `<div class="float ${focus ? "focus" : ""}" data-float="${f.id}" style="font-size:${f.zoom * 100}%"><div class="fh"><span class="t" data-ffocus="${f.id}">${esc(f.title)}${f.zoom !== 1 ? ` · ${Math.round(f.zoom * 100)} %` : ""}</span><button data-fclose="${f.id}">Esc ✕</button></div><div class="fb">${body}</div></div>`;
-  }).join("");
+  }).join(""));
 }
 
 // ------------------------------------------------------------------ Offline

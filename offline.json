@@ -1,6 +1,6 @@
 {
- "version": "1dcb79df2b",
- "total": 2740192,
+ "version": "195bfcd499",
+ "total": 2752330,
  "files": [
   {
    "path": "./",
@@ -36,11 +36,11 @@
   },
   {
    "path": "css/app.css",
-   "size": 35416
+   "size": 42412
   },
   {
    "path": "js/app.js",
-   "size": 31240
+   "size": 32146
   },
   {
    "path": "js/core/boot.js",
@@ -112,7 +112,7 @@
   },
   {
    "path": "js/ui/layers.js",
-   "size": 41601
+   "size": 41602
   },
   {
    "path": "js/ui/learningview.js",
@@ -124,7 +124,11 @@
   },
   {
    "path": "js/ui/tourcard.js",
-   "size": 6978
+   "size": 9341
+  },
+  {
+   "path": "js/ui/viewport.js",
+   "size": 1815
   },
   {
    "path": "data/course.json",
@@ -192,11 +196,11 @@
   },
   {
    "path": "offline.json",
-   "size": 2929
+   "size": 2986
   }
  ],
  "single": {
   "path": "CodeSearch-Pocket-offline.html",
-  "size": 3077641
+  "size": 3089811
  }
 }
