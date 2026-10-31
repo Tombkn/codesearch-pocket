@@ -19,7 +19,8 @@ export function renderTD(ctx) {
   if (td.tab === "net") body = netHtml(ctx);
   if (td.tab === "par") body = parHtml(ctx);
   if (td.tab === "time") body = timeHtml(ctx);
-  layer.innerHTML = `<div class="lhead"><h1>TOUCHDESIGNER</h1>${tabs.map(([k, l]) => `<button data-tdtab="${k}" class="${td.tab === k ? "on" : ""}">${l}</button>`).join("")}<button data-act="td-close">✕</button></div>${body}`;
+  if (layer.contains(document.activeElement) && document.activeElement.matches('input,select,textarea')) return;
+  updateHtml(layer, `<div class="lhead"><h1>TOUCHDESIGNER</h1>${tabs.map(([k, l]) => `<button data-tdtab="${k}" class="${td.tab === k ? "on" : ""}">${l}</button>`).join("")}<button data-act="td-close">✕</button></div>${body}`);
   void cs;
 }
 
@@ -111,18 +112,19 @@ function netSelHtml(ctx, path) {
       <button data-act="net-cs" data-mode="chain" data-path="${esc(path)}">→ FLOW</button></div></div>`;
 }
 
-const SHEETS = [["BranchLab", "BranchLab"], ["StateLab", "StateLab"], ["Farbmischer", "Farbmischer"], ["cs", "CodeSearch"], ["op", "markierter Op"]];
+const SHEETS = [["SignalGarden", "SignalGarden"], ["BranchLab", "BranchLab"], ["StateLab", "StateLab"], ["Farbmischer", "Farbmischer"], ["cs", "CodeSearch"], ["op", "markierter Op"]];
 
 function parHtml(ctx) {
   const { cs, td } = ctx;
   const chips = SHEETS.map(([k, l]) => `<button class="chip ${td.sheet === k ? "on" : ""}" data-sheet="${k}">${l}</button>`).join("");
   let body = "";
   if (td.sheet === "BranchLab") body = branchSheet(ctx);
+  else if (td.sheet === 'SignalGarden') body = gardenSheet(ctx);
   else if (td.sheet === "StateLab") body = stateSheet(ctx);
   else if (td.sheet === "Farbmischer") body = fmSheet(ctx);
   else if (td.sheet === "cs") body = csSheet(ctx);
   else body = opSheet(ctx, td.opPath || cs.state.networkSelected[0] || cs.state.focus);
-  return `<div class="ltabs row-scroll">${chips}</div><div class="lbody parsheet">${body}</div>`;
+  return `<div class="ltabs row-scroll">${chips}</div><div class="lbody parsheet" data-scroll-key="tdpar-${td.sheet}-${td.gardenOwner || 'root'}">${body}</div>`;
 }
 
 function parRow(name, label, help, control) {
@@ -132,6 +134,29 @@ function parRow(name, label, help, control) {
 function rgbCss(r, g, b) {
   const c = (v) => Math.round(Math.max(0, Math.min(1, v)) * 255);
   return `rgb(${c(r)}, ${c(g)}, ${c(b)})`;
+}
+
+function gardenSheet(ctx) {
+  const garden = ctx.cs.lab.garden;
+  const owners = { root: 'SignalGarden', sensor: 'SignalGarden/Sensor', scenes: 'SignalGarden/Scenes', palette: 'SignalGarden/Palette' };
+  const owner = ctx.td.gardenOwner || 'root';
+  const comp = ctx.cs.net.op(owners[owner]);
+  const tabs = Object.entries(owners).map(([key, path]) => `<button class="chip ${key === owner ? 'on' : ''}" data-garden-owner="${key}">${key === 'root' ? 'Root' : path.split('/').pop()}</button>`).join('');
+  const rows = (comp?.custom || []).map((p) => {
+    const v = garden.pars[owner][p.name];
+    let control;
+    if (p.readOnly) control = `<span class="ro">${esc(v)}</span>`;
+    else if (p.style === 'Pulse') control = `<button class="pulse" data-garden-pulse="${p.name}" data-owner="${owner}">${p.name}</button>`;
+    else if (p.style === 'Toggle') control = `<button class="tog ${v ? 'on' : ''}" data-garden-toggle="${p.name}" data-owner="${owner}">${v ? '1 · an' : '0 · aus'}</button>`;
+    else if (p.style === 'Menu') control = `<select data-garden-menu="${p.name}" data-owner="${owner}">${(p.menuNames || []).map((m) => `<option ${v === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select>`;
+    else control = `<input type="number" inputmode="decimal" step="0.05" value="${esc(v)}" data-garden-num="${p.name}" data-owner="${owner}">`;
+    return parRow(p.name, p.name, p.name === 'Prepare' ? 'Setzt das gesamte eigene Lab auf Anfang. Führt keinen Versuch aus.' : '', control);
+  }).join('');
+  return `<div class="ltabs row-scroll">${tabs}</div><div class="sect">${esc(owners[owner])}</div>${rows}
+    ${['sensor', 'scenes'].includes(owner) ? `<button data-garden-reinit="${owner}">Nur ${owner === 'sensor' ? 'Sensor' : 'Scenes'} neu initialisieren</button>` : ''}
+    <div class="sect">Output/out1 · modellierte Farbe</div><span class="swatch" style="background:${rgbCss(...garden.rgb)}"></span>
+    <p>RGB ${garden.rgb.map(fmtNum).join(' · ')}<br>Samples ${garden.samples} · Requests ${garden.requests} · Mix ${fmtNum(garden.mix)}</p>
+    <p class="evidence-note">Auto verwendet die Pocket-Timeline. Für die Workflows bleibt Auto aus: jeder Step rechnet genau 0.25 Sekunden. Der Farbfleck ist kein echter TOP-Render.</p>`;
 }
 
 function branchSheet(ctx) {
@@ -246,7 +271,7 @@ export function renderCourse(ctx) {
     return `<button class="chapter ${i === cur ? "cur" : ""}" data-chapter="${i}"><div class="n">KAPITEL ${String(i + 1).padStart(2, "0")} · ${done}/${lessons.length}</div><div class="t">${esc(name)}</div><div class="bar"><span style="width:${pct}%"></span></div></button>`;
   }).join("");
   updateHtml(layer, `<div class="lhead"><h1>KURS</h1><button data-act="course-close">✕</button></div>
-    <div class="lbody" data-scroll-key="course"><div class="overall">${p.verified} im Modell geprüft · ${p.confirmed} selbst bestätigt · ${p.open} offen${p.skipped ? ` · ${p.skipped} übersprungen` : ""}<br>Ein Kapitel antippen springt zum ersten offenen Schritt darin. Laptop-Tests sind darin nicht enthalten.</div>${items}</div>`);
+    <div class="lbody" data-scroll-key="course"><div class="overall">${p.verified} im Modell geprüft · ${p.confirmed} selbst bestätigt · ${p.open} offen${p.skipped ? ` · ${p.skipped} übersprungen` : ""}<br>Ein Kapitel antippen springt zum ersten offenen Schritt. Die acht SignalGarden-Workflows starten am Anfang, damit ihr Versuchszustand nachvollziehbar bleibt; Häkchen bleiben erhalten. Laptop-Tests sind darin nicht enthalten.</div>${items}</div>`);
 }
 
 // ------------------------------------------------------------------ Atlas

@@ -14,6 +14,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 LOCK = ROOT / "upstream.json"
 FILES = {
+    "signalgarden-scenarios.json": "src/signalgarden/scenarios.json",
+    "upstream_docs/SIGNALGARDEN_WORKFLOWS.md": "docs/SIGNALGARDEN_WORKFLOWS.md",
     "CodeSearchExt.py": "src/CodeSearchExt.py",
     "CodeModelExt.py": "src/CodeModelExt.py",
     "CodeSearch.tdn": "src/tdn/CodeSearch.tdn",

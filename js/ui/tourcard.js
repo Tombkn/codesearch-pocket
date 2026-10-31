@@ -25,11 +25,12 @@ export function renderTour(ctx) {
   const count = tour.lessons.length;
   const progress = tour.progress();
   const done = tour.done[lesson.id];
+  const canAdvance = Boolean(done) && (!lesson.workflow_id || tour.currentPassed);
   const changed = ctx.renderedLessonId !== lesson.id;
   const chapterLessons = tour.lessons.filter((item) => item.chapter === lesson.chapter);
   const chapterStep = chapterLessons.findIndex((item) => item.id === lesson.id) + 1;
   const nohelp = Boolean(lesson.nohelp);
-  const reveal = !nohelp || tour.hint || done;
+  const reveal = !nohelp || tour.hint || (lesson.workflow_id ? tour.currentPassed : done);
   const result = ctx.lastCheck?.id === lesson.id ? ctx.lastCheck : null;
   const steps = nohelp ? [] : phoneSteps(lesson);
   $("#tb-prog").textContent = `${progress.total - progress.open}/${progress.total}`;
@@ -51,7 +52,7 @@ export function renderTour(ctx) {
   if (lesson.chapter === 8) tools.push(["restore", "Fehler zurück", true]);
   if (lesson.id === "flowlens" || lesson.chapter === 24) tools.push(["flowlens", "FlowLens", true]);
   if (lesson.prompt) tools.push(["prompt", "Codex-Aufgabe kopieren", true]);
-  if (lesson.chapter >= 25 && lesson.chapter !== 35) tools.push(["json", "JSON bearbeiten", true]);
+  if (lesson.capabilities?.includes("json") || (!lesson.workflow_id && lesson.chapter >= 25 && !lesson.id.startsWith("abschluss_"))) tools.push(["json", "JSON bearbeiten", true]);
   const directions = [lesson.action, ...steps].join("\n");
   const matches = [["Arbeitsplatz", "workspace"], ["Lab-Parameter", "labparams"], ["CS-Parameter", "csparams"],
     ["CodeSearch-Parameter", "csparams"], ["Codex-Aufgabe", "prompt"], ["Fehler setzen", "error"],
@@ -97,7 +98,7 @@ export function renderTour(ctx) {
     <button data-tour="back" ${index === 0 ? "disabled" : ""}>‹ Zurück</button>
     ${lesson.observed ? `<button class="seen ${tour.observed ? "done" : ""}" aria-pressed="${tour.observed}" data-tour="seen">${tour.observed ? "✓ Gesehen" : "Gesehen"}</button>` : `<button data-tour="hint">${nohelp ? "Lösung" : "Hinweis"}</button>`}
     <button class="check" data-tour="check">Prüfen</button>
-    <button class="next ${done ? "" : "locked"}" data-tour="next" aria-disabled="${!done}">${index < count - 1 ? "Weiter ›" : "Am Ende"}</button>`);
+    <button class="next ${canAdvance ? "" : "locked"}" data-tour="next" aria-disabled="${!canAdvance}">${index < count - 1 ? "Weiter ›" : "Am Ende"}</button>`);
   ctx.renderedLessonId = lesson.id;
   if (ctx.showFeedback) {
     $("#tour-body .feedback")?.scrollIntoView({ block: "nearest" });

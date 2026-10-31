@@ -110,6 +110,9 @@ def walk(ops: list, parent: str, out: list) -> None:
         if o.get("comment"):
             entry["comment"] = o["comment"]
         seq = o.get("sequences") or {}
+        if seq.get("iop"):
+            entry["iop"] = {s["shortcut"]: s["op"] for s in seq["iop"]
+                            if isinstance(s, dict) and s.get("shortcut") and s.get("op")}
         if seq.get("ext"):
             exts = [s for s in seq["ext"] if isinstance(s, dict) and s.get("name")]
             if exts:
@@ -180,7 +183,7 @@ def site_target(site: dict) -> dict:
         out["op"] = recv[2]
     elif kind == "op" and len(recv) > 1:
         out["op"] = recv[1]
-    elif kind == "parentshortcut" and len(recv) > 1:
+    elif kind in ("parentshortcut", "iop") and len(recv) > 1:
         out["shortcut"] = recv[1]
     elif kind == "ext" and len(recv) > 2:
         inner = recv[1]
@@ -274,6 +277,22 @@ def load_code(net: dict) -> dict:
                               "doc": fn.get("doc", "")})
         sites = [site_target(s) for s in raw.get("sites", [])
                  if s["type"] in ("call", "run", "dispatch") or s.get("dynamic")]
+        # Das native Analysemodell markiert iop bei diesem Build noch als other.
+        # Nur syntaktisch direkte iop.Alias.ext.Klasse.Methode()-Aufrufe ergänzen.
+        direct_iop = {}
+        for node in ast.walk(ast.parse(text)):
+            if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+                continue
+            receiver = node.func.value
+            if (isinstance(receiver, ast.Attribute) and isinstance(receiver.value, ast.Attribute)
+                    and receiver.value.attr == 'ext'):
+                alias = receiver.value.value
+                if isinstance(alias, ast.Attribute) and isinstance(alias.value, ast.Name) and alias.value.id == 'iop':
+                    direct_iop[(node.lineno, node.func.attr)] = alias.attr
+        for site in sites:
+            alias = direct_iop.get((site['line'], site['attr']))
+            if alias:
+                site.update(via='iop', shortcut=alias)
         accesses = [{"cls": a[0], "func": a[1], "name": a[2], "how": a[3], "line": a[4], "conf": a[5]}
                     for a in raw.get("accesses", [])]
         result[entry["path"]] = {"classes": classes, "functions": functions, "sites": sites, "accesses": accesses,
@@ -354,6 +373,18 @@ class Resolver:
             path = path.rsplit("/", 1)[0] if "/" in path else ""
         return path
 
+    def internal_shortcut(self, comp: str, short: str):
+        path = comp
+        while True:
+            aliases = self.by_path.get(path, {}).get('iop', {})
+            if short in aliases:
+                value = aliases[short]
+                match = re.fullmatch(r"=me\.op\(['\"]([^'\"]+)['\"]\)", str(value))
+                return self.relative(path, match.group(1) if match else value)
+            if not path:
+                return None
+            path = path.rsplit('/', 1)[0] if '/' in path else ''
+
 
 def resolve_ref(res: Resolver, art: str, receiver: str, name: str, home: str, owner: str):
     """Ein (art, empfaenger, name) aus refscan auf einen Op-Pfad abbilden.
@@ -367,6 +398,8 @@ def resolve_ref(res: Resolver, art: str, receiver: str, name: str, home: str, ow
         return res.relative(base, name)
     if art == "short" and receiver.startswith("parent."):
         return res.parent_shortcut(home, name)
+    if art == "short" and receiver.startswith("iop."):
+        return res.internal_shortcut(home, name)
     if art == "parent":
         try:
             return res.parent_levels(home, int(name))
@@ -468,6 +501,7 @@ def load_course() -> dict:
 
 
 DOCS = [
+    ("workflows", "SignalGarden: acht komplette Analyse-Workflows", "upstream_docs/SIGNALGARDEN_WORKFLOWS.md", 36),
     ("map", "Die sieben Werkzeuge", "docs/FEATURES_EINFACH.md", 26),
     ("atlas", "1. State Atlas", "docs/FEATURE_01_STATE_ATLAS.md", 26),
     ("ask", "2. Kontext nachliefern", "docs/FEATURE_02_NACHFRAGE.md", 27),
@@ -526,6 +560,9 @@ def main() -> None:
     sizes = {name: write(name, data) for name, data in (
         ("course.json", course), ("net.json", net), ("code.json", code), ("ui.json", ui),
         ("features.json", features))}
+    scenarios = SRC / 'signalgarden-scenarios.json'
+    if scenarios.exists():
+        sizes['signalgarden-scenarios.json'] = write('signalgarden-scenarios.json', json.loads(scenarios.read_text(encoding='utf-8')))
     stale = DATA / "hits.json"
     if stale.exists():
         stale.unlink()

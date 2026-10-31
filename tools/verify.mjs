@@ -11,6 +11,7 @@ import { createApp } from "../js/core/boot.js";
 import { evaluate } from "../js/core/tour.js";
 import { SCRIPTS, generic } from "./walkthroughs.mjs";
 import { PARITY_SCRIPTS } from "./parity_walkthroughs.mjs";
+import { WORKFLOW_SCRIPTS } from './workflow-walkthroughs.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const load = (name) => JSON.parse(readFileSync(join(root, "data", name), "utf8"));
@@ -28,14 +29,14 @@ for (let i = 0; i < tour.lessons.length; i += 1) {
   if (only && lesson.id !== only) {
     // Zustand trotzdem fortschreiben, damit "keep"-Stationen ihren Vorlauf haben
     tour.goTo(i);
-    try { await (PARITY_SCRIPTS[lesson.id] || SCRIPTS[lesson.id] || ((x) => generic(x, lesson)))(g, lesson); } catch { /* Vorlauf */ }
+    try { await (WORKFLOW_SCRIPTS[lesson.id] || PARITY_SCRIPTS[lesson.id] || SCRIPTS[lesson.id] || ((x) => generic(x, lesson)))(g, lesson); } catch { /* Vorlauf */ }
     continue;
   }
   tour.goTo(i);
   const before = evaluate(lesson.rules, tour.snapshot(), tour.baseline);
   if (before.passed) report.gifted.push({ i, id: lesson.id });
   try {
-    const script = PARITY_SCRIPTS[lesson.id] || SCRIPTS[lesson.id];
+    const script = WORKFLOW_SCRIPTS[lesson.id] || PARITY_SCRIPTS[lesson.id] || SCRIPTS[lesson.id];
     if (script) await script(g, lesson);
     else generic(g, lesson);
   } catch (error) {

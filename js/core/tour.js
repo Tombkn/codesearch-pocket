@@ -3,6 +3,7 @@
 
 import { abs, rel, pyStr, casefold } from "./util.js";
 import { stateAtlas } from "./views/miscviews.js";
+import { resolveProgressStep } from "./progress.js";
 
 const CODE_MODES = new Set(["map", "entries", "tour", "impact", "record", "check"]);
 const SKIP_KINDS = new Set(["info", "empty", "header", "section", "button", "notice"]);
@@ -84,6 +85,7 @@ export class Tour {
     this.playing = false;
     this.baseline = {};
     this.prepared = -1;
+    this.currentPassed = false;
     this.workplaceSelectionSerial = 0;
   }
 
@@ -95,6 +97,7 @@ export class Tour {
     if (!lesson) return;
     if (this.prepared === this.step && !force) return;
     this.prepared = this.step;
+    this.currentPassed = false;
     const cs = this.cs;
     const prep = lesson.prep || {};
     this.observed = false;
@@ -130,6 +133,13 @@ export class Tour {
       cs.state.display = { format: prep["display.format"] || "name", base: abs("BranchLab"), details: false, prevFormat: prep["display.format"] || "name" };
     }
     if (lesson.target === "StateLab" && prep["investigation.prepare"]) this.lab.stateLab.Prepare();
+    if (prep['garden.prepare']) this.lab.garden.Prepare();
+    for (const [key, value] of Object.entries(prep)) {
+      if (key.startsWith('garden.par.')) {
+        const [, , owner, name] = key.split('.');
+        this.lab.garden.pars[owner][name] = value;
+      }
+    }
     if (prep["investigation.clear_repro"]) cs.state.inv.repro = null;
     cs.rebuild();
     this.baseline = this.snapshot();
@@ -200,6 +210,7 @@ export class Tour {
       table_path: s.mode === "table" || s.table.path ? abs(s.table.path) : "", table_query: s.table.query,
       table_visible: table.rows.length, table_sort_col: s.table.sort[0],
       recording: rec.recording, record_text: rec.records.map((r) => r.name).join(" "), record_calls: rec.records.length,
+      'record.session': rec.session || 0,
       record_state: rec.records.map((r) => r.state || "").join(" "),
       live_hold: rec.liveHold !== null, live_mini: rec.liveMini, live_continuous: rec.liveContinuous,
       events: lab.events, branch: lab.branch, writes: lab.writes, engine_status: lab.ceStatus,
@@ -237,7 +248,7 @@ export class Tour {
       if (rule.key === "clipboard") state.clipboard = cs.clipboard;
       else if (rule.key.startsWith("cell:")) {
         const [path, row, col] = rule.key.slice(5).split("|");
-        const data = rel(abs(path)) === "BranchLab/ColorEngine/palette" ? lab.palette : (cs.net.op(path) || {}).table || [];
+        const data = rel(abs(path)) === 'SignalGarden/Palette/colors' ? lab.garden.table : rel(abs(path)) === "BranchLab/ColorEngine/palette" ? lab.palette : (cs.net.op(path) || {}).table || [];
         const header = data[0] || [];
         const r = data.find((x, i) => i > 0 && x[0] === row);
         const c = header.indexOf(col);
@@ -266,6 +277,9 @@ export class Tour {
       "investigation.lab.ready": true,
     });
     for (const [key, value] of Object.entries(lab.stateLab.Observe())) state[`investigation.lab.${key}`] = value;
+    for (const [key, value] of Object.entries(lab.garden.Observe())) state[`garden.${key}`] = value;
+    state['workflow.investigation_view'] = s.view === 'untersuchung' ? 'investigation' : s.view;
+    for (const [owner, pars] of Object.entries(lab.garden.pars)) for (const [name, value] of Object.entries(pars)) state[`garden.par.${owner}.${name}`] = value;
     Object.assign(state, {
       "cs.context": s.context,
       "cs.code_definition": Boolean(s.codeView.definition),
@@ -287,6 +301,7 @@ export class Tour {
   check() {
     const lesson = this.lesson();
     const result = evaluate(lesson.rules, this.snapshot(), this.baseline);
+    this.currentPassed = result.passed;
     if (result.passed) {
       const kind = lesson.observed ? "confirmed" : "verified";
       this.done[lesson.id] = kind;
@@ -309,7 +324,7 @@ export class Tour {
   toggleHint() { this.hint = !this.hint; }
 
   next() {
-    if (!(this.lesson().id in this.done)) {
+    if (!(this.lesson().id in this.done) || (this.lesson().workflow_id && !this.currentPassed)) {
       this.feedback = "Dieser Schritt ist noch offen. Erst Prüfen oder bewusst Überspringen.";
       return false;
     }
@@ -332,7 +347,7 @@ export class Tour {
   chapterStart(chapter) {
     const items = this.lessons.map((l, i) => [i, l]).filter(([, l]) => l.chapter === chapter);
     if (!items.length) return;
-    const open = items.find(([, l]) => !(l.id in this.done));
+    const open = items[0][1].workflow_id ? items[0] : items.find(([, l]) => !(l.id in this.done));
     this.goTo((open || items[0])[0]);
   }
 
@@ -350,7 +365,7 @@ export class Tour {
   save() {
     if (!this.storage) return;
     try {
-      this.storage.setItem("codesearch-pocket-v2", JSON.stringify({ step: this.step, done: this.done, skipped: [...this.skipped] }));
+      this.storage.setItem("codesearch-pocket-v2", JSON.stringify({ version: 3, lessonId: this.lesson().id, step: this.step, done: this.done, skipped: [...this.skipped] }));
     } catch { /* privater Modus: Fortschritt bleibt nur in dieser Sitzung */ }
   }
 
@@ -361,9 +376,10 @@ export class Tour {
       if (raw) {
         const data = JSON.parse(raw);
         const known = new Set(this.lessons.map((l) => l.id));
-        this.done = Object.fromEntries(Object.entries(data.done || {}).filter(([id]) => known.has(id)));
+        this.done = Object.fromEntries(Object.entries(data.done || {}).filter(([id, status]) => known.has(id) && ["verified", "confirmed"].includes(status)));
         this.skipped = new Set((data.skipped || []).filter((id) => known.has(id)));
-        this.step = Math.max(0, Math.min(Number(data.step) || 0, this.lessons.length - 1));
+        this.step = resolveProgressStep(data, this.lessons);
+        if (this.lesson().workflow_id) this.step = this.lessons.findIndex((l) => l.workflow_id === this.lesson().workflow_id);
         return;
       }
       const old = this.storage.getItem("codesearch-pocket-v1");

@@ -291,7 +291,10 @@ export function makeSample(packet, kind) {
     return { schema: "codesearch.explanation.v1", revision: packet.revision, claims: [site ? { id: "c1", text: "Fire schreibt _count", kind: "writes", state_id: counter.id, symbol: site.method } : { id: "c1", kind: "source", source, line: 1, text: packet.sources[source].split("\n")[0] }, { id: "c2", text: "Ein nicht erfasster Call", kind: "called", symbol: "GhostCall" }] };
   }
   requireThat(kind === "vorschau", ">beispiel anfrage | antwort | vorschau");
-  const source = Object.keys(packet.sources).find((p) => p.endsWith("/StateLabExt"));
-  requireThat(source, "Das Pocket-Vorschaubeispiel benötigt StateLab als Ziel");
-  return { schema: "codesearch.preview.v1", revision: packet.revision, changes: { [source]: packet.sources[source] + "\n    def PreviewOnly(self):\n        self._count = 999\n" }, rules: { forbid_new_writers: true } };
+  const garden = Object.keys(packet.sources).find((p) => p.endsWith('/SignalGarden/Scenes/SceneControllerExt'));
+  const source = garden || Object.keys(packet.sources).find((p) => p.endsWith('/StateLabExt'));
+  requireThat(source, 'Das Vorschaubeispiel benötigt StateLab oder SignalGarden/Scenes');
+  const addition = garden ? '\n    def _candidateReset(self):\n        self._requests = 0\n' : '\n    def PreviewOnly(self):\n        self._count = 999\n';
+  return { schema: 'codesearch.preview.v1', revision: packet.revision,
+    changes: { [source]: packet.sources[source] + addition }, rules: { forbid_new_writers: true } };
 }

@@ -69,7 +69,7 @@ try {
     assert.equal(window.document.querySelectorAll("script[src],link[rel=stylesheet]").length, 0);
     assert.equal(requests, 0);
     assert.deepEqual(errors, []);
-    assert.match($("#tour-head").textContent, /488/);
+    assert.match($("#tour-head").textContent, /584/);
     for (const name of ["course", "net", "code", "ui", "features"]) {
       assert.deepEqual(JSON.parse(JSON.stringify(window.__POCKET_DATA__[`${name}.json`])), json(`data/${name}.json`));
     }
@@ -81,8 +81,8 @@ try {
   await click("#tour-grip");
   await click("#btn-atlas");
   await click("[data-atlas=laptop]");
-  check("Alle 37 Laptop-Leitfäden stecken in der Einzeldatei", () => {
-    assert.equal(window.document.querySelectorAll("[data-learn-chapter]").length, 37);
+  check("Alle 45 Laptop-Leitfäden stecken in der Einzeldatei", () => {
+    assert.equal(window.document.querySelectorAll("[data-learn-chapter]").length, 45);
     assert.deepEqual(errors, []);
     assert.equal(requests, 0);
   });

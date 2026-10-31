@@ -88,44 +88,71 @@ export function tapper(root, selector, { tap, double, long, longMs = 480 }) {
   let longFired = false;
   let startX = 0;
   let startY = 0;
+  let pointer = null;
+  let moved = false;
   let last = { el: null, t: 0 };
   root.addEventListener("pointerdown", (ev) => {
+    if (ev.isPrimary === false) { clearTimeout(timer); moved = true; last = { el: null, t: 0 }; return; }
+    if (ev.button != null && ev.button !== 0) { moved = false; longFired = false; clearTimeout(timer); return; }
     const el = ev.target.closest(selector);
     if (!el || !root.contains(el)) return;
+    pointer = ev.pointerId;
+    moved = false;
     longFired = false;
     startX = ev.clientX;
     startY = ev.clientY;
     clearTimeout(timer);
     if (long) {
       timer = setTimeout(() => {
+        if (moved || !root.contains(el)) return;
         longFired = true;
+        last = { el: null, t: 0 };
         if (navigator.vibrate) navigator.vibrate(12);
         long(el, ev);
       }, longMs);
     }
   });
   root.addEventListener("pointermove", (ev) => {
-    if (Math.abs(ev.clientX - startX) > 10 || Math.abs(ev.clientY - startY) > 10) clearTimeout(timer);
+    if (ev.pointerId !== pointer) return;
+    if (Math.abs(ev.clientX - startX) > 10 || Math.abs(ev.clientY - startY) > 10) {
+      clearTimeout(timer); moved = true; last = { el: null, t: 0 };
+    }
   });
-  root.addEventListener("pointerup", () => clearTimeout(timer));
-  root.addEventListener("pointercancel", () => clearTimeout(timer));
+  root.addEventListener("pointerup", (ev) => {
+    if (ev.pointerId === pointer) { clearTimeout(timer); pointer = null; }
+  });
+  root.addEventListener("pointercancel", () => {
+    clearTimeout(timer); pointer = null; moved = true; last = { el: null, t: 0 };
+  });
+  root.addEventListener("scroll", () => {
+    clearTimeout(timer); moved = true; last = { el: null, t: 0 };
+  }, { capture: true, passive: true });
   root.addEventListener("contextmenu", (ev) => {
     const el = ev.target.closest(selector);
-    if (el && long) { ev.preventDefault(); if (!longFired) { longFired = true; long(el, ev); } }
+    if (el && long) {
+      ev.preventDefault(); clearTimeout(timer);
+      if (!longFired && !moved) { longFired = true; last = { el: null, t: 0 }; long(el, ev); }
+    }
   });
   root.addEventListener("click", (ev) => {
     const el = ev.target.closest(selector);
     if (!el || !root.contains(el)) return;
-    if (longFired) { longFired = false; return; }
+    // Ein nachlaufender Click nach Scrollen/Halten darf auch den äußeren
+    // Button-Handler nicht auslösen. Tastatur-/Accessibility-Clicks bleiben frei.
+    if (ev.detail !== 0 && (longFired || moved)) {
+      longFired = false; moved = false;
+      ev.preventDefault(); ev.stopImmediatePropagation(); return;
+    }
     const now = Date.now();
-    if (double && last.el === el.dataset.key && now - last.t < 330) {
+    const identity = el.dataset.key || el.dataset.cell || el;
+    if (double && last.el === identity && now - last.t < 330) {
       last = { el: null, t: 0 };
       double(el, ev);
       return;
     }
-    last = { el: el.dataset.key, t: now };
+    last = { el: identity, t: now };
     tap(el, ev);
-  });
+  }, true);
 }
 
 let toastTimer = null;

@@ -1,6 +1,6 @@
 // Zeichnet das CodeSearch-Fenster aus dem Zustand von cs (js/core/cs.js). Keine Logik ausser Darstellung.
 
-import { $, esc } from "./dom.js";
+import { $, esc, updateHtml } from "./dom.js";
 import { abs, rel, baseName, fmtNum } from "../core/util.js";
 import { DATA_LABELS } from "../core/cs.js";
 
@@ -45,14 +45,14 @@ export function renderTitle(ctx) {
   const focus = cs.net.op(s.focus);
   const name = focus ? (focus.name || "CodeSearch_Tutorial") : s.focus;
   const type = focus ? focus.type : "";
-  $("#cs-title").innerHTML = `
+  updateHtml($("#cs-title"), `
     <span class="focus"><b>FOCUS</b> ${esc(name)} · ${esc(type)} · bleibt</span>
     <span class="sp"></span>
     <button class="quickbtn" data-act="quick" title="Schnellsuche (Ctrl+P)">quick ⌕</button>
     <button class="look" data-act="look" title="LOOK: nur Farben">LOOK · ${esc(cs.cs.Look)}</button>
     <button class="wbtn" data-act="win-min" title="Minimieren">—</button>
     <button class="wbtn" data-act="win-max" title="Maximieren / Zurück">▢</button>
-    <button class="wbtn" data-act="win-close" title="Schließen (Esc)">✕</button>`;
+    <button class="wbtn" data-act="win-close" title="Schließen (Esc)">✕</button>`);
 }
 
 export function renderScopes(ctx) {
@@ -64,11 +64,11 @@ export function renderScopes(ctx) {
   const scope = cs.cs.Scope;
   const comp = baseName(cs.cs.Scopecomp || "") || "…";
   $("#cs-scopes").className = "cs-scopes row-scroll";
-  $("#cs-scopes").innerHTML = `<span class="lbl">SUCHEN IN</span>
+  updateHtml($("#cs-scopes"), `<span class="lbl">SUCHEN IN</span>
     <button class="chip ${scope === "project" ? "on" : ""}" data-scope="project">GLOBAL</button>
     <button class="chip ${scope === "currentflat" ? "on" : ""}" data-scope="currentflat">${esc(pane)}  NUR</button>
     <button class="chip ${scope === "currentpane" ? "on" : ""}" data-scope="currentpane">${esc(pane)}  REKURSIV</button>
-    <button class="chip ${scope === "comp" ? "on" : ""}" data-scope="comp">IN ${esc(comp)}  ▼</button>`;
+    <button class="chip ${scope === "comp" ? "on" : ""}" data-scope="comp">IN ${esc(comp)}  ▼</button>`);
 }
 
 export function renderTabs(ctx) {
@@ -86,10 +86,10 @@ export function renderTabs(ctx) {
     return `<div class="tabgrp"><span class="gt ${activeGroup === grp ? "on" : ""}">${esc(title)}</span><div class="tabs">${tabs}</div></div>`;
   }).join("");
   $("#cs-tabs").className = `cs-tabs ${g.mods.alt ? "helpmode" : ""}`;
-  $("#cs-tabs").innerHTML = html + `<div class="tab-extra">
+  updateHtml($("#cs-tabs"), html + `<div class="tab-extra">
       <button data-act="readorder" class="${s.view === "path" ? "on" : ""}" title="READ ORDER: Lesereihenfolge (lange drücken = ReadPath-Marken)">${esc((ui.TAB_LABELS || {}).path || "READ ORDER")}</button>
       <button data-act="help" class="${s.view === "guide" ? "on" : ""}" title="Funktionsübersicht">?</button>
-    </div>`;
+    </div>`);
 }
 
 export function renderContext(ctx) {
@@ -110,7 +110,7 @@ export function renderContext(ctx) {
   }
   if (s.mode === "entries" && s.meta && s.meta.scopeText) parts.push(`<span class="ctxinfo">${esc(s.meta.scopeText)}</span>`);
   box.className = "cs-context row-scroll";
-  box.innerHTML = parts.join("");
+  updateHtml(box, parts.join(""));
 }
 
 export function renderField(ctx) {
@@ -128,7 +128,7 @@ export function renderFilters(ctx) {
   const { cs, ui } = ctx;
   const s = cs.state;
   const box = $("#cs-filters");
-  if (s.mode !== "search" || s.view) { box.innerHTML = ""; return; }
+  if (s.mode !== "search" || s.view) { updateHtml(box, ""); return; }
   const counts = (s.meta && s.meta.counts) || {};
   const f = cs.cs.Searchfilter;
   const chip = (key) => `<button class="chip ${f === key ? "on" : ""}" data-filter="${key}">${esc((ui.FILTER_LABELS || {})[key] || key)}${key === "all" ? "" : `<span class="n">${counts[key] ?? 0}</span>`}</button>`;
@@ -140,7 +140,7 @@ export function renderFilters(ctx) {
     html += `<span class="sep"></span><span class="chip head">ADRESSE ›</span>` + (ui.OP_ADDRESSES || []).map((k) => `<button class="chip ${s.opAddress === k ? "on" : ""}" data-address="${k}" title="${esc((ui.OP_ADDRESS_HELP || {})[k] || "")}">${esc((ui.OP_ADDRESS_LABELS || {})[k] || k)}</button>`).join("");
   }
   box.className = "cs-filters row-scroll";
-  box.innerHTML = html;
+  updateHtml(box, html);
 }
 
 export function renderData(ctx) {
@@ -165,11 +165,11 @@ export function renderRecord(ctx) {
   const { cs } = ctx;
   const s = cs.state;
   const box = $("#cs-record");
-  if (s.mode !== "record") { box.innerHTML = ""; return; }
+  if (s.mode !== "record") { updateHtml(box, ""); return; }
   const r = s.record;
   const duration = r.liveContinuous ? "CONTINUOUS ↔" : `${fmtNum(Number(cs.cs.Recordseconds))} s ↔`;
   box.className = "cs-record row-scroll";
-  box.innerHTML = `
+  updateHtml(box, `
     <button class="rbtn ${r.recording ? "live" : ""}" data-rec="${r.recording ? "stop" : "start"}">${r.recording ? "■ STOP" : "▶ START"}</button>
     <button class="rbtn ${r.liveHold ? "on" : ""}" data-rec="hold">${r.liveHold ? "FOLLOW LIVE" : "HOLD VIEW"}</button>
     <button class="rbtn ${r.liveMini ? "on" : ""}" data-rec="${r.liveMini ? "full" : "mini"}">${r.liveMini ? "FULL TAB" : "MINI WINDOW"}</button>
@@ -178,7 +178,7 @@ export function renderRecord(ctx) {
     <button class="rbtn" data-rec="prev">◀ PREV</button>
     <button class="rbtn" data-rec="next">NEXT ▶</button>
     <button class="rbtn" data-rec="copy">COPY CHAIN</button>
-    <button class="rbtn ${s.view === "why" ? "on" : ""}" data-rec="why">WARUM ▸</button>`;
+    <button class="rbtn ${s.view === "why" ? "on" : ""}" data-rec="why">WARUM ▸</button>`);
 }
 
 export function renderCrumb(ctx) {
@@ -197,14 +197,14 @@ export function renderGroups(ctx) {
   const groups = cs.state.mode === "table" ? [] : cs.groups();
   const box = $("#cs-groups");
   box.className = "cs-groups row-scroll";
-  box.innerHTML = dataControls(cs) + groups.map((gp) => `<button class="g" data-jump="${gp.index}">${esc(gp.num)} · ${esc(gp.title)}${gp.count !== null && gp.count !== undefined ? `<span class="n">${gp.count}</span>` : ""}</button>`).join("");
+  updateHtml(box, dataControls(cs) + groups.map((gp) => `<button class="g" data-jump="${gp.index}">${esc(gp.num)} · ${esc(gp.title)}${gp.count !== null && gp.count !== undefined ? `<span class="n">${gp.count}</span>` : ""}</button>`).join(""));
 }
 
 export function renderList(ctx) {
   const { cs, ui } = ctx;
   const s = cs.state;
   const box = $("#cs-list");
-  if (s.mode === "table") { box.innerHTML = tableHtml(cs); return; }
+  if (s.mode === "table") { updateHtml(box, tableHtml(cs)); return; }
   const cols = cs.columns();
   const head = `<div class="colhead"><span>${esc(cols[0])}</span><span>${esc(cols[1])} · ${esc(cols[2])} / ${esc(cols[3])}</span></div>`;
   const rows = s.hits.map((h, i) => {
@@ -224,7 +224,7 @@ export function renderList(ctx) {
       : h.text;
     return `<button class="${cls.join(" ")}" data-row="${i}" data-key="r${i}"><span class="art ${artClass(h)}" data-art="${i}">${esc(artOf(ui, h))}</span><span class="main"><div class="wo">${det ? `<span class="det">${esc(det)}</span>` : ""}${esc(wo)}</div><div class="txt">${esc(txt)}</div>${st}</span></button>`;
   }).join("");
-  box.innerHTML = head + rows;
+  updateHtml(box, head + rows);
 }
 
 function tableHtml(cs) {
@@ -293,7 +293,7 @@ export function renderDetail(ctx) {
   box.classList.toggle("empty", !h);
   $("#cs-split").classList.toggle("empty", !h);
   if (!h) {
-    box.innerHTML = `<div class="det-empty">DETAIL – Zeile antippen = Steckbrief + Code · lange drücken = Menü (Rechtsklick) · ART-Zelle antippen = Tooltip</div>`;
+    updateHtml(box, `<div class="det-empty">DETAIL – Zeile antippen = Steckbrief + Code · lange drücken = Menü (Rechtsklick) · ART-Zelle antippen = Tooltip</div>`);
     return;
   }
   const bar = [];
@@ -318,7 +318,9 @@ export function renderDetail(ctx) {
     code = `<div class="code-head"><span class="sp">${esc(cv.path)}:${esc(cv.line ?? "")}${cv.definition ? " · DEFINITION" : ""}</span>
       <button data-act="def-back" title="Alt+←">◀</button><button data-act="def-fwd" title="Alt+→">▶</button></div>${codeHtml(cs, dat, cv.line)}`;
   }
-  box.innerHTML = `<div class="det-bar">${bar.join("")}</div>${blocksHtml}${code}`;
+  const detailKey = `${s.mode}|${h.path}|${h.ctx}|${h.line}|${h.row}|${h.col}|${cv.path}|${cv.line}`;
+  updateHtml(box, `<div class="det-bar">${bar.join("")}</div>${blocksHtml}${code}`, ctx.detailKey !== detailKey);
+  ctx.detailKey = detailKey;
 }
 
 function tableDetail(cs, h) {

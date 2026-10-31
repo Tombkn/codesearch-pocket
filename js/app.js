@@ -301,9 +301,14 @@ function wire(ctx) {
       if (wide) detail.style.width = `${Math.max(160, Math.min(body.width - 160, body.right - e.clientX))}px`;
       else detail.style.height = `${Math.max(60, Math.min(body.height - 80, body.bottom - e.clientY))}px`;
     };
-    const up = () => { split.removeEventListener("pointermove", move); split.removeEventListener("pointerup", up); };
+    const up = () => {
+      split.removeEventListener("pointermove", move); split.removeEventListener("pointerup", up);
+      split.removeEventListener("pointercancel", up); split.removeEventListener("lostpointercapture", up);
+    };
     split.addEventListener("pointermove", move);
     split.addEventListener("pointerup", up);
+    split.addEventListener("pointercancel", up);
+    split.addEventListener("lostpointercapture", up);
   });
 
   // ---------------------------------------------------------------- Tastenleiste
@@ -337,7 +342,7 @@ function wire(ctx) {
       }
       case "skip": ctx.lastCheck = null; ctx.tourOpen = true; return g.skip();
       case "workspace": ctx.tourOpen = false; return g.workspace();
-      case "labparams": ctx.td.open = true; ctx.td.tab = "par"; ctx.td.sheet = tour.lesson().target.startsWith("StateLab") ? "StateLab" : (tour.lesson().target.startsWith("Farbmischer") ? "Farbmischer" : "BranchLab"); return undefined;
+      case "labparams": ctx.td.open = true; ctx.td.tab = "par"; ctx.td.sheet = tour.lesson().target.startsWith("SignalGarden") ? "SignalGarden" : tour.lesson().target.startsWith("StateLab") ? "StateLab" : (tour.lesson().target.startsWith("Farbmischer") ? "Farbmischer" : "BranchLab"); return undefined;
       case "params": ctx.td.open = true; ctx.td.tab = "par"; ctx.td.sheet = "op"; ctx.td.opPath = tour.lesson().target; return undefined;
       case "csparams": ctx.td.open = true; ctx.td.tab = "par"; ctx.td.sheet = "cs"; return undefined;
       case "compare": ctx.popup.compare = true; return undefined;
@@ -359,13 +364,20 @@ function wire(ctx) {
   // ---------------------------------------------------------------- TD-Seite
   const tdLayer = $("#layer-td");
   tdLayer.addEventListener("click", act((ev) => {
-    const t = ev.target.closest("[data-tdtab],[data-act],[data-sheet],[data-bl-toggle],[data-bl-pulse],[data-sl-toggle],[data-sl-pulse],[data-fm-toggle],[data-fm-pulse],[data-cs-toggle]");
+    const t = ev.target.closest("[data-tdtab],[data-act],[data-sheet],[data-bl-toggle],[data-bl-pulse],[data-sl-toggle],[data-sl-pulse],[data-fm-toggle],[data-fm-pulse],[data-cs-toggle],[data-garden-owner],[data-garden-toggle],[data-garden-pulse],[data-garden-reinit]");
     if (!t) return undefined;
     const d = t.dataset;
+    // Safari fokussiert Buttons nicht immer: beendete Eingaben dürfen die
+    // nächste Parameteraktion oder den Blattwechsel nicht vom Rendern abhalten.
+    if (tdLayer.contains(document.activeElement) && document.activeElement.matches('input,select,textarea')) document.activeElement.blur();
     if (d.tdtab) { ctx.td.tab = d.tdtab; return undefined; }
     if (d.sheet) { ctx.td.sheet = d.sheet; return undefined; }
     if (d.blToggle) return g.blPar(d.blToggle, !cs.lab.blPars[d.blToggle]);
     if (d.blPulse) { g.blPulse(d.blPulse); return toast(`${d.blPulse} gepulst · ${cs.lab.blPars.Status}`); }
+    if (d.gardenOwner) { ctx.td.gardenOwner = d.gardenOwner; return undefined; }
+    if (d.gardenToggle) return g.gardenPar(d.owner, d.gardenToggle, !cs.lab.garden.pars[d.owner][d.gardenToggle]);
+    if (d.gardenPulse) { g.gardenPulse(d.owner, d.gardenPulse); return toast(`${d.owner}.${d.gardenPulse} ausgeführt`); }
+    if (d.gardenReinit) return g.gardenReinit(d.gardenReinit);
     if (d.slToggle) return g.slPar(d.slToggle, !cs.lab.stateLab.pars[d.slToggle]);
     if (d.slPulse) { g.slPulse(d.slPulse); return toast(cs.lab.stateLab.pars.Status); }
     if (d.fmToggle) return g.fmPar(d.fmToggle, !cs.lab.farbmischer.pars[d.fmToggle]);
@@ -394,6 +406,8 @@ function wire(ctx) {
     const d = t.dataset;
     if (d.blMenu) return g.blPar(d.blMenu, t.value);
     if (d.blNum) return g.blPar(d.blNum, Number(t.value));
+    if (d.gardenMenu) return g.gardenPar(d.owner, d.gardenMenu, t.value);
+    if (d.gardenNum) return g.gardenPar(d.owner, d.gardenNum, Number(t.value));
     if (d.fmNum) return g.fmPar(d.fmNum, Number(t.value));
     if (d.csMenu) return g.csPar(d.csMenu, t.value);
     if (d.csNum) return g.csPar(d.csNum, Number(t.value));

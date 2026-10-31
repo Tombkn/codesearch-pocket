@@ -2,6 +2,7 @@
 // (BranchLabExt, ColorEngineExt, FarbmischerExt, StateLabExt). trace() meldet Aufrufe an RECORD.
 
 import { uid } from "./util.js";
+import { SignalGarden } from "./signalgarden.js";
 
 export const PALETTE = [["name", "r", "g", "b"], ["warm", "0.95", "0.36", "0.14"],
   ["cool", "0.12", "0.48", "0.88"], ["neutral", "0.55", "0.62", "0.60"]];
@@ -295,6 +296,7 @@ export class Lab {
     this.script = (net.op("BranchLab/experiment_script") || {}).text || "";
     this.farbmischer = new Farbmischer(this, net);
     this.stateLab = new StateLab(this);
+    this.garden = new SignalGarden(this);
     this.Reset(false);
   }
 
@@ -315,7 +317,9 @@ export class Lab {
   }
 
   stateSnapshot() {
-    return { _events: this.events, _branch: this.branch, _writes: this.writes, _last: pyTuple(this.last) };
+    const garden = this.garden?.Observe() || {};
+    return { _events: this.events, _branch: this.branch, _writes: this.writes, _last: pyTuple(this.last),
+      ...Object.fromEntries(Object.entries(garden).map(([k, v]) => [`garden.${k}`, Array.isArray(v) ? JSON.stringify(v) : v])) };
   }
 
   stateDiff(before) {
@@ -454,6 +458,8 @@ export class Lab {
   // Wert eines Custom-Pars, wie STRUCTURE > PARAMETER ihn als WERT JETZT zeigt
   helperParValue(comp, par) {
     const quote = (v) => (typeof v === "string" ? `„${v}“` : (typeof v === "boolean" ? (v ? "1" : "0") : String(Number(v.toFixed ? v.toFixed(4) : v))));
+    const gardenOwner = this.garden.owner(comp);
+    if (gardenOwner && par in this.garden.pars[gardenOwner]) return quote(this.garden.pars[gardenOwner][par]);
     if (comp === "BranchLab" && par in this.blPars) return quote(this.blPars[par]);
     if (comp === "BranchLab/ColorEngine" && par === "Status") return quote(this.ceStatus);
     if (comp === "Farbmischer" && par in this.farbmischer.pars) return quote(this.farbmischer.pars[par]);
@@ -466,6 +472,11 @@ export class Lab {
 
   // Python-State einer Extension (WERT JETZT, Recordstate)
   stateValue(dat, name) {
+    const gardenOwner = this.garden.owner(dat);
+    if (gardenOwner) {
+      const value = this.garden.attributes(gardenOwner)[name];
+      return value === undefined ? undefined : JSON.stringify(value);
+    }
     const tuple = (t) => pyTuple(t);
     const values = {
       "BranchLab/BranchLabExt": { _events: this.events, _branch: `'${this.branch}'`, ownerComp: "baseCOMP /project1/CodeSearch_Tutorial/BranchLab" },
@@ -485,6 +496,7 @@ export class Lab {
     for (let i = 0; i < frames; i += 1) {
       this.frame += 1;
       this.time += 1 / 60;
+      this.garden.FrameTick(1 / 60);
       const beat = Math.floor(this.time * 0.5 * 2) % 2 === 0;
       const rising = beat && !this.beat;
       this.beat = beat;

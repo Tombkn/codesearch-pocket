@@ -1,10 +1,14 @@
 # CodeSearch Pocket
 
-Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **488 Schritte in 37 Kapiteln**, ein bedienbares Übungsnetz und **37 Leitfäden für den Laptop**. Quellenstand: **CodeSearch 1.8.0, Commit [9a3133d](https://github.com/Tombkn/td-codesearch/tree/9a3133dc2a7482e6fa46a69ba26a30864ab2b5ed)**, abgeglichen am 31.10.2026.
+Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **584 Schritte in 45 Kapiteln**, ein bedienbares Übungsnetz und **Laptop-Anleitungen für alle Kapitel**. Quellenstand: **CodeSearch 1.9.0, Commit [9a9dac1](https://github.com/Tombkn/td-codesearch/tree/9a9dac1f21a86050073c9f7b729e33597b3e87e5)**, abgeglichen am 31.10.2026.
 
 [Veröffentlichte Handyseite](https://tombkn.github.io/codesearch-pocket/)
 
 ## Lernen und üben
+
+**Neu: SignalGarden, Kapitel 36–43.** Acht vollständige Workflows mit je zwölf Stationen an einer interaktiven Lichtinstallation. Root, Sensor, Scenes und Palette arbeiten als vier Extensions zusammen. Du verfolgst Eingaben bis zur Farbe, prüfst Hysterese, doppelte Aufrufe, kaputte Tabellendaten und laufenden State. Jede Station enthält konkrete Laptop- und iPhone-Schritte, erwartete Beobachtung und eine Gegenprobe oder Grenze. [Alle 96 Stationen lesen](https://github.com/Tombkn/td-codesearch/blob/9a9dac1f21a86050073c9f7b729e33597b3e87e5/docs/SIGNALGARDEN_WORKFLOWS.md) · [Prüfbericht](docs/WORKFLOWS-2026-10-31.md).
+
+Die acht Themen: Orientierung → komplette Extension → Datenfluss → State → Aufrufwege → Fehlersuche → Änderungen prüfen → eigenständige Projektanalyse. Beim erneuten Kapitelstart oder Laden beginnt ein Workflow mit bekannten Ausgangswerten. Alte Häkchen bleiben sichtbar; „Weiter“ braucht in diesem Durchlauf erneut „Prüfen“. Bewusstes Überspringen bleibt möglich.
 
 1. Die **Lernansicht** öffnet sich groß. **Aa Größer** schaltet von 17 auf 20 Pixel Leseschrift; die Wahl bleibt lokal gespeichert. Die Karte trennt **Verstehen → selbst ausprobieren → daran erkennst du es**. Vertiefungen und zusätzliche Werkzeuge sind aufklappbar.
 2. **Zur Übung →** oder **Jetzt selbst ausprobieren →** wechselt ins nachgebildete CodeSearch. **Lektion lesen** bringt dich an deine Lesestelle zurück. Eine neue Lektion beginnt oben. Offene Such- und Lesefenster verschwinden während des Lesens aus dem Weg und bleiben für die Übung erhalten.
@@ -14,7 +18,7 @@ Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **488 Schritte in 37 K
 
 **KURS** öffnet die Kapitel. **TD** enthält Übungsnetz, Parameter und Timeline. **⌨** öffnet die Tastenleiste. Zeile antippen = markieren; doppelt tippen = Enter; lange drücken = Kontextmenü. Die Lektionskarte übersetzt die Laptop-Handgriffe in „AM HANDY“.
 
-Alle 462 originalen TD-Lektionen bleiben mit stabilen IDs erhalten. Dazu kommen 14 Abschlussaufgaben ohne Hilfen und zwölf Werkstattfälle: State-Verlauf, ungültige/aktuelle/veraltete JSON-Pakete, belegte/unbekannte/widersprochene Aussagen, begrenzte Vorschau und eine isolierte Testkopie.
+Alle 462 bisherigen TD-Lektionen bleiben mit stabilen IDs erhalten. Dazu kommen 96 SignalGarden-Stationen sowie 14 Abschlussaufgaben ohne Hilfen und zwölf Werkstattfälle: State-Verlauf, ungültige/aktuelle/veraltete JSON-Pakete, belegte/unbekannte/widersprochene Aussagen, begrenzte Vorschau und eine isolierte Testkopie.
 
 ## Neue Funktionen praktisch beurteilen
 
@@ -56,7 +60,10 @@ npm ci
 npm test
 ```
 
-- `verify.mjs`: alle 488 Stationen über Gestenfunktionen; **kein Browser-Touchtest**.
+- `verify.mjs`: alle 584 Stationen über Gestenfunktionen; **kein Browser-Touchtest**.
+- `progress-tests.mjs` und `workflow-tests.mjs`: alte Lesestellen/Häkchen, frische Aufnahmen, Scope-Gegenprobe, isolierte Fallvergleiche und Wiederaufnahme.
+- `signalgarden-tests.mjs`: zwölf gemeinsame Szenarien mit derselben Erwartungsdatei wie die Python- und nativen TD-Tests.
+- `gesture-tests.mjs`: acht Gegenproben für Tap, Double-Tap, Hold, horizontales/vertikales Wischen, Pointer-Abbruch, zweiten Finger, Scroll-Events und nachlaufende Clicks. **Synthetische Ereignisse, keine Messung der iPhone-Flüssigkeit.**
 - `parity-tests.mjs`: Gegenfälle für Protokolle, Quellen, Mutation und Testkopien.
 - `smoke.mjs`: Aufbau der Ansichten, Detailfelder und Kopiermenüs.
 - `ui-tests.mjs`: DOM-Integration der echten App-Handler mit jsdom; Lesen/Üben, Lesestelle, Schriftgröße, Rückmeldung, JSON-Eingabe, überlagernde Fenster und Kapitelwechsel. **jsdom besitzt keine Layout- oder Touch-Engine.**
@@ -67,11 +74,11 @@ Die Prüfung auf einem echten Android/Chrome und iPhone/Safari bleibt eine eigen
 
 ## Quellen reproduzierbar bauen
 
-`upstream.json` enthält Commit und SHA-256-Hashes der 31 Build-Eingaben. `source/` bleibt lokal; eine neue Revision erhält einen eigenen Unterordner. Aus einem Clone von `Tombkn/td-codesearch`:
+`upstream.json` enthält Commit und SHA-256-Hashes der 33 Build-Eingaben. `source/` bleibt lokal; eine neue Revision erhält einen eigenen Unterordner. Aus einem Clone von `Tombkn/td-codesearch`:
 
 ```sh
 python -m pip install -r requirements-build.txt
-python tools/upstream.py --repo ../td-codesearch --ref 9a3133dc2a7482e6fa46a69ba26a30864ab2b5ed --version 1.8.0 --checked 2026-10-31 --freeze
+python tools/upstream.py --repo ../td-codesearch --ref 9a9dac1f21a86050073c9f7b729e33597b3e87e5 --version 1.9.0 --checked 2026-10-31 --freeze
 python tools/build_data.py
 python tools/build_offline.py
 npm test

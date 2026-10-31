@@ -67,6 +67,12 @@ export class Gestures {
     this.cs.rebuild();
   }
   slPar(name, value) { this.lab.stateLab.pars[name] = value; this.cs.rebuild(); }
+  gardenPar(owner, name, value) {
+    if (!(name in this.lab.garden.pars[owner])) throw new Error(`Unbekannter Parameter ${owner}.${name}`);
+    this.lab.garden.pars[owner][name] = value; this.cs.rebuild();
+  }
+  gardenPulse(owner, name) { this.lab.garden.pulse(owner, name); this.cs.rebuild(); }
+  gardenReinit(owner) { this.lab.garden.reinit(owner); this.cs.rebuild(); }
   // Farbmischer-Parameter
   fmPulse(name) {
     const fm = this.lab.farbmischer;

@@ -15,6 +15,10 @@ window.__POCKET_DATA__ = Object.fromEntries(["course.json", "net.json", "code.js
   .map((name) => [name, JSON.parse(readFileSync(new URL(`data/${name}`, root), "utf8"))]));
 window.localStorage.setItem("codesearch-pocket-intro", "1");
 globalThis.requestAnimationFrame = (fn) => setTimeout(fn, 0);
+window.requestAnimationFrame = globalThis.requestAnimationFrame;
+window.cancelAnimationFrame = clearTimeout;
+const runtimeErrors = [];
+window.addEventListener('error', (event) => runtimeErrors.push(event.message));
 window.HTMLElement.prototype.scrollIntoView = function () { this.dataset.scrollRequested = "true"; };
 const nativeInterval = globalThis.setInterval;
 const intervals = [];
@@ -148,16 +152,22 @@ try {
   await click("[data-atlas=laptop]");
   check("Laptop-Start und sämtliche Kapitel sind zugänglich", () => {
     assert.equal(document.querySelectorAll("[data-learn-chapter]").length, window.__POCKET_DATA__["course.json"].chapters.length);
-    assert.match($("#layer-atlas").textContent, /462 Lektionen/);
+    assert.match($("#layer-atlas").textContent, /558 Lektionen/);
   });
   const atlasBody = $("#layer-atlas .lbody");
+  const stableSearchButton = $('[data-mode="search"]');
+  const stableResult = $('#cs-list [data-row]');
   atlasBody.scrollTop = 340;
   await click("#layer-atlas .lbody p");
   check("Atlas-Scrollposition bei unveränderter Ansicht erhalten", () => {
     assert.equal($("#layer-atlas .lbody"), atlasBody);
     assert.equal(atlasBody.scrollTop, 340);
   });
-  await click("[data-learn-chapter='35']");
+  check('Unveränderte Tabs und Treffer bleiben bei Status-Render dieselben DOM-Knoten', () => {
+    assert.equal($('[data-mode="search"]'), stableSearchButton);
+    assert.equal($('#cs-list [data-row]'), stableResult);
+  });
+  await click("[data-learn-chapter='43']");
   check("Abschlusskarte verrät keine Vorher/Aktion/Nachher-Lösung", () => {
     assert.equal(document.querySelector("#tour-body .transfer-grid"), null);
     assert.match($("#tour-body").textContent, /OHNE HILFEN/);
@@ -173,6 +183,38 @@ try {
   await click("[data-learn-chapter='18']");
   await click("#tour-body [data-tour=labparams]");
   check("Farbmischer-Lektion öffnet Farbmischer statt BranchLab", () => assert.ok(document.querySelector("[data-fm-pulse=Weiter]")));
+  await click('[data-act=td-close]');
+  await click('#tour-body [data-tour=laptop]');
+  await click('[data-learn-chapter="35"]');
+  await click('#tour-body [data-tour=labparams]');
+  check('SignalGarden öffnet eigenes Root-Blatt', () => assert.ok(document.querySelector('[data-garden-pulse=Submit]')));
+  const gardenSheet = $('#layer-td .parsheet'); gardenSheet.scrollTop = 270;
+  await click('[data-garden-pulse=Submit]');
+  check('Parameter-Lesestelle bleibt nach Pulse erhalten', () => {
+    assert.equal($('#layer-td .parsheet').scrollTop, 270);
+    assert.match($('#layer-td').textContent, /Samples 1 · Requests 1/);
+  });
+  await click('[data-garden-owner=sensor]');
+  const valueInput = $('[data-garden-num=Value]'); valueInput.focus(); valueInput.value = '0.7';
+  valueInput.dispatchEvent(new window.Event('change', { bubbles: true })); await delay(15);
+  await click('[data-garden-pulse=Sample]');
+  check('Sensorblatt setzt Value und führt Sample über App-Handler aus', () => {
+    assert.match($('#layer-td').textContent, /Samples 2/);
+    assert.equal($('[data-garden-num=Value]').value, '0.7');
+  });
+  await click('[data-garden-reinit=sensor]');
+  check('Lokale Re-Init erhält Setting und setzt Runtime zurück', () => {
+    assert.match($('#layer-td').textContent, /Samples 0/);
+    assert.equal($('[data-garden-num=Value]').value, '0.7');
+  });
+  await click('[data-act=td-close]');
+  await click('#tour-body [data-tour=laptop]');
+  await click('[data-learn-chapter="42"]');
+  check('Selbständiger Workflow zeigt keine Lösung vor Hinweis', () => {
+    assert.equal(document.querySelector('#tour-body .expected'), null);
+    assert.equal(document.querySelector('#tour-body .phone'), null);
+  });
+  assert.deepEqual(runtimeErrors, [], 'Keine unbehandelten App-Fehler');
   console.log(JSON.stringify({ passed, engine: "jsdom", layout: "nicht geprüft", nativeTouch: "nicht geprüft" }));
 } finally {
   for (const handle of intervals) clearInterval(handle);

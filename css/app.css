@@ -501,6 +501,10 @@ button:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus
   .tour-body { padding-inline: 14px; }
 }
 @media (pointer: coarse) {
+  button, select, input, summary, .grid td { min-height: 44px; }
+  button { min-width: 44px; }
+  button, summary, .grid td { touch-action: manipulation; }
+  .cs-split { height: 24px; }
   .tab, .key, .json-button { min-height: 44px; }
   .quick .qh button, .quick .qf button { min-height: 44px; min-width: 44px; }
 }

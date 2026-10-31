@@ -43,6 +43,7 @@ export function keysFor(text) {
 }
 
 export function phoneSteps(lesson) {
+  if (lesson.phone_steps) return lesson.phone_steps;
   const text = String(lesson.action || "");
   const steps = [];
   const add = (s) => { if (!steps.includes(s)) steps.push(s); };

@@ -601,8 +601,11 @@ export class CodeSearch {
         return done("Untersuchung");
       case "fall": {
         const id = uid("case");
-        if (this.codeTargetPath() !== "StateLab") return done("Pocket-Fallvergleich: nur StateLab-Werte; andere Ziele in TD untersuchen", false);
-        inv.cases.push({ id, label: arg || `fall${inv.cases.length + 1}`, lab: clone(lab.Observe()) });
+        const scope = this.codeTargetPath();
+        const garden = scope === 'SignalGarden' || scope.startsWith('SignalGarden/');
+        if (scope !== 'StateLab' && !garden) return done('Pocket-Fallvergleich: nur StateLab und SignalGarden modelliert; andere Ziele in TD untersuchen', false);
+        inv.cases.push({ id, label: arg || `fall${inv.cases.length + 1}`, scope, packet: packet(),
+          lab: clone(garden ? this.lab.garden.caseValues(scope) : lab.Observe()) });
         if (inv.cases.length > 12) inv.cases.shift();
         inv.caseId = id;
         s.mode = "map"; s.view = "untersuchung";
@@ -612,6 +615,7 @@ export class CodeSearch {
         const a = inv.cases[inv.cases.length - 2];
         const b = inv.cases[inv.cases.length - 1];
         if (!a || !b) { inv.comparison = null; return done("Vergleich braucht zwei Fälle (>fall …)", false); }
+        if (a.scope !== b.scope) { inv.comparison = null; return done('Verschiedene Analysebereiche: zwei Fälle am selben Ziel aufnehmen', false); }
         const rows = [];
         if (a && b) for (const k of Object.keys(b.lab)) if (JSON.stringify(a.lab[k]) !== JSON.stringify(b.lab[k])) rows.push({ key: k, a: a.lab[k], b: b.lab[k] });
         inv.comparison = { id: uid("cmp"), rows, changed: rows.length };
@@ -823,6 +827,7 @@ export class CodeSearch {
   // ------------------------------------------------------------------ RECORD
   recordStart() {
     const rec = this.state.record;
+    rec.session = (rec.session || 0) + 1;
     rec.target = this.codeTargetPath();
     rec.recording = true;
     rec.records = [];
@@ -1007,6 +1012,7 @@ export class CodeSearch {
   tableData() {
     const path = this.state.table.path;
     if (path === "BranchLab/ColorEngine/palette") return this.lab.palette;
+    if (path === 'SignalGarden/Palette/colors') return this.lab.garden.table;
     const o = this.net.op(path);
     return o && o.table ? o.table : [];
   }
@@ -1052,6 +1058,13 @@ export class CodeSearch {
   }
 
   tableEdit(row, col, value) {
+    if (this.state.table.path === 'SignalGarden/Palette/colors') {
+      const table = this.lab.garden.table;
+      if (row > 0 && row < table.length && col > 0 && col < table[row].length) {
+        table[row][col] = String(value); this.state.status = `colors[${row}, ${col}] = ${value}`;
+      } else this.state.status = 'Nur vorhandene RGB-Zellen bearbeiten; Namen und Header bleiben fest.';
+      return this.rebuild();
+    }
     if (this.state.table.path !== "BranchLab/ColorEngine/palette") { this.state.status = "diese Tabelle ist im Kurs schreibgeschützt"; return this.emit(); }
     this.lab.editCell(row, col, value);
     this.state.status = `palette[${row}, ${col}] = ${value}`;
@@ -1290,7 +1303,8 @@ export class CodeSearch {
       if (entry) {
         const steps = entryChain(this, entry);
         blocks.push({ title: "KETTE", rows: steps.map((st, i) => [`${i + 1}`, st.text, `chain:${i}`]), steps });
-        const jetzt = entry.watched === "BranchLab/control"
+        const gardenOwner = this.lab.garden.owner(path);
+        const jetzt = gardenOwner ? Object.entries(this.lab.garden.pars[gardenOwner]).map(([name, value]) => [name, String(value)]) : entry.watched === "BranchLab/control"
           ? [["CHOP control", `gain ${fmtNum(this.lab.control.gain)} · route ${fmtNum(this.lab.control.route)}`]]
           : [["Enabled", this.lab.blPars.Enabled ? "1" : "0"], ["Route", this.lab.blPars.Route], ["Intensity", fmtNum(this.lab.blPars.Intensity)]];
         blocks.push({ title: "JETZT", rows: jetzt });

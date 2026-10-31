@@ -2,14 +2,14 @@
 // Quellenpfade beziehen sich auf SOURCE_REF.repo am unten genannten Commit.
 export const SOURCE_REF = {
   repo: 'Tombkn/td-codesearch',
-  commit: '9a3133dc2a7482e6fa46a69ba26a30864ab2b5ed',
-  version: '1.8.0',
+  commit: '9a9dac1f21a86050073c9f7b729e33597b3e87e5',
+  version: '1.9.0',
   checked: '2026-10-31',
 };
 
 export const LAPTOP_START = [
   { title: 'Eine eigene Testdatei anlegen', text: 'Speichere ein leeres TouchDesigner-Projekt in einem eigenen Übungsordner. Arbeite für diese Versuche in einer Kopie, nicht in deiner laufenden Installation. Notiere den tatsächlich geöffneten Dateinamen. Pocket und TouchDesigner haben getrennte Werte und getrennten Fortschritt; die Handy-Anzeige ist kein Beleg für den Laptop-Zustand.' },
-  { title: 'Version und Dateien zusammenhalten', text: 'Die Referenz ist td-codesearch 1.8.0 am oben genannten Commit. Die README nennt TouchDesigner 2025.30000+ und einen Prüfstand auf Windows 2025.33230; das bestätigt noch nicht deinen Rechner. Lade release/CodeSearch.tox und release/CodeSearch_Tutorial.tox aus demselben Stand. Für FlowLens kommt release/FlowLens.tox hinzu, für optionale Netzmarkierungen release/ReadPath.tox.' },
+  { title: 'Version und Dateien zusammenhalten', text: 'Die Referenz ist td-codesearch 1.9.0 am oben genannten Commit. Die README nennt TouchDesigner 2025.30000+ und einen Prüfstand auf Windows 2025.33230; das bestätigt noch nicht deinen Rechner. Lade release/CodeSearch.tox und release/CodeSearch_Tutorial.tox aus demselben Stand. Für FlowLens kommt release/FlowLens.tox hinzu, für optionale Netzmarkierungen release/ReadPath.tox.' },
   { title: 'Komponenten einsetzen und Pfade prüfen', text: 'Ziehe CodeSearch einmal in die Projektwurzel, sodass /CodeSearch entsteht, und setze das Tutorial ein. Vermeide eine zweite CodeSearch-Instanz. Öffne mit Shift+K. Lies den tatsächlichen Tutorial-Pfad im Netzwerk: /project1/CodeSearch_Tutorial ist nur ein möglicher Ort. Verwende für StateLab und BranchLab die vorhandenen Pfade; kopiere keinen fremden Rechnerpfad.' },
   { title: 'Den Arbeitsplatz bewusst öffnen', text: 'Starte das Mitmach-Tutorial und klicke Arbeitsplatz. Prüfe FOCUS, Suchbereich und die laufende Timeline. FOCUS ist der untersuchte Operator; Scope begrenzt die Suche. RECORD und TABLE besitzen eigene Ziele. Wenn das Bild stillsteht, prüfe zuerst, ob der Versuch laufende Frames voraussetzt. Ein offenes Fenster allein bestätigt keinen passenden Analysebereich.' },
   { title: 'Einen bekannten Fall wirklich auslösen', text: 'Bereite BranchLab vor, stelle Enabled an, Route warm und Intensity 0.8 ein. Notiere Events und ColorEngine.Writes. Starte RECORD im Bereich BranchLab, drücke einmal Fire und stoppe. Prüfe _warm, _send, ApplyPreset und _writeColor sowie den CHOP rgb. Erst diese eigene Aufnahme beschreibt deinen ausgeführten Laptop-Versuch.' },
@@ -17,6 +17,16 @@ export const LAPTOP_START = [
   { title: 'Speichern und Reload als eigenen Versuch behandeln', text: 'Für das Startup-Experiment: In deiner Testkopie Startwert konfigurieren drücken, Jetztwert 99 und vorgesehenen Startwert 7 notieren, speichern und genau diese Datei neu öffnen. Danach den tatsächlichen Storage-Wert lesen. Erst der eigene Reload beantwortet, ob 7 ankommt. Der Pocket-Klick konfiguriert nur das Beispiel; er startet kein TouchDesigner neu.' },
   { title: 'Ausgaben und Belege mitnehmen', text: 'Prüfe echte DAT-Zellen, CHOP-Werte und den TOP out1 getrennt von Statusmeldungen. Native Bildfälle schreiben PNG und Datenpaket nach .codesearch/investigations/ im Projektordner; ein Dateipfad lädt kein Bild in einen Chat. Halte bei Fehlern Aktion, Ausgangswerte, Pfad und Ergebnis fest. Stelle danach Teständerungen zurück und speichere nur den Stand, den du behalten willst.' },
 ];
+
+export function guideForLesson(lesson) {
+  if (lesson.workflow_id) return {
+    title: lesson.title, goal: lesson.workflow_goal, before: lesson.before,
+    action: lesson.action, after: lesson.expected, laptop: lesson.laptop_steps,
+    proof: lesson.expected, limit: lesson.limit, source: lesson.source,
+  };
+  const chapter = lesson.id.startsWith('abschluss_') ? 35 : lesson.id.startsWith('pocket_') ? 36 : lesson.chapter;
+  return CHAPTER_GUIDES[chapter];
+}
 
 export const CHAPTER_GUIDES = [
   {

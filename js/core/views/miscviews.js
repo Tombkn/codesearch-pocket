@@ -347,6 +347,28 @@ export function buildGuide(cs) {
 
 // ------------------------------------------------------------------------------------------ StateLab-Untersuchung
 export function stateAtlas(cs, target = cs.codeTargetPath()) {
+  if (target === 'SignalGarden' || target.startsWith('SignalGarden/')) {
+    const garden = cs.lab.garden;
+    const paths = { root: 'SignalGarden', sensor: 'SignalGarden/Sensor', scenes: 'SignalGarden/Scenes', palette: 'SignalGarden/Palette' };
+    const rows = [];
+    for (const [key, path] of Object.entries(paths)) {
+      const ext = cs.net.extClass(path);
+      if (target !== 'SignalGarden' && target !== path && target !== ext?.dat) continue;
+      const add = (group, kind, name, value, extra = {}) => rows.push({ group, kind, name, value,
+        owner: abs(path), id: `${abs(path)}|${kind}|${name}`, ...extra });
+      for (const [name, value] of Object.entries(garden.attributes(key))) {
+        const accesses = ext?.model.accesses?.filter((a) => a.name === name) || [];
+        add('PYTHON-ATTRIBUTE', 'attribute', `${ext?.cls.name || key}.${name}`, value,
+          { lifetime: 'Instanz; lokale Re-Init erzeugt neue Runtime-Werte',
+            writers: [...new Set(accesses.filter((a) => a.how !== 'read').map((a) => a.func))],
+            readers: [...new Set(accesses.filter((a) => a.how === 'read').map((a) => a.func))] });
+      }
+      for (const [name, value] of Object.entries(garden.pars[key])) add('PARAMETER', 'parameter', name, value, { mode: 'CONSTANT' });
+    }
+    rows.push({ group: 'GRENZEN', kind: 'coverage', name: 'Aufnahme', owner: abs(target), id: 'garden-coverage',
+      value: 'Pocket: modellierte SignalGarden-Werte und Constant-Parameter. Keine Live-Verbindung zu TouchDesigner; dynamische fremde Objekte sind nicht erfasst.' });
+    return rows;
+  }
   if (target !== "StateLab" && !target.startsWith("StateLab/")) return [];
   const s = cs.lab.stateLab;
   const obs = s.Observe();
@@ -374,7 +396,7 @@ export function buildInvestigation(cs) {
   const view = cs.state.view;
   const inv = cs.state.inv;
   const rows = [];
-  const add = (art, name, value, detail = "", path = abs("StateLab")) => {
+  const add = (art, name, value, detail = "", path = abs(cs.codeTargetPath())) => {
     const h = hit("investigation", path, `${name}   ·   ${value}`, { detail, ctx: name });
     h.art = art;
     rows.push(h);
@@ -405,7 +427,7 @@ export function buildInvestigation(cs) {
     }
     if (view === "untersuchung") {
       rows.push(section("FÄLLE", "mit >fall <name> gespeichert", inv.cases.length, { num: String(n + 1) }));
-      inv.cases.forEach((c) => add("FALL", c.label, `Count ${c.lab.count} · ${c.id}`));
+      inv.cases.forEach((c) => add('FALL', c.label, `${c.scope || 'StateLab'} · ${c.id}`));
     }
   } else if (view === "request") {
     rows.push(section("NACHFRAGE", "Antwort auf die Anfrage aus der Zwischenablage", inv.request ? inv.request.answers.length : 0, { num: "1" }));

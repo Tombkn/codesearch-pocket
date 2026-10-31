@@ -170,6 +170,10 @@ export class Net {
         let via = site.via;
         if (site.via === "self" && ownClass) {
           if (this.member(dat, site.attr)) target = { dat, name: site.attr };
+        } else if (site.via === 'iop' && site.shortcut) {
+          const comp = this.findInternalShortcut(home, site.shortcut);
+          const ext = comp != null ? this.extClass(comp) : null;
+          if (ext && this.member(ext.dat, site.attr)) target = { dat: ext.dat, name: site.attr };
         } else if ((site.via === "opof" || site.via === "op") && site.op) {
           const comp = home ? `${home}/${site.op}` : site.op;
           const ext = this.extClass(comp);
@@ -220,6 +224,25 @@ export class Net {
     for (;;) {
       const o = this.op(path);
       if (o && o.pars && o.pars.parentshortcut && o.pars.parentshortcut.v === short) return path;
+      if (!path) return null;
+      path = parentOf(path);
+    }
+  }
+
+  findInternalShortcut(start, alias) {
+    let path = start || '';
+    for (;;) {
+      const value = this.op(path)?.iop?.[alias];
+      if (typeof value === 'string') {
+        const relative = /^=me\.op\(['"]([^'"]+)['"]\)$/.exec(value)?.[1] || value;
+        const parts = path ? path.split('/') : [];
+        for (const part of relative.split('/')) {
+          if (part === '..') parts.pop();
+          else if (part && part !== '.') parts.push(part);
+        }
+        const resolved = parts.join('/');
+        return this.has(resolved) ? resolved : null;
+      }
       if (!path) return null;
       path = parentOf(path);
     }

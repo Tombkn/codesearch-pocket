@@ -1,33 +1,41 @@
 {
   "repo": "Tombkn/td-codesearch",
-  "commit": "9a3133dc2a7482e6fa46a69ba26a30864ab2b5ed",
-  "version": "1.8.0",
+  "commit": "9a9dac1f21a86050073c9f7b729e33597b3e87e5",
+  "version": "1.9.0",
   "checked": "2026-10-31",
-  "lesson_count": 462,
+  "lesson_count": 558,
   "files": {
+    "signalgarden-scenarios.json": {
+      "path": "src/signalgarden/scenarios.json",
+      "sha256": "6a187ed558e058990175ac415df05c7f9f6d7535470a397de58fcd8697984d22"
+    },
+    "upstream_docs/SIGNALGARDEN_WORKFLOWS.md": {
+      "path": "docs/SIGNALGARDEN_WORKFLOWS.md",
+      "sha256": "100e72a778ec1cfa23666e950f9c91bac747aa9ef99c67a55851e91647e25def"
+    },
     "CodeSearchExt.py": {
       "path": "src/CodeSearchExt.py",
       "sha256": "14e0ee2d0d80c65eef153080929f6e51b024410dce4587cbb2626fb0d044af94"
     },
     "CodeModelExt.py": {
       "path": "src/CodeModelExt.py",
-      "sha256": "2a46383c042a6ea4480e6d99ec4cbb3da66a4e5bc8e63f2f2fca54dc77070fd9"
+      "sha256": "bf74559c1d6f560cbba306b634bc394d2c15df471e25ffc759408f845e19bb11"
     },
     "CodeSearch.tdn": {
       "path": "src/tdn/CodeSearch.tdn",
-      "sha256": "3741773636b0c827fcdecd3742624608caf900abcc09cfafbbaf67d0a178ecff"
+      "sha256": "e5e1e998a5f67036c20965213fadde2f783cdaed4abb752df3f889fadf7a3b29"
     },
     "CodeSearch_Tutorial.tdn": {
       "path": "src/tdn/CodeSearch_Tutorial.tdn",
-      "sha256": "849217feca8e9d9c2eb3f88d99860304dd061727952918ee6c0205a5832ffe88"
+      "sha256": "a6c3c1423d8174d69c07f10986e1eab0d8e30a88976b443ca191291e04d78071"
     },
     "TourExt.py": {
       "path": "src/tutorial/TourExt.py",
-      "sha256": "d38e5eca9099929c017637270516511383ae9290b67baba1f9c038b93d807aa5"
+      "sha256": "46c7508df5cb778bafb88dd6063e3019df879465c808f0ddede0308deb56fa23"
     },
     "lessons.json": {
       "path": "src/tutorial/lessons.json",
-      "sha256": "571c5b1f631db82c2acaeab72915c70c3ad1d5996bcaca056ca2d1470b05f84d"
+      "sha256": "c21a9ff3647d31d02b4633fd5510bd1ef92fe1b7720394fb6462a1702a600700"
     },
     "marker_catalogue.json": {
       "path": "src/tutorial/marker_catalogue.json",
@@ -47,11 +55,11 @@
     },
     "cs_workbench.py": {
       "path": "src/stateatlas/cs_workbench.py",
-      "sha256": "13245e91b606dddc009d2f1ce518c8114855dade405479b31a9217df81fb436c"
+      "sha256": "3b947943e6eee694a6b565830a89d7b8a9eba3a3aad45ad40a8fcac7784e69ca"
     },
     "tutorial_adapter.py": {
       "path": "src/stateatlas/tutorial_adapter.py",
-      "sha256": "eeb7347138f57f5e287259f3ad3ebd813f3da427b3598e0ef708bda8842e00bf"
+      "sha256": "886da3733d31d93477fb5c50531d58382ce2c4ec432c5a2508be6c2d9d218ffa"
     },
     "tutorial_fixture.py": {
       "path": "src/stateatlas/tutorial_fixture.py",
