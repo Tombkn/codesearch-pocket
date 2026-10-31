@@ -4,3 +4,5 @@ __pycache__/
 *.pyc
 
 source/
+node_modules/
+.test-output/

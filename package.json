@@ -1,5 +1,13 @@
 {
   "name": "codesearch-pocket",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "test": "node tools/verify.mjs && node tools/parity-tests.mjs && node tools/smoke.mjs && node tools/ui-tests.mjs && node tools/package-tests.mjs",
+    "test:ui": "node tools/ui-tests.mjs",
+    "build": "python tools/build_data.py && python tools/build_offline.py"
+  },
+  "devDependencies": {
+    "jsdom": "29.1.1"
+  }
 }

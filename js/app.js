@@ -31,7 +31,7 @@ async function main() {
     layers: { course: false, atlas: false, atlasTab: "cheat", doc: null, offline: false },
     offline, storage,
     popup: { tooltip: null, compare: false },
-    lastCheck: null, keysOpen: false, tourOpen: false, tourMini: false, fieldFocused: false,
+    lastCheck: null, keysOpen: false, tourOpen: true, fieldFocused: false,
   };
 
   // Kopieren landet auch in der Zwischenablage des Handys
@@ -58,11 +58,11 @@ async function main() {
   if (!introSeen) {
     ctx.popup.tooltip = { title: "SO GEHT'S AM HANDY", text: [
       "OBEN das CodeSearch-Fenster – dieselben Tabs, Spalten, Tooltips und Befehle wie in TouchDesigner.",
-      "UNTEN die Mitmach-Tour: JETZT DU sagt die Aufgabe, AM HANDY übersetzt Maus und Tasten, Prüfen liest den echten Zustand.",
+      "LESEN: Die Mitmach-Tour nutzt den ganzen Bildschirm. Wische im Text hoch oder runter. „Zur Übung“ öffnet das CodeSearch-Fenster; „Lektion lesen“ bringt dich an dieselbe Textstelle zurück.",
       "TD (oben links) ist TouchDesigner: NETZ mit Kabeln und versteckten Kanten, PARAMETER (Fire, Route, …), TIMELINE.",
       "⌨ öffnet die Tastenleiste: Strg/Alt/⇧ einmal antippen, dann tippen = Strg+Klick usw. Die Tasten der Station leuchten.",
       "Zeile antippen = markieren · doppelt = Enter · lange drücken = Rechtsklick · ART-Zelle antippen = Tooltip.",
-      "Prüfen besteht nur, wenn du den Schritt wirklich gemacht hast. „Gesehen“ heißt: du hast es selbst gelesen.",
+      "Prüfen liest den Zustand der Handy-Simulation. Einige Regeln können bereits erfüllt sein. „Gesehen“ ist deine Bestätigung und kein automatischer Verständnisnachweis. Die Laptop-Karte nennt die zusätzliche praktische Prüfung.",
       "Hinten wartet ein Abschluss-Kapitel ohne Hilfen. ATLAS hat Spickzettel, Doku, Bilder des echten Fensters und alle Begriffe.",
       "⇩ oben rechts speichert den ganzen Kurs auf dem Handy – danach läuft er auch im Flugmodus. Steht dort ✓ offline, ist alles da.",
     ].join("\n\n") };
@@ -77,6 +77,8 @@ async function main() {
 }
 
 function renderAll(ctx) {
+  $("#tour").classList.toggle("open", ctx.tourOpen);
+  $("#tour").classList.toggle("mini", !ctx.tourOpen);
   const keepScroll = $("#cs-list").scrollTop;
   renderCS(ctx);
   $("#cs-list").scrollTop = keepScroll;
@@ -109,7 +111,12 @@ function renderAll(ctx) {
   renderFloats(ctx);
   renderOffline(ctx);
   $("#tour").classList.toggle("open", ctx.tourOpen);
-  $("#tour").classList.toggle("mini", Boolean(ctx.tourMini && !ctx.tourOpen));
+  $("#tour").classList.toggle("mini", !ctx.tourOpen);
+  $("#app").classList.toggle("reading", ctx.tourOpen);
+  $("#cs").inert = ctx.tourOpen;
+  $("#keys").inert = ctx.tourOpen;
+  $("#tour-grip").textContent = ctx.tourOpen ? "Zur Übung →" : "↑ Lektion lesen";
+  $("#tour-grip").setAttribute("aria-expanded", String(ctx.tourOpen));
   $("#keys").classList.toggle("show", ctx.keysOpen);
   $("#btn-keys").classList.toggle("on", ctx.keysOpen);
   $("#btn-td").classList.toggle("on", ctx.td.open);
@@ -143,7 +150,7 @@ function wire(ctx) {
 
   // ---------------------------------------------------------------- Kopf
   $("#btn-td").addEventListener("click", act(() => { ctx.td.open = !ctx.td.open; }));
-  $("#btn-keys").addEventListener("click", act(() => { ctx.keysOpen = !ctx.keysOpen; }));
+  $("#btn-keys").addEventListener("click", act(() => { ctx.keysOpen = !ctx.keysOpen; if (ctx.keysOpen) ctx.tourOpen = false; }));
   $("#btn-course").addEventListener("click", act(() => { ctx.layers.course = true; }));
   $("#btn-atlas").addEventListener("click", act(() => { ctx.layers.atlas = true; }));
   $("#btn-reopen").addEventListener("click", act(() => g.openCodeSearch()));
@@ -202,6 +209,7 @@ function wire(ctx) {
     if (d.id) return g.codeClick(d.id);
     if (d.sort !== undefined) return g.tableSort(Number(d.sort));
     switch (d.act) {
+      case "json": ctx.popup.json = true; return undefined;
       case "quick": return g.key("Ctrl+P");
       case "look": return g.look();
       case "win-min": return g.window(cs.state.window === "min" ? "normal" : "min");
@@ -302,28 +310,25 @@ function wire(ctx) {
   }));
 
   // ---------------------------------------------------------------- Tour-Karte
-  $("#tour-grip").addEventListener("click", act(() => { ctx.tourOpen = !ctx.tourOpen; ctx.tourMini = false; }));
-  $("#tour-head").addEventListener("click", act((ev) => {
-    if (ev.target.closest("[data-tour=mini]")) { ctx.tourMini = !ctx.tourMini; ctx.tourOpen = false; return; }
-    ctx.tourOpen = !ctx.tourOpen;
-    ctx.tourMini = false;
-  }));
+  $("#tour-grip").addEventListener("click", act(() => { ctx.tourOpen = !ctx.tourOpen; }));
   const tourClick = act((ev) => {
     const t = ev.target.closest("[data-tour]");
     if (!t) return undefined;
     switch (t.dataset.tour) {
-      case "back": ctx.lastCheck = null; ctx.tourOpen = false; return g.back();
-      case "next": ctx.lastCheck = null; if (!g.next()) ctx.tourOpen = true; else ctx.tourOpen = false; return undefined;
-      case "check": { ctx.lastCheck = g.check(); ctx.tourOpen = true; return undefined; }
+      case "back": ctx.lastCheck = null; ctx.tourOpen = true; return g.back();
+      case "next": ctx.lastCheck = null; g.next(); ctx.tourOpen = true; return undefined;
+      case "check": { ctx.lastCheck = g.check(); ctx.tourOpen = true; ctx.showFeedback = true; return undefined; }
       case "seen": return g.seen();
-      case "hint": return g.hint();
-      case "skip": ctx.lastCheck = null; ctx.tourOpen = false; return g.skip();
+      case "hint": ctx.tourOpen = true; return g.hint();
+      case "skip": ctx.lastCheck = null; ctx.tourOpen = true; return g.skip();
       case "workspace": ctx.tourOpen = false; return g.workspace();
-      case "labparams": ctx.td.open = true; ctx.td.tab = "par"; ctx.td.sheet = tour.lesson().target === "StateLab" ? "StateLab" : "BranchLab"; return undefined;
+      case "labparams": ctx.td.open = true; ctx.td.tab = "par"; ctx.td.sheet = tour.lesson().target.startsWith("StateLab") ? "StateLab" : (tour.lesson().target.startsWith("Farbmischer") ? "Farbmischer" : "BranchLab"); return undefined;
       case "params": ctx.td.open = true; ctx.td.tab = "par"; ctx.td.sheet = "op"; ctx.td.opPath = tour.lesson().target; return undefined;
       case "csparams": ctx.td.open = true; ctx.td.tab = "par"; ctx.td.sheet = "cs"; return undefined;
       case "compare": ctx.popup.compare = true; return undefined;
       case "chapters": ctx.layers.course = true; return undefined;
+      case "laptop": ctx.layers.atlas = true; ctx.layers.atlasTab = "laptop"; return undefined;
+      case "json": ctx.popup.json = true; return undefined;
       case "pause": return pause(ctx);
       case "error": return g.setError();
       case "restore": return g.restoreError();
@@ -390,13 +395,18 @@ function wire(ctx) {
     if (t.dataset.act === "course-close") { ctx.layers.course = false; return undefined; }
     ctx.layers.course = false;
     ctx.lastCheck = null;
+    ctx.tourOpen = true;
     tour.chapterStart(Number(t.dataset.chapter));
     return cs.emit();
   }));
   $("#layer-atlas").addEventListener("click", act((ev) => {
-    const t = ev.target.closest("[data-atlas],[data-doc],[data-act]");
+    const t = ev.target.closest("[data-atlas],[data-doc],[data-act],[data-learn-chapter]");
     if (!t) return undefined;
     if (t.dataset.act === "atlas-close") { ctx.layers.atlas = false; return undefined; }
+    if (t.dataset.learnChapter !== undefined) {
+      ctx.layers.atlas = false; ctx.tourOpen = true; ctx.lastCheck = null;
+      tour.chapterStart(Number(t.dataset.learnChapter)); return cs.emit();
+    }
     if (t.dataset.atlas) { ctx.layers.atlasTab = t.dataset.atlas; ctx.layers.doc = null; return undefined; }
     if (t.dataset.doc !== undefined) { ctx.layers.doc = Number(t.dataset.doc) < 0 ? null : Number(t.dataset.doc); $("#layer-atlas .lbody").scrollTop = 0; }
     return undefined;
@@ -421,6 +431,14 @@ function wire(ctx) {
       return cs.rebuild();
     }
     switch (t.dataset.pop) {
+      case "json-cancel": ctx.popup.json = false; return undefined;
+      case "json-apply": {
+        const text = $("#json-text").value;
+        ctx.popup.json = false;
+        g.setClipboard(text);
+        ctx.tourOpen = false;
+        return undefined;
+      }
       case "esc": return g.key("Esc");
       case "enter": return g.enter();
       case "edit-apply": g.editSet($("#editor-text").value); return g.editApply();
@@ -480,7 +498,11 @@ function wire(ctx) {
 
   // Hardware-Tastatur (Tablet / Desktop): dieselben Gesten
   document.addEventListener("keydown", act((ev) => {
+    if (ev.defaultPrevented) return undefined;
     if (ev.target.tagName === "INPUT" || ev.target.tagName === "TEXTAREA" || ev.target.tagName === "SELECT") return undefined;
+    // Im Lesetext und in überlagerten Seiten bleiben Pfeile/Enter beim Browser.
+    if (ctx.tourOpen || ctx.td.open || Object.values(ctx.layers).some((value) => value === true) || $("#popup").classList.contains("show")) return undefined;
+    if (ev.target.closest("button, summary") && (ev.key === "Enter" || ev.key === " ")) return undefined;
     const parts = [];
     if (ev.ctrlKey || ev.metaKey) parts.push("Ctrl");
     if (ev.altKey) parts.push("Alt");
@@ -495,7 +517,7 @@ function wire(ctx) {
 
 function closePopup(ctx) {
   const s = ctx.cs.state;
-  if (s.editor) return;
+  if (s.editor || ctx.popup.json) return;
   if (s.dialog || s.menu || s.viewer) { ctx.g.key("Esc"); return; }
   s.help = null;
   ctx.popup.tooltip = null;

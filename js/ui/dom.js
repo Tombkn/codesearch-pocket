@@ -2,6 +2,32 @@
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 
+const renderedHtml = new WeakMap();
+
+// Unveränderten Lesetext stehen lassen: sonst werden Auswahl, Details und
+// laufende Touch-Bewegungen bei jedem Status-Update erneut aufgebaut.
+export function updateHtml(element, html, reset = false) {
+  if (!reset && renderedHtml.get(element) === html) return false;
+  const top = reset ? 0 : element.scrollTop;
+  const left = reset ? 0 : element.scrollLeft;
+  const scrolls = reset ? [] : [...element.querySelectorAll("[data-scroll-key]")]
+    .map((el) => [el.dataset.scrollKey, el.scrollTop, el.scrollLeft]);
+  const opened = reset ? [] : [...element.querySelectorAll("details[data-persist][open]")]
+    .map((el) => el.dataset.persist);
+  element.innerHTML = html;
+  for (const el of element.querySelectorAll("details[data-persist]")) {
+    if (opened.includes(el.dataset.persist)) el.open = true;
+  }
+  for (const el of element.querySelectorAll("[data-scroll-key]")) {
+    const saved = scrolls.find(([key]) => key === el.dataset.scrollKey);
+    if (saved) [el.scrollTop, el.scrollLeft] = saved.slice(1);
+  }
+  element.scrollTop = top;
+  element.scrollLeft = left;
+  renderedHtml.set(element, html);
+  return true;
+}
+
 export function esc(text) {
   return String(text ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }

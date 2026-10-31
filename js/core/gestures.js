@@ -15,6 +15,7 @@ export class Gestures {
   // ------------------------------------------------------------------ Tour-Karte
   workspace() { this.tour.showWorkplace(); }
   seen() { this.tour.seen(); this.cs.emit(); }
+  setClipboard(text) { this.cs.copy(text); this.cs.emit(); }
   check() { const r = this.tour.check(); this.cs.emit(); return r; }
   next() { const ok = this.tour.next(); this.cs.emit(); return ok; }
   back() { this.tour.back(); this.cs.emit(); }
@@ -368,7 +369,7 @@ export class Gestures {
   _floatCopy() {
     const f = this._floatFocused();
     const h = f && f.rows ? f.rows[f.selected] : null;
-    if (h) this.cs.copy(h.ctx ? `${h.ctx}` : h.text);
+    if (h) { this.cs.copy(h.ctx ? `${h.ctx}` : h.text); this.cs.clipboardOrigin = "float"; }
     this.cs.emit();
   }
   _floatZoom(delta) {
@@ -390,7 +391,7 @@ export class Gestures {
     if (action === "story") fl.story = !fl.story;
     if (action === "colors") fl.colors = !fl.colors;
     if (action === "hidden") fl.hidden = !fl.hidden;
-    if (action === "select") fl.selected = arg;
+    if (action === "select") { fl.selected = arg; fl.selectionSerial = (fl.selectionSerial || 0) + 1; }
     if (action === "close") fl.open = false;
     if (action === "codesearch" && fl.selected) {
       this.cs.OpenAt("chain", { target: fl.selected });

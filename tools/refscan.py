@@ -10,7 +10,8 @@ import json
 from pathlib import Path
 from typing import Optional
 
-SRC = Path(__file__).resolve().parents[1] / "source" / "CodeSearchExt.py"
+from source_root import SOURCE
+SRC = SOURCE / "CodeSearchExt.py"
 NAMES = {'OP_CALL_NAMES', 'SHORTCUT_HOLDERS', 'PARSE_ERRORS', 'BOM_CHAR', '_str_argument', '_parent_levels',
          '_op_refs_in_tree', '_op_refs_by_row', '_op_refs_in_expr', '_ref_name', '_node_text', '_ref_label',
          '_row_key', '_parse_ready', '_is_json_document'}

@@ -1,6 +1,7 @@
 // Ebenen ueber dem Fenster: TD-Seite (Netz, Parameter, Timeline), Kurs, Atlas, FlowLens, Popup, Schnellsuche, Lesekopien.
 
-import { $, esc, md } from "./dom.js";
+import { $, esc, md, updateHtml } from "./dom.js";
+import { laptopOverview } from "./learningview.js";
 import { abs, rel, baseName, fmtNum } from "../core/util.js";
 import { artOf, pathText, codeHtml } from "./cswin.js";
 
@@ -244,8 +245,8 @@ export function renderCourse(ctx) {
     const pct = lessons.length ? Math.round((done / lessons.length) * 100) : 0;
     return `<button class="chapter ${i === cur ? "cur" : ""}" data-chapter="${i}"><div class="n">KAPITEL ${String(i + 1).padStart(2, "0")} · ${done}/${lessons.length}</div><div class="t">${esc(name)}</div><div class="bar"><span style="width:${pct}%"></span></div></button>`;
   }).join("");
-  layer.innerHTML = `<div class="lhead"><h1>KURS</h1><button data-act="course-close">✕</button></div>
-    <div class="lbody"><div class="overall">${p.verified} geprüft · ${p.confirmed} selbst bestätigt · ${p.open} offen${p.skipped ? ` · ${p.skipped} übersprungen` : ""}<br>Ein Kapitel antippen springt zum ersten offenen Schritt darin.</div>${items}</div>`;
+  updateHtml(layer, `<div class="lhead"><h1>KURS</h1><button data-act="course-close">✕</button></div>
+    <div class="lbody" data-scroll-key="course"><div class="overall">${p.verified} im Modell geprüft · ${p.confirmed} selbst bestätigt · ${p.open} offen${p.skipped ? ` · ${p.skipped} übersprungen` : ""}<br>Ein Kapitel antippen springt zum ersten offenen Schritt darin. Laptop-Tests sind darin nicht enthalten.</div>${items}</div>`);
 }
 
 // ------------------------------------------------------------------ Atlas
@@ -255,17 +256,20 @@ export function renderAtlas(ctx) {
   layer.classList.toggle("show", layers.atlas);
   if (!layers.atlas) return;
   const tab = layers.atlasTab || "cheat";
-  const tabs = [["cheat", "SPICKZETTEL"], ["docs", "DOKU"], ["pics", "BILDER"], ["gloss", "BEGRIFFE"]];
+  const tabs = [["cheat", "SPICKZETTEL"], ["laptop", "AM LAPTOP"], ["docs", "DOKU"], ["pics", "BILDER"], ["gloss", "BEGRIFFE"]];
   let body = "";
   if (tab === "cheat") body = cheatSheet(ui);
+  else if (tab === "laptop") body = laptopOverview(course);
   else if (tab === "docs") {
     if (layers.doc !== undefined && layers.doc !== null) body = `<button class="feat" data-doc="-1">‹ Übersicht</button><div class="md">${md(features[layers.doc].body.replace(/\]\((?:\.\.\/)?(?:docs\/)?images\/([\w-]+)\.png\)/g, (m, name) => `](${imgSrc(`${name}.webp`)})`))}</div>`;
     else body = features.map((f, i) => `<button class="feat" data-doc="${i}"><span class="n">${f.chapter ? `KAPITEL ${f.chapter}` : "ÜBERBLICK"}</span>${esc(f.title)}</button>`).join("");
   } else if (tab === "pics") body = pictures();
   else body = glossary(course);
-  layer.innerHTML = `<div class="lhead"><h1>ATLAS</h1><button data-act="atlas-close">✕</button></div>
+  const key = `${tab}|${layers.doc ?? ""}`;
+  updateHtml(layer, `<div class="lhead"><h1>ATLAS</h1><button data-act="atlas-close">✕</button></div>
     <div class="ltabs">${tabs.map(([k, l]) => `<button class="chip ${tab === k ? "on" : ""}" data-atlas="${k}">${l}</button>`).join("")}</div>
-    <div class="lbody">${body}</div>`;
+    <div class="lbody" data-scroll-key="atlas">${body}</div>`, ctx.atlasKey !== key);
+  ctx.atlasKey = key;
 }
 
 function cheatSheet(ui) {
@@ -444,7 +448,12 @@ export function renderPopup(ctx) {
   const s = cs.state;
   const box = $("#popup");
   let html = "";
-  if (s.editor) {
+  if (popup.json) {
+    html = `<div class="box" role="dialog" aria-modal="true" aria-labelledby="json-title"><div class="bh"><span class="t" id="json-title">JSON BEARBEITEN</span></div>
+      <div class="bb"><p>Hier steht die Pocket-Zwischenablage. Du kannst den Text ändern oder eine Antwort einfügen. „In Pocket übernehmen“ führt nichts aus; anschließend prüfst du mit &gt;nachfrage, &gt;antwort oder &gt;vorschau.</p>
+      <label for="json-text">Datenpaket</label><textarea id="json-text" spellcheck="false" autocorrect="off" autocapitalize="off">${esc(cs.clipboard)}</textarea></div>
+      <div class="bf"><button data-pop="json-cancel">Abbrechen</button><button class="ok" data-pop="json-apply">In Pocket übernehmen</button></div></div>`;
+  } else if (s.editor) {
     html = `<div class="box"><div class="bh"><span class="t">BEARBEITEN · ${esc(abs(s.editor.path))}</span></div>
       <div class="bb"><textarea id="editor-text" spellcheck="false" autocapitalize="off">${esc(s.editor.text)}</textarea>${s.editor.error ? `<div class="err">${esc(s.editor.error)}</div>` : ""}</div>
       <div class="bf"><button data-pop="edit-cancel">ABBRECHEN</button><button class="ok" data-pop="edit-apply">ÜBERNEHMEN</button></div></div>`;
@@ -465,8 +474,8 @@ export function renderPopup(ctx) {
     html = `<div class="box"><div class="bh"><span class="t">TABS VERGLEICHEN</span><button data-pop="compare-close">✕</button></div><div class="bb">${esc(compareText(ctx))}</div></div>`;
   }
   box.classList.toggle("show", Boolean(html));
-  box.innerHTML = html;
-  if (s.editor) {
+  const changed = updateHtml(box, html);
+  if (s.editor && changed) {
     const ta = $("#editor-text");
     if (ta) ta.focus({ preventScroll: true });
   }

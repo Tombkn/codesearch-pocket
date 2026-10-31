@@ -1,4 +1,5 @@
-// Ehrliche Pruefung des Handy-Kurses: jeder Schritt der Reihe nach, wie ein Mensch.
+// Logikprüfung der Tour über dieselben Gestenfunktionen wie die App.
+// Kein Browserlauf: Scrollen, Touch und Layout brauchen getrennte Gerätetests.
 //   1. Station vorbereiten (wie die Tour), Pruefen darf noch NICHT bestehen (sonst: "geschenkt").
 //   2. Nur Handgriffe aus tools/walkthroughs.mjs (Gesten), danach muss Pruefen bestehen.
 // Kein Zustand wird direkt gesetzt. Aufruf: node tools/verify.mjs [--from N] [--only id] [--verbose]
@@ -9,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import { createApp } from "../js/core/boot.js";
 import { evaluate } from "../js/core/tour.js";
 import { SCRIPTS, generic } from "./walkthroughs.mjs";
+import { PARITY_SCRIPTS } from "./parity_walkthroughs.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const load = (name) => JSON.parse(readFileSync(join(root, "data", name), "utf8"));
@@ -26,15 +28,15 @@ for (let i = 0; i < tour.lessons.length; i += 1) {
   if (only && lesson.id !== only) {
     // Zustand trotzdem fortschreiben, damit "keep"-Stationen ihren Vorlauf haben
     tour.goTo(i);
-    try { (SCRIPTS[lesson.id] || ((x) => generic(x, lesson)))(g, lesson); } catch { /* Vorlauf */ }
+    try { await (PARITY_SCRIPTS[lesson.id] || SCRIPTS[lesson.id] || ((x) => generic(x, lesson)))(g, lesson); } catch { /* Vorlauf */ }
     continue;
   }
   tour.goTo(i);
   const before = evaluate(lesson.rules, tour.snapshot(), tour.baseline);
   if (before.passed) report.gifted.push({ i, id: lesson.id });
   try {
-    const script = SCRIPTS[lesson.id];
-    if (script) script(g, lesson);
+    const script = PARITY_SCRIPTS[lesson.id] || SCRIPTS[lesson.id];
+    if (script) await script(g, lesson);
     else generic(g, lesson);
   } catch (error) {
     report.errors.push({ i, id: lesson.id, error: error.message });
@@ -55,4 +57,4 @@ console.log(JSON.stringify({
 if (report.errors.length) console.log("ERRORS", JSON.stringify(report.errors.slice(0, 40), null, 1));
 if (report.failed.length) console.log("FAILED", JSON.stringify(report.failed.slice(0, 40), null, 1));
 if (report.gifted.length) console.log("GESCHENKT (besteht ohne Handgriff)", report.gifted.map((x) => `#${x.i} ${x.id}`).join(", "));
-process.exit(report.failed.length || report.errors.length ? 1 : 0);
+process.exit(report.failed.length || report.errors.length || report.gifted.length ? 1 : 0);

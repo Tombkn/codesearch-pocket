@@ -1,7 +1,8 @@
 // Tour-Karte: JETZT DU, AM HANDY, DARAUF ACHTEN, Rueckmeldung, Knoepfe, Bedeutung, Grenzen, Begriffe.
 
-import { $, esc } from "./dom.js";
+import { $, esc, updateHtml } from "./dom.js";
 import { phoneSteps } from "../core/phone.js";
+import { transferCard, lessonEvidence } from "./learningview.js";
 
 const MODE_LABEL = { refs: "USED BY", trace: "USES", chain: "FLOW", map: "STRUCTURE", entries: "TRIGGERS", tour: "CALL PATH", check: "AUDIT" };
 const OP_TEXT = { eq: "=", contains: "enthält", not_contains: "enthält nicht", gt: ">", near: "≈", delta: "gestiegen auf", changed: "geändert auf" };
@@ -24,12 +25,13 @@ export function renderTour(ctx) {
   const count = tour.lessons.length;
   const p = tour.progress();
   const done = tour.done[lesson.id];
+  const changed = ctx.renderedLessonId !== lesson.id;
   $("#tb-prog").textContent = `${p.total - p.open}/${p.total}`;
   $("#tb-title").textContent = `${String(lesson.chapter + 1).padStart(2, "0")} · ${tour.chapters[lesson.chapter] || ""}`;
-  $("#tour-head").innerHTML = `
-    <div class="eyebrow"><span>MITMACH-TOUR ${String(index + 1).padStart(3, "0")} / ${count}</span><span class="sp"></span><span>${done ? (done === "confirmed" ? "✓ bestätigt" : "✓ geprüft") : (tour.skipped.has(lesson.id) ? "übersprungen" : "offen")}</span></div>
+  updateHtml($("#tour-head"), `
+    <div class="eyebrow"><span>MITMACH-TOUR ${String(index + 1).padStart(3, "0")} / ${count}</span><span class="sp"></span><span>${done ? (done === "confirmed" ? "✓ selbst bestätigt" : "✓ Modell geprüft") : (tour.skipped.has(lesson.id) ? "übersprungen" : "offen")}</span></div>
     <div class="chap">${String(lesson.chapter + 1).padStart(2, "0")}  ${esc(tour.chapters[lesson.chapter] || "")}</div>
-    <h2>${esc(lesson.title)}</h2>`;
+    <h2>${esc(lesson.title)}</h2>`);
   const nohelp = Boolean(lesson.nohelp);
   const steps = nohelp ? [] : phoneSteps(lesson);
   const fb = tour.feedback || "";
@@ -44,14 +46,15 @@ export function renderTour(ctx) {
   if (lesson.chapter === 8) buttons.push(["restore", "Fehler zurück", true]);
   if (lesson.id === "flowlens" || lesson.chapter === 24) buttons.push(["flowlens", "FlowLens", true]);
   if (lesson.prompt) buttons.push(["prompt", "Codex-Aufgabe kopieren", true]);
+  if (lesson.chapter >= 25 && lesson.chapter !== 35) buttons.unshift(["json", "JSON bearbeiten", true]);
   const target = `ARBEITSPLATZ  ${lesson.target}\nCODESEARCH  ${MODE_LABEL[lesson.mode] || String(lesson.mode).toUpperCase()}`;
   // Knoepfe, die der Lektionstext nennt, direkt unter JETZT DU
   const mentioned = [["Arbeitsplatz", "workspace"], ["Lab-Parameter", "labparams"], ["CS-Parameter", "csparams"], ["Codex-Aufgabe", "prompt"],
     ["Fehler setzen", "error"], ["Fehler zurück", "restore"], ["„FlowLens“", "flowlens"], ["Tabs vergleichen", "compare"], ["Kapitel", "chapters"]]
     .filter(([word, key]) => !nohelp && lesson.action.includes(word) && buttons.some(([k]) => k === key))
     .map(([, key]) => buttons.find(([k]) => k === key));
-  $("#tour-head").insertAdjacentHTML("afterbegin", `<button class="mini-t" data-tour="mini" title="Karte klein / groß">${ctx.tourMini ? "▴" : "▾"}</button>`);
-  $("#tour-body").innerHTML = `
+  updateHtml($("#tour-body"), `
+    ${lesson.before ? `<div class="tblk muted"><div class="l">VORHER</div><p>${esc(lesson.before)}</p></div>` : ""}
     <div class="tblk now"><div class="l">JETZT DU</div><p>${esc(lesson.action)}</p></div>
     ${mentioned.length ? `<div class="tblk quickbtns">${mentioned.map(([key, label]) => `<button data-tour="${key}">${esc(label)}</button>`).join("")}</div>` : ""}
     ${steps.length ? `<div class="tblk phone"><div class="l">AM HANDY</div><ul>${steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ul></div>` : ""}
@@ -63,13 +66,21 @@ export function renderTour(ctx) {
     <div class="tblk"><div class="l">HIER GLÄNZT ES</div><p>${esc(lesson.why || "")}</p></div>
     <div class="tblk muted"><div class="l">DAFÜR REICHT ES NICHT</div><p>${esc(lesson.limit || "")}\nNächster Schritt: ${esc(lesson.next_step || "")}</p></div>
     <div class="tblk muted"><div class="l">ZIEL</div><p>${esc(target)}</p></div>
+    ${lessonEvidence(lesson)}
+    ${transferCard(lesson)}
     ${tour.hint ? `<div class="tblk"><div class="l">${nohelp ? "LÖSUNG" : "HINWEIS"}</div><p>${esc(lesson.hint || "")}</p></div>` : ""}
-    <div class="tblk muted"><div class="l">AGENDA – BEGRIFFE &amp; METHODEN</div><p>${esc(lesson.glossary || "")}</p></div>`;
+    <div class="tblk muted"><div class="l">AGENDA – BEGRIFFE &amp; METHODEN</div><p>${esc(lesson.glossary || "")}</p></div>`, changed);
   const nextLocked = !done;
-  $("#tour-actions").innerHTML = `
+  updateHtml($("#tour-actions"), `
     <button data-tour="back">‹ Zurück</button>
     ${lesson.observed ? `<button class="seen ${tour.observed ? "done" : ""}" data-tour="seen">${tour.observed ? "✓ Gesehen" : "Gesehen"}</button>` : `<button data-tour="hint">${nohelp ? "Lösung" : "Hinweis"}</button>`}
     <button class="check" data-tour="check">Prüfen</button>
-    <button class="next ${nextLocked ? "locked" : ""}" data-tour="next">${index < count - 1 ? "Weiter ›" : "Am Ende"}</button>`;
+    <button class="next ${nextLocked ? "locked" : ""}" data-tour="next">${index < count - 1 ? "Weiter ›" : "Am Ende"}</button>`);
+  ctx.renderedLessonId = lesson.id;
+  if (ctx.showFeedback) {
+    // Nur nach ausdrücklichem Prüfen zur Rückmeldung springen, nie beim Lesen.
+    $("#tour-body .feedback")?.scrollIntoView({ block: "nearest" });
+    ctx.showFeedback = false;
+  }
   void ui;
 }

@@ -10,7 +10,8 @@ import json
 import re
 from pathlib import Path
 
-SRC = Path(__file__).resolve().parents[1] / "source" / "CodeSearchExt.py"
+from source_root import SOURCE
+SRC = SOURCE / "CodeSearchExt.py"
 
 WANTED = (
     'TAB_LABELS', 'GROUP_ORDER', 'GROUP_LABELS', 'GROUP_TITLES', 'GROUP_OF_MODE', 'GROUP_HELP', 'WINDOW_HELP',

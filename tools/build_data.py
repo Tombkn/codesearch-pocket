@@ -10,6 +10,7 @@ Ergebnis in data/: course.json, net.json, code.json, ui.json, features.json.
 from __future__ import annotations
 
 import ast
+import importlib.util
 import json
 import re
 import sys
@@ -19,7 +20,7 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
-SRC = ROOT / "source"
+from source_root import SOURCE as SRC, LOCK
 DATA = ROOT / "data"
 sys.path.insert(0, str(HERE))
 
@@ -229,6 +230,9 @@ def ast_extras(text: str) -> dict:
 
 def load_code(net: dict) -> dict:
     ns, M = codemodel.load()
+    spec = importlib.util.spec_from_file_location("pocket_state_core", SRC / "cs_core.py")
+    state_core = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(state_core)
     result = {}
     for entry in net["ops"]:
         if not is_python(entry):
@@ -274,6 +278,13 @@ def load_code(net: dict) -> dict:
                     for a in raw.get("accesses", [])]
         result[entry["path"]] = {"classes": classes, "functions": functions, "sites": sites, "accesses": accesses,
                                  "ast": ast_extras(text)}
+        # Der State-Atlas hat eine eigene Analyse für Mutation, Storage und Aliase.
+        # CodeModel-Fundstellen allein dürfen diese Informationen nicht ersetzen.
+        sources = {dat.path: text}
+        owner_path = PREFIX + ("/" + entry["parent"] if entry["parent"] else "")
+        state_facts = state_core.analyze_sources(sources, {dat.path: owner_path})
+        state_facts["revision"] = state_core.revision_for(sources)
+        result[entry["path"]]["state_atlas"] = state_facts
     return result
 
 
@@ -426,10 +437,11 @@ def build_edges(net: dict, code_refs: dict) -> list[dict]:
 
 def load_course() -> dict:
     src = json.loads((SRC / "lessons.json").read_text(encoding="utf-8"))
-    extra_path = HERE / "abschluss.json"
     chapters = list(src["chapters"])
     lessons = list(src["lessons"])
-    if extra_path.exists():
+    for extra_path in (HERE / "abschluss.json", HERE / "parity_lessons.json"):
+        if not extra_path.exists():
+            continue
         extra = json.loads(extra_path.read_text(encoding="utf-8"))
         offset = len(chapters)
         chapters.extend(extra["chapters"])
@@ -450,8 +462,8 @@ def load_course() -> dict:
             else:
                 target[key] = value
         target.setdefault("patched", []).append(patch["why"])
-    return {"version": src.get("version", 2), "updated": "2026-10-23",
-            "source": "codesearch_lab/merged/artifacts/lessons.json (eingefroren, siehe source/FROZEN.sha256)",
+    return {"version": src.get("version", 2), "updated": LOCK["checked"],
+            "source": {"repo": LOCK["repo"], "commit": LOCK["commit"], "version": LOCK["version"], "lessons": LOCK["lesson_count"]},
             "chapters": chapters, "lessons": lessons}
 
 

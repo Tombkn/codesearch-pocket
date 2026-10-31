@@ -3,7 +3,7 @@
 
 import { abs, rel, baseName, parentOf, pyStr, fmtNum, uid, clone } from "./util.js";
 import { buildSearch, buildReadOrder } from "./views/search.js";
-import { buildUses, buildUsedBy, buildFlow, flowStory, opForm, cookText } from "./views/netviews.js";
+import { buildUses, buildUsedBy, buildSymbolRefs, buildFlow, flowStory, opForm, cookText } from "./views/netviews.js";
 import {
   buildStructure, buildLandkarte, buildImpact, buildTriggers, buildCallPath, buildRoute, buildOverview, buildSystem,
   reviewTable, landkarteText, symbolDetail, addressOfSymbol, entryChain, codeTarget, entriesFor, routeFor,
@@ -13,6 +13,8 @@ import {
   buildErrors, errorReport, buildGuide, buildInvestigation, stateAtlas,
 } from "./views/miscviews.js";
 import { headers, groupsOf, countRows } from "./views/common.js";
+import { collectEvidence, parseProtocol, answerRequest, checkExplanation, previewChange, makeSample } from "./investigation.js";
+import { Lab } from "./lab.js";
 
 export const TAB_ORDER = ["search", "trace", "refs", "impact", "errors", "chain", "table", "map", "entries", "tour", "record", "check"];
 const CODE_MODES = new Set(["map", "entries", "tour", "record", "check"]);
@@ -34,6 +36,8 @@ export class CodeSearch {
     this.cs = { ...CS_DEFAULTS };
     this.parDefs = Object.fromEntries((ui.CS_PARS || []).map((p) => [p.name, p]));
     this.clipboard = "";
+    this.clipboardSerial = 0;
+    this.clipboardOrigin = "";
     this.state = this._freshState();
     this.lab.tracer = this._makeTracer();
     this.listeners = new Set();
@@ -54,7 +58,7 @@ export class CodeSearch {
       learning: false, collapsedBlocks: new Set(), savedMaps: [], changeFeed: [], expandedStates: new Set(),
       codeView: { path: "", focus: "", definition: false, back: [], forward: [] }, chainReader: { index: -1, reader: false },
       floats: [], history: [], future: [], status: "", lastSnapshot: "", opAddress: "all", help: null, dialog: null, menu: null,
-      inv: { cases: [], visuals: [], request: null, comparison: null, explanation: null, preview: null, repro: null, sample: "" },
+      inv: { cases: [], visuals: [], request: null, comparison: null, explanation: null, preview: null, repro: null, sample: "", watching: false, watchTarget: "", watchHistory: [], watchView: false, error: "" },
       flowlens: { open: false, target: "", story: true, colors: false, hidden: true, selected: "" },
       zoom: 1, look: "classic", window: "normal", editor: null, viewer: null, intent: "", context: "selection", fieldDraft: "",
     };
@@ -217,7 +221,7 @@ export class CodeSearch {
     switch (s.mode) {
       case "search": return buildSearch(this);
       case "trace": return buildUses(this, t);
-      case "refs": return buildUsedBy(this, t);
+      case "refs": return s.view === "symbolrefs" ? buildSymbolRefs(this, s.symbolRefs.dat, s.symbolRefs.name) : buildUsedBy(this, t);
       case "chain": return buildFlow(this, t);
       case "map":
         if (s.view === "landkarte") return buildLandkarte(this, this.codeTargetPath());
@@ -296,6 +300,11 @@ export class CodeSearch {
     if (!h) return;
     s.selected = index;
     if (h.kind === "button") return this.runAction(h.action_key, h);
+    if (h.evidence?.length) {
+      const site = h.evidence.find((e) => e.source && e.line);
+      if (site && this.net.op(rel(site.source))) { this._showCode(rel(site.source), site.line, site.method || ""); this.jumpTo({ path: site.source, line: site.line }); }
+      return this.emit();
+    }
     if (h.kind === "tourbranch") {
       if (s.tourClosed.has(h.branch_id)) s.tourClosed.delete(h.branch_id); else s.tourClosed.add(h.branch_id);
       return this.rebuild();
@@ -508,11 +517,23 @@ export class CodeSearch {
     s.fieldDraft = "";
     const lab = this.lab.stateLab;
     const inv = s.inv;
-    const done = (msg) => { s.status = msg; this.rebuild(); return { ok: true }; };
+    inv.error = "";
+    const done = (msg, ok = true) => { s.status = msg; if (!ok) inv.error = msg; this.rebuild(); return { ok }; };
+    const target = (value = arg) => {
+      if (!value) return s.focus;
+      const path = rel(value.replace(/^op\(['"]|['"]\)$/g, ""));
+      if (this.net.op(path)) return path;
+      const matches = [...this.net.ops.keys()].filter((p) => baseName(p) === value);
+      if (matches.length === 1) return matches[0];
+      throw new Error(matches.length > 1 ? `Ziel mehrdeutig: ${value}; vollständigen Pfad verwenden` : `Ziel nicht vorhanden: ${value}`);
+    };
+    const openTarget = (mode) => { const path = target(); this.OpenAt(mode, { target: path }); return done(`${mode.toUpperCase()} · ${abs(path)}`); };
+    const packet = () => { const p = collectEvidence(this, stateAtlas(this)); inv.packet = p; return p; };
+    try {
     switch ((head || "").toLowerCase()) {
       case "hilfe": s.view = "guide"; return done("Funktionsübersicht");
       case "landkarte":
-        if (arg === "kopieren") { this.copy(landkarteText(this, this.codeTargetPath())); return done("LANDKARTE kopiert"); }
+        if (arg === "kopieren") { this.copy(landkarteText(this, this.codeTargetPath())); this.clipboardOrigin = "landkarte"; return done("LANDKARTE kopiert"); }
         s.mode = "map"; s.view = "landkarte"; return done("LANDKARTE");
       case "snapshot": return this.saveMap();
       case "story": this.copy(flowStory(this, s.focus)); return done("Story der Strecke kopiert");
@@ -522,13 +543,15 @@ export class CodeSearch {
       case "review": this.copy(reviewTable(this, this.codeTargetPath())); return done("REVIEW-Tabelle kopiert");
       case "system": s.mode = "map"; s.view = "system"; return done("SYSTEM");
       case "lernen": s.learning = arg !== "aus"; return done(`Lernmodus ${s.learning ? "an" : "aus"}`);
-      case "warum": s.mode = "record"; return this.openWhy();
+      case "warum": case "why": s.mode = "record"; return this.openWhy();
+      case "live": this.SetMode("record"); return done("RECORD");
+      case "tour": this.SetMode("tour"); return done("CALL PATH");
       case "ziel":
         if (!arg) { s.dialog = { title: "ZIEL", lines: [`Analyse-Ziel: ${abs(this.codeTargetPath())}`, this.cs.Analysistarget ? "gepinnt" : "folgt dem markierten COMP"] }; return done("Ziel"); }
         if (arg === "aus") { this.cs.Analysistarget = ""; return done("Ziel folgt wieder dem markierten COMP"); }
         if (this.net.op(rel(arg))) { this.cs.Analysistarget = abs(rel(arg)); return done(`Ziel gepinnt: ${abs(rel(arg))}`); }
         return done(`>ziel: ${arg} gibt es nicht`);
-      case "route": {
+      case "route": case "aufrufer": case "weg": {
         const h = this.selectedHit;
         if (arg.startsWith(".")) {
           const name = arg.slice(1);
@@ -536,25 +559,51 @@ export class CodeSearch {
           if (ext && this.net.member(ext.dat, name)) return this.openRoute(ext.dat, name);
         }
         if (["ganz", "schritt", "kompakt"].includes(arg)) { s.route.mode = arg; return done(`ROUTE ${arg}`); }
+        if (arg === "aus") { s.route.thread = ""; return done("ROUTE-Faden ausgeblendet"); }
+        if (arg.startsWith("faden ")) { s.route.thread = arg.slice(6).trim(); return done(`ROUTE-Faden: ${s.route.thread}`); }
+        if (arg === "aufnehmen") return this.runAction("RECORDROUTE");
         if (h) return this.routeFromSelection();
         return done("ROUTE braucht eine markierte Methode");
       }
-      case "impact": return this.impact();
-      case "refs": s.mode = "refs"; return done("USED BY");
-      case "karte": s.mode = "map"; return done("STRUCTURE");
-      case "prüfen": case "pruefen": s.mode = "check"; return done("AUDIT");
+      case "impact": if (arg) return openTarget("refs"); else return this.impact();
+      case "refs": {
+        if (arg.startsWith(".")) {
+          const ext = this.net.extClass(this.codeTargetPath());
+          const name = arg.slice(1);
+          if (!ext || !(this.net.member(ext.dat, name) || ext.model.accesses.some((a) => a.name === name))) return done(`Symbol ${arg} nicht gefunden`, false);
+          s.symbolRefs = { dat: ext.dat, name }; s.mode = "refs"; s.view = "symbolrefs"; return done(`Symbol-Referenzen · ${arg}`);
+        }
+        return openTarget("refs");
+      }
+      case "karte": return openTarget("map");
+      case "prüfen": case "pruefen": return openTarget("check");
       case "frage": this.copy(auditQuestion(this, this.selectedHit, this.codeTargetPath())); return done("Frage-Paket kopiert");
       case "ursache": return this.cause();
       case "absicht": s.intent = arg; return done(`Absicht notiert: ${arg}`);
       // StateLab-Untersuchung
-      case "states": s.mode = "map"; s.view = "states"; return done("State-Atlas");
+      case "states": {
+        s.mode = "map"; s.view = "states"; inv.watchView = false;
+        if (arg === "beobachten") {
+          this.stopStateWatch(); inv.watchTarget = this.codeTargetPath(); inv.watchHistory = []; inv.watching = true;
+          this.sampleStates();
+          this._stateWatchTimer = setInterval(() => { this.sampleStates(); this.rebuild(); }, 1000);
+          this._stateWatchTimer.unref?.();
+          return done("Pocket-Beobachtung läuft: 1.000 ms · maximal 30 Stichproben · >states stoppen");
+        }
+        if (arg === "stoppen") { this.stopStateWatch(); return done(`Pocket-Beobachtung gestoppt · ${inv.watchHistory.length} Stichproben`); }
+        if (arg === "verlauf") { inv.watchView = true; return done("Pocket-Verlauf: Änderungen zwischen Stichproben; kurze Zwischenzustände können fehlen"); }
+        if (arg) return done(">states [beobachten | stoppen | verlauf]", false);
+        return done("State-Atlas · begrenzte Pocket-Werte");
+      }
       case "untersuchung":
         s.mode = "map"; s.view = "untersuchung";
-        if (arg === "kopieren") this.copy(JSON.stringify({ schema: "codesearch.evidence.v1", id: uid("ev"), states: stateAtlas(this) }, null, 2), "evidence");
+        if (arg === "kopieren") this.copy(JSON.stringify(packet(), null, 2), "evidence");
         return done("Untersuchung");
       case "fall": {
         const id = uid("case");
-        inv.cases.push({ id, label: arg || `fall${inv.cases.length + 1}`, lab: lab.Observe() });
+        if (this.codeTargetPath() !== "StateLab") return done("Pocket-Fallvergleich: nur StateLab-Werte; andere Ziele in TD untersuchen", false);
+        inv.cases.push({ id, label: arg || `fall${inv.cases.length + 1}`, lab: clone(lab.Observe()) });
+        if (inv.cases.length > 12) inv.cases.shift();
         inv.caseId = id;
         s.mode = "map"; s.view = "untersuchung";
         return done(`Fall ${arg || ""} erfasst`);
@@ -562,6 +611,7 @@ export class CodeSearch {
       case "vergleich": {
         const a = inv.cases[inv.cases.length - 2];
         const b = inv.cases[inv.cases.length - 1];
+        if (!a || !b) { inv.comparison = null; return done("Vergleich braucht zwei Fälle (>fall …)", false); }
         const rows = [];
         if (a && b) for (const k of Object.keys(b.lab)) if (JSON.stringify(a.lab[k]) !== JSON.stringify(b.lab[k])) rows.push({ key: k, a: a.lab[k], b: b.lab[k] });
         inv.comparison = { id: uid("cmp"), rows, changed: rows.length };
@@ -569,55 +619,79 @@ export class CodeSearch {
         return done(a && b ? `${rows.length} geänderte Werte` : "Vergleich braucht zwei Fälle (>fall …)");
       }
       case "beispiel": {
-        if (arg === "anfrage") {
-          this.copy(JSON.stringify({ schema: "codesearch.request.v1", id: uid("req"), questions: [{ kind: "overview" }, { kind: "writers", state_id: `${abs("StateLab")}|attribute|StateLabExt._count` }] }, null, 2), "anfrage");
-        } else if (arg === "antwort") {
-          this.copy(JSON.stringify({ schema: "codesearch.explanation.v1", claims: [{ id: "c1", text: "Fire schreibt _count", kind: "writes", symbol: "Fire" }, { id: "c2", text: "Ein nicht erfasster Call", kind: "called", symbol: "GhostCall" }] }, null, 2), "antwort");
-        } else if (arg === "vorschau") {
-          this.copy(JSON.stringify({ schema: "codesearch.preview.v1", changes: { "StateLabExt.py": "def Fire(self):\n    self._count += 1\n    self._also += 1\n" } }, null, 2), "vorschau");
-        } else return done(">beispiel anfrage | antwort | vorschau");
+        this.copy(JSON.stringify(makeSample(packet(), arg), null, 2), arg);
         return done(`Beispiel ${arg} kopiert`);
       }
       case "nachfrage": {
-        if (!this.clipboard.includes("codesearch.request.v1")) return done("Zwischenablage enthält keine Anfrage (>beispiel anfrage)");
-        inv.request = { id: uid("ans"), status: "answered", answers: [{ kind: "overview", text: "StateLab · 14 erfasste States · nur gelesen" }, { kind: "writers", text: "_count: Fire (Z.108) und _reset_runtime (Z.205) schreiben" }] };
+        inv.request = null;
+        inv.request = answerRequest(packet(), parseProtocol(this.clipboard));
         s.mode = "map"; s.view = "request";
-        return done("Nachfrage beantwortet");
+        return done(inv.request.status === "stale" ? "stale: Quellenrevision passt nicht; keine aktuellen Antworten" : "Nachfrage aus dem begrenzten Pocket-Paket beantwortet");
       }
       case "antwort": {
-        if (!this.clipboard.includes("codesearch.explanation.v1")) return done("Zwischenablage enthält keine Antwort (>beispiel antwort)");
-        inv.explanation = { id: uid("exp"), claims: [{ id: "c1", text: "Fire schreibt _count", status: "supported" }, { id: "c2", text: "GhostCall", status: "unknown" }] };
+        inv.explanation = null;
+        inv.explanation = checkExplanation(packet(), parseProtocol(this.clipboard));
         s.mode = "map"; s.view = "explanation";
         return done("Aussagen geprüft");
       }
       case "vorschau": {
-        if (!this.clipboard.includes("codesearch.preview.v1")) return done("Zwischenablage enthält keinen Vorschlag (>beispiel vorschau)");
-        inv.preview = { id: uid("prev"), items: [{ name: "self._also", text: "NEU: Fire schreibt zusätzlich self._also (Z.3 im Vorschlag)" }, { name: "self._count", text: "bleibt: Fire schreibt self._count" }], sourceUnchanged: true };
+        inv.preview = null;
+        inv.preview = previewChange(packet(), parseProtocol(this.clipboard, 3500000));
         s.mode = "map"; s.view = "preview";
-        return done("Vorschau berechnet – StateLabExt unverändert");
+        return done(`Pocket-Vorschau: ${inv.preview.status} · ${inv.preview.violations.length} Regelverletzungen · Quelle unverändert · keine Runtime-Prüfung`);
       }
       case "bildfall": {
+        if (this.codeTargetPath() !== "StateLab") return done("Pocket-Bildfall ist auf StateLab-Farbwerte begrenzt; echte TOP-Aufnahme in TD", false);
         inv.visuals.push({ id: uid("img"), count: lab.count, red: Math.min(1, lab.count * 0.25), blue: lab.gainEffective });
+        if (inv.visuals.length > 12) inv.visuals.shift();
         s.mode = "map"; s.view = "visual";
-        return done("Bildfall erfasst");
+        return done("Pocket-Bildfall: simulierte Farbwerte erfasst; kein TOP-Pixelbild gespeichert");
       }
       case "minimalfall": {
         if (arg === "prüfen" || arg === "pruefen") {
-          if (!inv.repro) inv.repro = { path: ".codesearch/investigations/ReproCandidate", verified: false };
-          inv.repro.verified = Boolean(lab.pars.Doublefire);
-          return done(inv.repro.verified ? "Minimalfall geprüft: die Kopie zählt doppelt (Fehler reproduziert)" : "Minimalfall: Fehler in der Kopie nicht reproduziert");
+          if (!inv.repro?.model) return done("Keine eigene Pocket-StateLab-Kopie vorhanden. Zuerst >minimalfall am StateLab", false);
+          const copy = inv.repro.model;
+          copy.RuntimeReset(); copy.Fire();
+          inv.repro.observed = clone(copy.Observe());
+          inv.repro.verified = inv.repro.observed.last_fire_increment === 2 && inv.repro.observed.count === 2;
+          return done(inv.repro.verified ? "Pocket-Kopie: ein Fire erhöht 0 → 2; Doppelzählfehler im isolierten JS-Modell reproduziert. Kein TD-Lauf." : "Pocket-Kopie: Doppelzählfehler beim einen Fire nicht reproduziert. Kein allgemeiner Fehlerfrei-Nachweis.");
         }
-        inv.repro = { path: `.codesearch/investigations/ReproCandidate-${uid("r")}`, verified: false };
-        return done(`Minimalfall angelegt: ${inv.repro.path}`);
+        if (arg) return done(">minimalfall [prüfen]", false);
+        if (this.codeTargetPath() !== "StateLab") return done("Pocket-Minimalfall ist nur für StateLab ausführbar; generische Quellenkopie in TD erstellen", false);
+        const model = new Lab(this.net).stateLab;
+        model.pars = clone(lab.pars);
+        inv.repro = { path: `pocket-memory:StateLab-${uid("r")}`, model, executable: true, verified: false, origin: "pocket-simulation" };
+        return done("Isolierte Pocket-StateLab-Kopie im Arbeitsspeicher angelegt; noch kein Prüflauf, keine TD-COMP-Kopie");
       }
       default:
-        return done(`unbekannter Befehl >${head} – >hilfe zeigt alle`);
+        return done(`unbekannter Befehl >${head} – >hilfe zeigt alle`, false);
     }
+    } catch (error) { return done(`Nicht übernommen: ${error.message}`, false); }
+  }
+
+  sampleStates() {
+    const inv = this.state.inv;
+    if (!inv.watching) return;
+    const packet = collectEvidence(this, stateAtlas(this, inv.watchTarget), inv.watchTarget);
+    inv.watchHistory.push(packet);
+    if (inv.watchHistory.length >= 30) {
+      this.stopStateWatch();
+      this.state.status = "Pocket-Beobachtung nach 30 Stichproben automatisch beendet · >states verlauf";
+    }
+  }
+
+  stopStateWatch() {
+    if (this._stateWatchTimer) clearInterval(this._stateWatchTimer);
+    this._stateWatchTimer = null;
+    this.state.inv.watching = false;
   }
 
   // ------------------------------------------------------------------ Kopieren
   copy(text, kind = "") {
     this.clipboard = String(text);
+    // Gleicher Text kann erneut kopiert werden; Inhalt allein beweist keinen neuen Handgriff.
+    this.clipboardSerial += 1;
+    this.clipboardOrigin = "";
     if (kind) this.state.inv.sample = kind;
     this.state.status = `kopiert: ${String(text).split("\n")[0].slice(0, 80)}`;
   }
@@ -749,6 +823,7 @@ export class CodeSearch {
   // ------------------------------------------------------------------ RECORD
   recordStart() {
     const rec = this.state.record;
+    rec.target = this.codeTargetPath();
     rec.recording = true;
     rec.records = [];
     rec.chainIndex = 0;
@@ -1199,6 +1274,7 @@ export class CodeSearch {
     const net = this.net;
     const path = rel(h.path);
     const blocks = [];
+    if (h.evidence) return [{ title: "BELEG", rows: [["GRENZE", h.reason], ...h.evidence.map((e) => [e.source || "RECORD", `Z.${e.line || "?"} · ${e.method || e.symbol || e.text || ""}`])] }];
     if (["method", "symbol", "state", "self", "tourstep", "impact", "parstate"].includes(h.kind) && h.ctx && net.code[path]) {
       blocks.push(...symbolDetail(this, path, h.ctx));
       if (h.kind === "parstate") {

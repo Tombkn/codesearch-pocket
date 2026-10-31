@@ -1,14 +1,14 @@
 {
- "version": "9c1dc1db1d",
- "total": 2490255,
+ "version": "1dcb79df2b",
+ "total": 2740192,
  "files": [
   {
    "path": "./",
-   "size": 3594
+   "size": 3844
   },
   {
    "path": "index.html",
-   "size": 3594
+   "size": 3844
   },
   {
    "path": "manifest.json",
@@ -36,11 +36,11 @@
   },
   {
    "path": "css/app.css",
-   "size": 33469
+   "size": 35416
   },
   {
    "path": "js/app.js",
-   "size": 29684
+   "size": 31240
   },
   {
    "path": "js/core/boot.js",
@@ -48,15 +48,23 @@
   },
   {
    "path": "js/core/cs.js",
-   "size": 60222
+   "size": 64562
   },
   {
    "path": "js/core/gestures.js",
-   "size": 18889
+   "size": 19045
+  },
+  {
+   "path": "js/core/investigation.js",
+   "size": 21625
   },
   {
    "path": "js/core/lab.js",
    "size": 18793
+  },
+  {
+   "path": "js/core/learning.js",
+   "size": 51935
   },
   {
    "path": "js/core/net.js",
@@ -68,7 +76,7 @@
   },
   {
    "path": "js/core/tour.js",
-   "size": 16565
+   "size": 18032
   },
   {
    "path": "js/core/util.js",
@@ -84,11 +92,11 @@
   },
   {
    "path": "js/core/views/miscviews.js",
-   "size": 24330
+   "size": 25898
   },
   {
    "path": "js/core/views/netviews.js",
-   "size": 20216
+   "size": 19830
   },
   {
    "path": "js/core/views/search.js",
@@ -100,11 +108,15 @@
   },
   {
    "path": "js/ui/dom.js",
-   "size": 4149
+   "size": 5314
   },
   {
    "path": "js/ui/layers.js",
-   "size": 40470
+   "size": 41601
+  },
+  {
+   "path": "js/ui/learningview.js",
+   "size": 4485
   },
   {
    "path": "js/ui/offline.js",
@@ -112,11 +124,11 @@
   },
   {
    "path": "js/ui/tourcard.js",
-   "size": 6457
+   "size": 6978
   },
   {
    "path": "data/course.json",
-   "size": 713319
+   "size": 733212
   },
   {
    "path": "data/net.json",
@@ -124,15 +136,15 @@
   },
   {
    "path": "data/code.json",
-   "size": 84979
+   "size": 221924
   },
   {
    "path": "data/ui.json",
-   "size": 107888
+   "size": 107950
   },
   {
    "path": "data/features.json",
-   "size": 57320
+   "size": 58160
   },
   {
    "path": "img/05_flow.webp",
@@ -180,11 +192,11 @@
   },
   {
    "path": "offline.json",
-   "size": 2742
+   "size": 2929
   }
  ],
  "single": {
   "path": "CodeSearch-Pocket-offline.html",
-  "size": 2835228
+  "size": 3086285
  }
 }

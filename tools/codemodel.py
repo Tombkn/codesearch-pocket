@@ -7,7 +7,8 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-SRC = Path(__file__).resolve().parents[1] / "source" / "CodeModelExt.py"
+from source_root import SOURCE
+SRC = SOURCE / "CodeModelExt.py"
 
 MODULE_FUNCS = (
     '_snippet', '_top_level', '_analyze_source', '_scan_class', '_scan_scope', '_first_doc_line', '_is_property',

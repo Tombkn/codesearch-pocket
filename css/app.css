@@ -6,7 +6,7 @@
   --chip: #30333a; --code: #17181b; --tour: #111215; --tour2: #1a1b1f;
   --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", Verdana, sans-serif;
-  --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px); --topbar-h: 48px;
 }
 body[data-look="graphite"] { --bg: #202124; --win: #2a2b2f; --panel: #313237; --panel2: #38393f; --sel: #3d4a57; }
 body[data-look="midnight"] { --bg: #0b1020; --win: #111830; --panel: #17203d; --panel2: #1c2748; --line: #263159; --sel: #23406b; }
@@ -20,11 +20,11 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 body { overflow: hidden; -webkit-tap-highlight-color: transparent; }
 button, input, textarea, select { font: inherit; color: inherit; }
 button { appearance: none; border: 0; background: none; cursor: pointer; }
-.app { height: 100dvh; display: flex; flex-direction: column; padding-top: var(--safe-t); }
+.app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-top: var(--safe-t); }
 
 /* ------------------------------------------------------------------ Kopf */
-.topbar { display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 8px; background: var(--tour); border-bottom: 1px solid var(--line); flex: 0 0 auto; }
-.tb { height: 28px; min-width: 34px; padding: 0 8px; border: 1px solid var(--line2); border-radius: 3px; color: var(--muted); font-size: 11px; letter-spacing: .06em; }
+.topbar { display: flex; align-items: center; gap: 4px; height: var(--topbar-h); padding: 0 6px; background: var(--tour); border-bottom: 1px solid var(--line); flex: 0 0 auto; }
+.tb { height: 44px; min-width: 34px; padding: 0 7px; border: 1px solid var(--line2); border-radius: 3px; color: var(--muted); font-size: 11px; letter-spacing: .06em; }
 .tb.on { color: var(--text); border-color: var(--accent); }
 .tb-title { flex: 1; font-size: 12px; font-weight: 600; letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tb-prog { font-family: var(--mono); font-size: 11px; color: var(--muted); }
@@ -191,21 +191,34 @@ table.grid td.idx { color: var(--dim); cursor: default; }
 .key.sep { border: 0; background: none; color: var(--dim); padding: 8px 2px; }
 
 /* ------------------------------------------------------------------ Tour-Karte */
-.tour { flex: 0 0 auto; background: var(--tour); border-top: 2px solid var(--accent); display: flex; flex-direction: column; height: 27dvh; padding-bottom: var(--safe-b); }
+.tour { flex: 0 0 auto; background: var(--tour); border-top: 2px solid var(--accent); display: flex; flex-direction: column; min-height: 0; padding-bottom: var(--safe-b); }
 .tour-head .mini-t { float: right; margin-left: 8px; padding: 0 8px; border: 1px solid var(--line2); border-radius: 3px; color: var(--muted); font-size: 11px; height: 22px; }
 .tblk.quickbtns { margin-top: 6px; }
 .tblk.quickbtns button { padding: 8px 11px; border: 1px solid var(--accent); color: var(--accent); border-radius: 3px; background: var(--panel); font-size: 12.5px; margin: 0 6px 4px 0; }
-.tour.open { position: fixed; left: 0; right: 0; bottom: 0; height: 80dvh; z-index: 20; box-shadow: 0 -10px 30px rgba(0, 0, 0, .6); }
+.tour.open { position: fixed; left: 0; right: 0; top: calc(var(--topbar-h) + var(--safe-t)); bottom: 0; height: auto; z-index: 20; }
+.reading > .cs, .reading > .keys { visibility: hidden; }
 .tour.mini { height: auto; }
 .tour.mini .tour-body { display: none; }
-.tour-grip { display: flex; justify-content: center; padding: 5px 0 3px; cursor: pointer; flex: 0 0 auto; }
-.tour-grip span { width: 44px; height: 4px; border-radius: 2px; background: var(--line2); }
-.tour-head { padding: 0 10px 4px; cursor: pointer; flex: 0 0 auto; }
+.tour-grip { display: block; width: 100%; min-height: 44px; padding: 10px 16px; text-align: right; color: var(--cyan); font-size: 15px; font-weight: 600; border-bottom: 1px solid var(--line); flex: 0 0 auto; touch-action: manipulation; }
+.tour-head { padding: 8px 16px; flex: 0 0 auto; }
+.tour.mini .tour-head { padding: 3px 10px; }
+.tour.mini .tour-head .chap, .tour.mini .tour-head .eyebrow { display: none; }
+.tour.mini .tour-head h2 { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tour-head .eyebrow { display: flex; gap: 8px; font-size: 9.5px; letter-spacing: .1em; color: var(--dim); font-family: var(--mono); }
 .tour-head .eyebrow .sp { flex: 1; }
 .tour-head .chap { font-size: 10.5px; color: var(--accent); letter-spacing: .05em; margin-top: 1px; }
 .tour-head h2 { margin: 2px 0 0; font-size: 15px; font-weight: 600; line-height: 1.25; }
-.tour-body { overflow-y: auto; padding: 0 10px 8px; flex: 1 1 auto; min-height: 0; -webkit-overflow-scrolling: touch; }
+.tour-body { overflow-y: auto; overflow-x: hidden; padding: 0 16px 24px; flex: 1 1 0; min-height: 0; -webkit-overflow-scrolling: touch; touch-action: pan-y pinch-zoom; overscroll-behavior-y: contain; overflow-wrap: anywhere; scrollbar-gutter: stable; }
+.tour.open .tour-body { font-size: 16px; line-height: 1.6; }
+.tour.open .tblk p, .tour.open .tblk li { font-size: 16px; line-height: 1.6; }
+.tour-body details { border-top: 1px solid var(--line); padding: 12px 0; }
+.tour-body summary { cursor: pointer; min-height: 44px; color: var(--cyan); font-size: 15px; font-weight: 600; }
+.tour-body details p, .tour-body details li { margin: 8px 0; }
+.tour-body a { color: var(--cyan); }
+.tour-body .evidence-note { font-size: 13px; color: var(--muted); }
+.tour-body .transfer-grid { display: grid; gap: 12px; }
+.tour-body .transfer-grid strong { color: var(--accent); }
+.tour-body .transfer-grid p { margin: 4px 0; }
 .tblk { margin: 7px 0 0; }
 .tblk .l { font-size: 9.5px; letter-spacing: .12em; color: var(--accent); font-weight: 700; }
 .tblk p { margin: 2px 0 0; font-size: 13px; line-height: 1.45; white-space: pre-wrap; }
@@ -228,12 +241,18 @@ table.grid td.idx { color: var(--dim); cursor: default; }
 .tbtns button { padding: 7px 9px; border: 1px solid var(--line2); border-radius: 3px; font-size: 11.5px; color: var(--text); background: var(--panel); }
 .tbtns button.special { border-color: var(--accent); color: var(--accent); }
 .tour-actions { display: grid; grid-template-columns: 1fr 1.1fr 1.25fr 1.25fr; gap: 6px; padding: 6px 10px 8px; border-top: 1px solid var(--line); flex: 0 0 auto; }
-.tour-actions button { height: 40px; border: 1px solid var(--line2); border-radius: 4px; font-size: 12.5px; color: var(--text); background: var(--panel); }
+.tour-actions button { min-height: 44px; border: 1px solid var(--line2); border-radius: 4px; font-size: 12.5px; color: var(--text); background: var(--panel); }
 .tour-actions .seen { border-color: var(--cyan); color: var(--cyan); }
 .tour-actions .seen.done { background: #163846; }
 .tour-actions .check { border-color: #3c8a4a; color: #b6e6bd; background: #18301d; }
 .tour-actions .next { border-color: #8a6324; color: #f4cf92; background: #33261a; }
 .tour-actions .next.locked { opacity: .5; }
+.json-button { min-height: 36px; padding: 0 8px; border: 1px solid var(--line2); border-radius: 3px; color: var(--cyan); font-size: 11px; }
+.transfer-start { min-height: 44px; border: 1px solid var(--line2); padding: 8px 12px; color: var(--cyan); }
+.learning-guide { max-width: 820px; margin-inline: auto; font-size: 16px; line-height: 1.6; }
+.learning-guide summary { min-height: 44px; padding-block: 10px; cursor: pointer; color: var(--cyan); }
+.learning-guide a { color: var(--cyan); }
+#json-text { font-size: 16px; min-height: 220px; }
 
 /* ------------------------------------------------------------------ Ebenen */
 .layer { position: fixed; inset: 0; z-index: 30; background: var(--bg); display: none; flex-direction: column; padding-top: var(--safe-t); padding-bottom: var(--safe-b); }
@@ -364,7 +383,13 @@ table.grid td.idx { color: var(--dim); cursor: default; }
   .cs-split { width: 12px; height: auto; cursor: col-resize; }
   .cs-split::after { left: 4px; top: 50%; width: 3px; height: 40px; margin: -20px 0 0; }
   .cs-detail { height: auto !important; width: 40%; }
-  .tour { height: 32dvh; }
+  .tour.open .tour-body, .tour.open .tour-head { width: min(100%, 840px); margin-inline: auto; }
+}
+
+@media (max-height: 500px) {
+  .tour-head .chap, .tour-head .eyebrow { display: none; }
+  .tour.mini .tour-head { display: none; }
+  .tour-grip { min-height: 40px; padding-block: 8px; }
 }
 
 /* ------------------------------------------------------------------ Kompakt am Handy: Kopfzeilen nie quetschen, Liste bekommt den Rest */

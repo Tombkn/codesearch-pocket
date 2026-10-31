@@ -44,14 +44,9 @@ export function buildUses(cs, target) {
   if (!o) return { rows: [info("INFO", "", `${target} gibt es nicht`)] };
   const rows = [];
   const inEdges = net.edgesTo(target);
-  const outEdges = net.edgesFrom(target);
-  const watchers = outEdges.filter((e) => e.kind === "watch");
-  const readers = outEdges.filter((e) => ["wire", "expr", "export", "bind", "oppar"].includes(e.kind) && e.dst);
   const sources = inEdges.filter((e) => e.kind !== "code" && e.src !== null && e.src !== undefined);
   const left = sources.length ? [...new Set(sources.map((e) => baseName(e.src) || net.root.name))].join(" · ") : "—";
-  const right = [...new Set(readers.map((e) => baseName(e.dst)))];
-  watchers.forEach((w) => right.push(`${baseName(w.dst)} (Wächter)`));
-  const flow = hit("flow", abs(target), `${left}  →  ${o.name} (${o.type})  →  ${right.length ? right.join(" · ") : "—"}`, { detail: "ÜBERBLICK", ctx: o.name });
+  const flow = hit("flow", abs(target), `${left}  →  ${o.name} (${o.type})`, { detail: "ÜBERBLICK", ctx: o.name });
   flow.art = "ÜBERBLICK";
   rows.push(flow);
 
@@ -132,22 +127,7 @@ export function buildUses(cs, target) {
   rows.push(section("DIESER OP", "der Op selbst: Typ und Daten, Cook-Zeit, Extension, Kinder, Callbacks-DAT, angedockte DATs", own.length, { num: o.family === "COMP" ? "3" : "2" }));
   rows.push(...own);
 
-  // ZIEL: Waechter und Kabel raus
-  const ziel = [];
-  for (const w of watchers) {
-    const dat = net.op(w.dst);
-    const active = !(dat.pars && dat.pars.active && dat.pars.active.v === false);
-    const h = hit("watcher", abs(w.dst), `${dat.name} beobachtet ${o.name} über ${parQuoted(w)}   →   ruft onValueChange()${active ? "" : "   ·   DAT aus (Par Active)"}`, { detail: parLabel(w), ctx: dat.name });
-    h.kind_note = `${dat.name} (${dat.type}): ändert sich ${o.name}, ruft TD seine eingeschalteten Callbacks.`;
-    ziel.push(h);
-  }
-  for (const e of outEdges.filter((x) => x.kind === "wire")) {
-    const h = hit("wire", abs(e.dst), `OUT   →   ${opLabel(net, e.dst)}   ·   Eingang ${e.index + 1}`, { detail: "OUT" });
-    h.family = net.family(e.dst);
-    ziel.push(h);
-  }
-  rows.push(section("ZIEL", "", ziel.length, { num: o.family === "COMP" ? "4" : "3" }));
-  rows.push(...ziel);
+  // Seit TD-CodeSearch 1.5 gehören Empfänger, Wächter und OUT-Kabel ausschließlich in USED BY.
   return { rows };
 }
 
@@ -155,6 +135,21 @@ export function cookText(o) {
   // Am Handy gibt es keinen Cook: die Zahl steht nur als Form da und ist als simuliert markiert
   const ms = { TOP: "0.05 ms CPU · 0.02 ms GPU", CHOP: "0.01 ms CPU", DAT: "0.00 ms CPU", COMP: "0.09 ms CPU · 0.00 ms GPU" }[o.family];
   return `${ms || "0.00 ms"} (Handy: simuliert)`;
+}
+
+export function buildSymbolRefs(cs, dat, name) {
+  const model = cs.net.dat(dat);
+  const rows = [];
+  for (const site of (model?.accesses || []).filter((s) => s.name === name)) {
+    const h = hit("self", abs(dat), `${site.func} · ${site.how} self.${name} · ${cs.net.lines(dat)[site.line - 1]?.trim() || ""}`, { ctx: name, line: site.line, detail: "STATISCH" });
+    h.art = site.how.toUpperCase(); rows.push(h);
+  }
+  for (const call of cs.net.callersOf(dat, name)) {
+    const h = hit("code", abs(call.from.dat), `${call.from.name} ruft ${name}() · statisch erfasst`, { ctx: call.from.name, line: call.line, detail: "CALL" });
+    h.art = "CALL"; rows.push(h);
+  }
+  if (!rows.length) rows.push(info("INFO", dat, `Keine Referenz auf ${name} im begrenzten Modell; kein Beweis der Nichtbenutzung`));
+  return { rows };
 }
 
 export function opForm(cs, path) {

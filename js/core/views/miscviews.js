@@ -346,27 +346,28 @@ export function buildGuide(cs) {
 }
 
 // ------------------------------------------------------------------------------------------ StateLab-Untersuchung
-export function stateAtlas(cs) {
+export function stateAtlas(cs, target = cs.codeTargetPath()) {
+  if (target !== "StateLab" && !target.startsWith("StateLab/")) return [];
   const s = cs.lab.stateLab;
   const obs = s.Observe();
   const owner = abs("StateLab");
-  const row = (group, kind, name, value, extra = {}) => ({ id: `${owner}|${kind}|${name}`, group, kind, name, value, owner, ...extra });
+  const row = (group, kind, name, value, extra = {}) => ({ id: `${extra.owner || owner}|${kind}|${name}`, group, kind, name, value, owner, ...extra });
   return [
     row("PYTHON-ATTRIBUTE", "attribute", "StateLabExt._count", obs.count, { lifetime: "Instanz · Reinit setzt auf 0", writers: ["Fire", "_reset_runtime"], readers: ["Count", "_publish"], note: "Eigentlicher Counter. Countdisplay zeigt ihn nur an." }),
-    row("PYTHON-ATTRIBUTE", "attribute", "StateLabExt._shared", `[${s.shared.join(", ")}]`, { alias: obs.alias_shared ? "GLEICHES OBJEKT wie _alias" : "eigenes Objekt", writers: ["Mutate", "ReplaceSameValue"] }),
-    row("PYTHON-ATTRIBUTE", "attribute", "StateLabExt._alias", `[${s.alias.join(", ")}]`, { alias: obs.alias_shared ? "GLEICHES OBJEKT wie _shared" : "eigenes Objekt", writers: ["_reset_runtime"] }),
-    row("PYTHON-ATTRIBUTE", "attribute", "StateLabExt._dependent", `[${s.dependent.join(", ")}]`, { note: `Dependency · Leser sehen ${obs.dependency_display}`, writers: ["Mutate", "Notify"] }),
+    row("PYTHON-ATTRIBUTE", "attribute", "StateLabExt._shared", s.shared.slice(), { alias: obs.alias_shared ? "GLEICHES OBJEKT wie _alias" : "eigenes Objekt", writers: ["Mutate", "ReplaceSameValue"] }),
+    row("PYTHON-ATTRIBUTE", "attribute", "StateLabExt._alias", s.alias.slice(), { alias: obs.alias_shared ? "GLEICHES OBJEKT wie _shared" : "eigenes Objekt", writers: ["_reset_runtime"] }),
+    row("PYTHON-ATTRIBUTE", "attribute", "StateLabExt._dependent", s.dependent.slice(), { note: `Dependency · Leser sehen ${obs.dependency_display}`, writers: ["Mutate", "Notify"] }),
     row("PYTHON-ATTRIBUTE", "attribute", "StateLabExt._notifications", obs.notifications, { writers: ["Notify"] }),
     row("PYTHON-ATTRIBUTE", "attribute", "StateLabExt._last_fire_increment", obs.last_fire_increment, { writers: ["Fire"] }),
     row("PROPERTIES", "property", "StateLabExt.Count", obs.count, { readers: ["Count"], note: "Liest self._count. Speichert selbst nichts." }),
     row("STORAGE", "storage", "lesson_value", obs.storage_parent, { origin: obs.storage_origin, note: obs.storage_child != null ? "vom Child überschattet" : "" }),
-    row("STORAGE", "storage", "state_child.lesson_value", obs.storage_child, { owner: `${owner}/state_child`, origin: obs.storage_child != null ? "child" : obs.storage_origin }),
+    row("STORAGE", "storage", "lesson_value", obs.storage_child, { owner: `${owner}/state_child`, origin: obs.storage_child != null ? "child" : obs.storage_origin }),
     row("STORAGE", "storage", "lesson_session", obs.session_current, { lifetime: "Operator · Reinit behält, StorageReset löscht" }),
     row("PARAMETER", "parameter", "Countdisplay", obs.count, { mode: "CONSTANT", note: "Anzeige. Der Speicher ist _count." }),
     row("PARAMETER", "parameter", "Gain", obs.gain_effective, { mode: obs.gain_mode, constant: s.pars.Gain }),
     row("PARAMETER", "parameter", "Doublefire", obs.doublefire, { mode: "CONSTANT" }),
-    row("GRENZEN", "coverage", "Aufnahme", "max. 80 Ops / 400 States · unbekannte Properties bleiben ungelesen", {}),
-  ];
+    row("GRENZEN", "coverage", "Aufnahme", "Pocket: 13 modellierte StateLab-Werte. Nativer Adapter: standardmäßig max. 80 Ops / 400 States. Keine Live-TD-Verbindung.", {}),
+  ].filter((s) => target === "StateLab" || target === "StateLab/StateLabExt" || s.owner === abs(target));
 }
 
 export function buildInvestigation(cs) {
@@ -377,9 +378,18 @@ export function buildInvestigation(cs) {
     const h = hit("investigation", path, `${name}   ·   ${value}`, { detail, ctx: name });
     h.art = art;
     rows.push(h);
+    return h;
   };
-  if (view === "states" || view === "untersuchung") {
+  if (view === "states" && inv.watchView) {
+    rows.push(section("STICHPROBEN", `${inv.watchHistory.length} Aufnahmen · Pocket-Simulation · ${inv.watching ? "läuft" : "gestoppt"}`, inv.watchHistory.length, { num: "1" }));
+    inv.watchHistory.forEach((p, i) => {
+      const previous = inv.watchHistory[i - 1];
+      const changes = previous ? p.states.filter((s) => JSON.stringify(s.value) !== JSON.stringify(previous.states.find((old) => old.id === s.id)?.value)) : [];
+      add("STICHPROBE", String(i + 1), `${p.captured.utc} · ${i ? changes.length + " Änderungen: " + changes.map((s) => s.name).join(", ") : "Ausgangswert"}`, "Zwischenwerte können fehlen", p.scope);
+    });
+  } else if (view === "states" || view === "untersuchung") {
     const atlas = stateAtlas(cs);
+    if (!atlas.length) rows.push(notice("Pocket-State-Atlas: Runtime-Werte nur für StateLab modelliert. Wähle StateLab oder untersuche dieses Ziel am Laptop in TD."));
     let group = "";
     let n = 0;
     for (const a of atlas) {
@@ -400,17 +410,23 @@ export function buildInvestigation(cs) {
   } else if (view === "request") {
     rows.push(section("NACHFRAGE", "Antwort auf die Anfrage aus der Zwischenablage", inv.request ? inv.request.answers.length : 0, { num: "1" }));
     (inv.request ? inv.request.answers : []).forEach((a) => add("ANTWORT", a.kind, a.text));
+    if (inv.request?.status === "stale") rows.push(notice("stale: Anfrage und aktuelle Quellen haben verschiedene Revisionen. Keine Antworten als aktuell ausgegeben."));
   } else if (view === "compare") {
     rows.push(section("VERGLEICH", "die letzten zwei Fälle", inv.comparison ? inv.comparison.rows.length : 0, { num: "1" }));
     (inv.comparison ? inv.comparison.rows : []).forEach((r) => add("Δ", r.key, `${JSON.stringify(r.a)} → ${JSON.stringify(r.b)}`));
   } else if (view === "explanation") {
     rows.push(section("AUSSAGEN", "jede Behauptung gegen Fundstellen geprüft", inv.explanation ? inv.explanation.claims.length : 0, { num: "1" }));
-    (inv.explanation ? inv.explanation.claims : []).forEach((c) => add(c.status === "supported" ? "BELEGT" : "UNKLAR", c.text, c.status, c.status === "supported" ? "Fire Z.108 schreibt self._count" : "kein erfasster Call"));
+    (inv.explanation ? inv.explanation.claims : []).forEach((c) => {
+      const site = c.evidence.find((e) => e.source);
+      const h = add({ supported: "BELEGT", contradicted: "WIDERSPROCHEN", unknown: "UNKLAR", stale: "VERALTET" }[c.status], c.text, c.status, c.reason, site?.source || cs.state.focus);
+      h.evidence = c.evidence; h.reason = c.reason; h.line = site?.line || null;
+    });
   } else if (view === "preview") {
     rows.push(section("VORSCHAU", "was der Vorschlag ändern würde – der DAT bleibt unverändert", inv.preview ? inv.preview.items.length : 0, { num: "1" }));
-    (inv.preview ? inv.preview.items : []).forEach((p) => add("NEU", p.name, p.text));
+    (inv.preview ? inv.preview.items : []).forEach((p) => add(p.status.toUpperCase(), p.name, p.text));
+    if (inv.preview) rows.push(notice(inv.preview.coverage));
   } else if (view === "visual") {
-    rows.push(section("BILDFÄLLE", "out1 des StateLab samt Kontext", inv.visuals.length, { num: "1" }));
+    rows.push(section("BILDFÄLLE", "Pocket: modellierte Farbwerte · kein gespeichertes TOP-Pixelbild", inv.visuals.length, { num: "1" }));
     inv.visuals.forEach((v, i) => add("BILD", `Bildfall ${i + 1}`, `rot ${fmtNum(v.red)} · blau ${fmtNum(v.blue)} · Count ${v.count}`, v.id));
   }
   if (!rows.length) rows.push(notice("leer"));

@@ -1,0 +1,133 @@
+{
+  "repo": "Tombkn/td-codesearch",
+  "commit": "9a3133dc2a7482e6fa46a69ba26a30864ab2b5ed",
+  "version": "1.8.0",
+  "checked": "2026-10-31",
+  "lesson_count": 462,
+  "files": {
+    "CodeSearchExt.py": {
+      "path": "src/CodeSearchExt.py",
+      "sha256": "14e0ee2d0d80c65eef153080929f6e51b024410dce4587cbb2626fb0d044af94"
+    },
+    "CodeModelExt.py": {
+      "path": "src/CodeModelExt.py",
+      "sha256": "2a46383c042a6ea4480e6d99ec4cbb3da66a4e5bc8e63f2f2fca54dc77070fd9"
+    },
+    "CodeSearch.tdn": {
+      "path": "src/tdn/CodeSearch.tdn",
+      "sha256": "3741773636b0c827fcdecd3742624608caf900abcc09cfafbbaf67d0a178ecff"
+    },
+    "CodeSearch_Tutorial.tdn": {
+      "path": "src/tdn/CodeSearch_Tutorial.tdn",
+      "sha256": "849217feca8e9d9c2eb3f88d99860304dd061727952918ee6c0205a5832ffe88"
+    },
+    "TourExt.py": {
+      "path": "src/tutorial/TourExt.py",
+      "sha256": "d38e5eca9099929c017637270516511383ae9290b67baba1f9c038b93d807aa5"
+    },
+    "lessons.json": {
+      "path": "src/tutorial/lessons.json",
+      "sha256": "571c5b1f631db82c2acaeab72915c70c3ad1d5996bcaca056ca2d1470b05f84d"
+    },
+    "marker_catalogue.json": {
+      "path": "src/tutorial/marker_catalogue.json",
+      "sha256": "2c8883531164db4a68584ac9410d5cf7199cf0c3fcf09d3a8ed1aa815e32d9bc"
+    },
+    "group_examples.json": {
+      "path": "src/tutorial/group_examples.json",
+      "sha256": "37bb2e87575c296bd113f94a8711e818c1d82a97ecb88e45becdd4251c4715f3"
+    },
+    "cs_core.py": {
+      "path": "src/stateatlas/cs_core.py",
+      "sha256": "8c6a587ca1347d4a9c9bb57974d77d9dedc14e056a1da26f1fa7fb136d375343"
+    },
+    "cs_state.py": {
+      "path": "src/stateatlas/cs_state.py",
+      "sha256": "ac24e0bc2f24fc3f7f710f9d3e3eeb35e3ccfa33b68c8f441f8b5fcfd84f1ee3"
+    },
+    "cs_workbench.py": {
+      "path": "src/stateatlas/cs_workbench.py",
+      "sha256": "13245e91b606dddc009d2f1ce518c8114855dade405479b31a9217df81fb436c"
+    },
+    "tutorial_adapter.py": {
+      "path": "src/stateatlas/tutorial_adapter.py",
+      "sha256": "eeb7347138f57f5e287259f3ad3ebd813f3da427b3598e0ef708bda8842e00bf"
+    },
+    "tutorial_fixture.py": {
+      "path": "src/stateatlas/tutorial_fixture.py",
+      "sha256": "754c55bec3421f56fdbb027d4c65ec287e95730b127b4c58ed146fda268dc34a"
+    },
+    "tutorial_network.json": {
+      "path": "src/stateatlas/tutorial_network.json",
+      "sha256": "e6911acbcf2adc3c9fa4991179bf509581e6bb691046d068a62a93fc5caba430"
+    },
+    "docs/FEATURES_EINFACH.md": {
+      "path": "docs/state-atlas/FEATURES_EINFACH.md",
+      "sha256": "6ccbea5d62f36d10959745456590573ae0f93731683d1187dfc6f7f3446fc44f"
+    },
+    "docs/FEATURE_01_STATE_ATLAS.md": {
+      "path": "docs/state-atlas/FEATURE_01_STATE_ATLAS.md",
+      "sha256": "27e44bf53d1daa7441533c709f1471dbc1677f1652f7386778acf728ec804d90"
+    },
+    "docs/FEATURE_02_NACHFRAGE.md": {
+      "path": "docs/state-atlas/FEATURE_02_NACHFRAGE.md",
+      "sha256": "8a2dd9fda28ea38bc8d362bc78c28d3c3ed06a9d984180ed1207bb78ecf59cef"
+    },
+    "docs/FEATURE_03_VERGLEICH.md": {
+      "path": "docs/state-atlas/FEATURE_03_VERGLEICH.md",
+      "sha256": "844448a9b5e992ae80ac1d2b3fa27a9ff188b25527ac1e26387bcec8cb735980"
+    },
+    "docs/FEATURE_04_AUSSAGEN.md": {
+      "path": "docs/state-atlas/FEATURE_04_AUSSAGEN.md",
+      "sha256": "562b3305e4955b920ea87cf0c3be09543d7a98308090cfb969d3f1a0e6e7d0c0"
+    },
+    "docs/FEATURE_05_VORSCHAU.md": {
+      "path": "docs/state-atlas/FEATURE_05_VORSCHAU.md",
+      "sha256": "b4a66028b5a518b83099fa4e9dc45b632aaf57bc703f1ec49f9d889d6e868b1e"
+    },
+    "docs/FEATURE_06_BILDFALL.md": {
+      "path": "docs/state-atlas/FEATURE_06_BILDFALL.md",
+      "sha256": "a1b63cd8b6bdb034f79acca6541f57f05870d401844b9ecfb22ae1b6eb5c8355"
+    },
+    "docs/FEATURE_07_REPRO.md": {
+      "path": "docs/state-atlas/FEATURE_07_REPRO.md",
+      "sha256": "ac4a9d9325be8a20f802dd0540a97ea26abf1307e9b547f8c7c73f87f1925b69"
+    },
+    "docs/STATE_ATLAS.md": {
+      "path": "docs/state-atlas/STATE_ATLAS.md",
+      "sha256": "d87068b4983bdf40ed8735cd40535969ad19411311a96d42df5ba7d0de0985ff"
+    },
+    "docs/PROTOCOL.md": {
+      "path": "docs/state-atlas/PROTOCOL.md",
+      "sha256": "3c2c0a97d15f8d2e6caea1eff1e7f4b68ad189276d508d0247eb69afeba77d38"
+    },
+    "upstream_docs/trigger-perspective.md": {
+      "path": "docs/trigger-perspective.md",
+      "sha256": "117908888eddb5c73a0db9588984aadb3879bb59941868b65f699e2be2adbb85"
+    },
+    "upstream_docs/comp-context.md": {
+      "path": "docs/comp-context.md",
+      "sha256": "ab008eed3b1c0eb5e716576291ff099a4b538a38da7d965d3f6330909d6ec26a"
+    },
+    "upstream_docs/data-shortcuts.md": {
+      "path": "docs/data-shortcuts.md",
+      "sha256": "d12100c659611df80460eba3ea6bf7f411f49d4c5c95efe8f26239c335567803"
+    },
+    "upstream_docs/definition-navigation.md": {
+      "path": "docs/definition-navigation.md",
+      "sha256": "d540e4a412b5a82bf8090124ed7fb06d21e49d8c395995538a90d39f014408b2"
+    },
+    "upstream_docs/floating-copies.md": {
+      "path": "docs/floating-copies.md",
+      "sha256": "4c16bb2957051077b9f4e641a68b0cf025fcaa1b1fa5184ae860307e5ed0a5df"
+    },
+    "upstream_docs/flowlens-integration.md": {
+      "path": "docs/flowlens-integration.md",
+      "sha256": "ed60021a840b078ef752f03526be32d9cf596b5eda76a48ba440c1dd11a8e18f"
+    },
+    "upstream_docs/deep-dive/STAERKEN_UND_GRENZEN.md": {
+      "path": "docs/deep-dive/STAERKEN_UND_GRENZEN.md",
+      "sha256": "c3d63ac9409f301fa49321d51f7e4ba62e202e76628aa69684e71219967f8889"
+    }
+  }
+}

@@ -2,6 +2,7 @@
 // Pruefen liest nur den Zustand - es fuehrt die zu lernende Aktion nie selbst aus.
 
 import { abs, rel, pyStr, casefold } from "./util.js";
+import { stateAtlas } from "./views/miscviews.js";
 
 const CODE_MODES = new Set(["map", "entries", "tour", "impact", "record", "check"]);
 const SKIP_KINDS = new Set(["info", "empty", "header", "section", "button", "notice"]);
@@ -83,6 +84,7 @@ export class Tour {
     this.playing = false;
     this.baseline = {};
     this.prepared = -1;
+    this.workplaceSelectionSerial = 0;
   }
 
   lesson(i = this.step) { return this.lessons[i]; }
@@ -106,6 +108,7 @@ export class Tour {
     cs.state.dialog = null;
     cs.state.viewer = null;
     if (cs.state.record.recording && !lesson.keep) cs.recordStop();
+    if (cs.state.inv.watching && !lesson.keep) cs.stopStateWatch();
     if (prep.close_quick) cs.state.quick.open = false;
     if ("quick_filter" in prep) cs.state.quick.filter = prep.quick_filter;
     if (!lesson.keep) {
@@ -127,6 +130,7 @@ export class Tour {
       cs.state.display = { format: prep["display.format"] || "name", base: abs("BranchLab"), details: false, prevFormat: prep["display.format"] || "name" };
     }
     if (lesson.target === "StateLab" && prep["investigation.prepare"]) this.lab.stateLab.Prepare();
+    if (prep["investigation.clear_repro"]) cs.state.inv.repro = null;
     cs.rebuild();
     this.baseline = this.snapshot();
     this.save();
@@ -164,6 +168,8 @@ export class Tour {
       cs.rebuild();
     }
     this.opened = true;
+    // Automatische Vorbereitung (emit=false) ist kein Rücksprung des Nutzers.
+    if (emit) this.workplaceSelectionSerial = cs.state.flowlens.selectionSerial || 0;
     if (emit) cs.emit();
   }
 
@@ -181,6 +187,7 @@ export class Tour {
     const quickHit = s.quick.hits[s.quick.selected] || {};
     const state = {
       opened: this.opened, observed: this.observed, playing: this.playing,
+      "clipboard.copy_serial": cs.clipboardSerial, "clipboard.origin": cs.clipboardOrigin,
       mode: s.mainopen || s.quick.open ? s.mode : s.mode, view: s.view, query: s.query, hits: hits.length,
       search_results: hits.filter((h) => !SKIP_KINDS.has(h.kind)).length,
       hit_text: hits.map((h) => pyStr(h)).join("\n"), selected: pyStr(sel), selected_kind: sel.kind || "",
@@ -240,9 +247,15 @@ export class Tour {
     // tutorial_adapter.snapshot: InvestigationSnapshot + StateLab.Observe + view_state
     const inv = s.inv;
     Object.assign(state, {
-      "investigation.view": s.view, "investigation.state_count": s.view === "states" || s.view === "untersuchung" ? 14 : 0,
+      "investigation.view": s.view, "investigation.state_count": s.view === "states" || s.view === "untersuchung" ? stateAtlas(cs).filter((row) => row.kind !== "coverage").length : 0,
+      "investigation.watch_count": inv.watchHistory.length, "investigation.watching": inv.watching, "investigation.watch_view": inv.watchView,
+      "investigation.error": inv.error, "investigation.request_protocol_status": inv.request?.status || "",
+      "investigation.revision": inv.packet?.revision || "", "investigation.preview_status": inv.preview?.status || "",
+      "investigation.preview_violations": inv.preview?.violations.length || 0,
+      "investigation.claim_status": inv.explanation?.claims.map((c) => c.status).join(" ") || "",
+      "investigation.repro_observed_count": inv.repro?.observed?.count ?? -1,
       "investigation.case_id": inv.caseId || "", "investigation.case_count": inv.cases.length, "investigation.sample": inv.sample,
-      "investigation.request_status": inv.request ? inv.request.status : "", "investigation.request_id": inv.request ? inv.request.id : "",
+      "investigation.request_status": inv.request ? (inv.request.status === "ok" ? "answered" : inv.request.status) : "", "investigation.request_id": inv.request ? inv.request.id : "",
       "investigation.answer_count": inv.request ? inv.request.answers.length : 0,
       "investigation.comparison_id": inv.comparison ? inv.comparison.id : "", "investigation.compare_changed": inv.comparison ? inv.comparison.changed : 0,
       "investigation.explanation_id": inv.explanation ? inv.explanation.id : "", "investigation.claim_count": inv.explanation ? inv.explanation.claims.length : 0,
@@ -264,6 +277,9 @@ export class Tour {
       "cs.ui_scale": s.zoom,
       "flowlens.target": s.flowlens.target,
       "flowlens.colors": s.flowlens.colors,
+      "flowlens.selected": s.flowlens.selected,
+      "flowlens.selection_serial": s.flowlens.selectionSerial || 0,
+      "flowlens.returned_selection": this.workplaceSelectionSerial > 0 && this.workplaceSelectionSerial === s.flowlens.selectionSerial,
     });
     return state;
   }

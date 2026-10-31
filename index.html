@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-180.png">
   <meta name="apple-mobile-web-app-title" content="CodeSearch">
-  <link rel="stylesheet" href="css/app.css?v=9c1dc1db1d">
+  <link rel="stylesheet" href="css/app.css?v=1dcb79df2b">
 </head>
 <body data-look="classic">
   <div id="app" class="app">
@@ -37,6 +37,7 @@
         <span class="cs-gt" id="cs-mode-label">SEARCH</span>
         <input id="cs-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
         <button class="cs-enter" id="cs-enter" title="Enter">⏎</button>
+        <button class="json-button" data-act="json" title="JSON für Nachfrage, Antwort oder Vorschau bearbeiten">JSON</button>
       </div>
       <div class="cs-filters" id="cs-filters"></div>
       <div class="cs-data" id="cs-data"></div>
@@ -57,9 +58,9 @@
 
     <!-- Tour-Karte -->
     <section class="tour" id="tour">
-      <div class="tour-grip" id="tour-grip"><span></span></div>
+      <button class="tour-grip" id="tour-grip" type="button" aria-controls="tour-body" aria-expanded="true">Zur Übung →</button>
       <div class="tour-head" id="tour-head"></div>
-      <div class="tour-body" id="tour-body"></div>
+      <div class="tour-body" id="tour-body" tabindex="0" role="region" aria-label="Lektion lesen"></div>
       <div class="tour-actions" id="tour-actions"></div>
     </section>
   </div>
@@ -75,6 +76,6 @@
   <div class="floats" id="floats"></div>
   <div class="toast" id="toast"></div>
 
-  <script type="module" src="js/app.js?v=9c1dc1db1d"></script>
+  <script type="module" src="js/app.js?v=1dcb79df2b"></script>
 </body>
 </html>

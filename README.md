@@ -1,93 +1,89 @@
 # CodeSearch Pocket
 
-Die komplette CodeSearch-Mitmach-Tour auf dem Handy: **462 Schritte in 35 Kapiteln** plus **14 Abschluss-Aufgaben ohne Hilfen**. Du bedienst ein nachgebautes CodeSearch-Fenster, das auf dem echten Übungsnetz rechnet. Es gibt dieselben Tabs, Spalten, Tooltips, Befehle und Prüfregeln wie in TouchDesigner.
+Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **488 Schritte in 37 Kapiteln**, ein bedienbares Übungsnetz und **37 Leitfäden für den Laptop**. Quellenstand: **CodeSearch 1.8.0, Commit [9a3133d](https://github.com/Tombkn/td-codesearch/tree/9a3133dc2a7482e6fa46a69ba26a30864ab2b5ed)**, abgeglichen am 31.10.2026.
 
-Live: https://tombkn.github.io/codesearch-pocket/
+[Veröffentlichte Handyseite](https://tombkn.github.io/codesearch-pocket/)
 
-## Auf dem Handy – komplett offline
+## Lernen und üben
 
-1. Seite einmal mit Netz öffnen. Der Kurs speichert sich dabei **ganz** auf dem Handy: alle 45 Dateien, 2,4 MB, mit Bildern.
-2. Oben rechts zeigt **⇩** den Stand. Steht dort **✓ offline**, ist alles da. Ein Tipp darauf öffnet die OFFLINE-Seite mit Dateizahl, Version, „Speicher schützen“ und einer Anleitung.
-3. Als App: iPhone (Safari) Teilen → **Zum Home-Bildschirm**. Android (Chrome) Menü → **App installieren**.
-4. Test: Flugmodus an, App öffnen. Kurs, Fenster, TD-Seite, Atlas und Bilder laufen weiter. Der Fortschritt bleibt auf dem Gerät.
+1. Die **Lernansicht** öffnet sich groß. Im Text hoch und runter wischen; die Aktionsknöpfe bleiben erreichbar.
+2. **Zur Übung →** wechselt ins nachgebildete CodeSearch. **Lektion lesen** bringt dich an deine Lesestelle zurück. Eine neue Lektion beginnt oben.
+3. **Prüfen** liest den Zustand der Simulation. Es führt den geforderten Handgriff nicht für dich aus.
+4. **Am Laptop anwenden** erklärt pro Kapitel einen konkreten Fall: vorher → Aktion → nachher, drei Arbeitsschritte, sichtbare Prüfung und Grenze.
+5. **ATLAS → AM LAPTOP** enthält acht Schritte für Installation, tatsächliche Projektpfade, erste Aufnahmen, Re-Init und Save/Reload sowie den kompletten Kapitelplan.
 
-**Eine Datei zum Mitnehmen:** [`CodeSearch-Pocket-offline.html`](CodeSearch-Pocket-offline.html) (2,7 MB) enthält den ganzen Kurs, also JS, CSS, Daten und Bilder, und läuft ohne Server. Android: mit Chrome aus den Downloads öffnen. PC: Doppelklick. Das iPhone zeigt HTML-Dateien in der Dateien-App nur als Vorschau ohne Bedienung, dort also die Home-Bildschirm-App nehmen.
+**KURS** öffnet die Kapitel. **TD** enthält Übungsnetz, Parameter und Timeline. **⌨** öffnet die Tastenleiste. Zeile antippen = markieren; doppelt tippen = Enter; lange drücken = Kontextmenü. Die Lektionskarte übersetzt die Laptop-Handgriffe in „AM HANDY“.
 
-Fortschritt wechseln (z. B. von der Datei in die App): OFFLINE → **Fortschritt sichern** und am anderen Ort **Fortschritt laden**.
+Alle 462 originalen TD-Lektionen bleiben mit stabilen IDs erhalten. Dazu kommen 14 Abschlussaufgaben ohne Hilfen und zwölf Werkstattfälle: State-Verlauf, ungültige/aktuelle/veraltete JSON-Pakete, belegte/unbekannte/widersprochene Aussagen, begrenzte Vorschau und eine isolierte Testkopie.
 
-## So ist es aufgebaut
+## Neue Funktionen praktisch beurteilen
 
-| Bereich | Was es ist |
-|---|---|
-| Fenster oben | CodeSearch: SEARCH, USES, USED BY, IMPACT, ERRORS · FLOW, TABLE, READ ORDER · STRUCTURE (+ LANDKARTE, SYSTEM), TRIGGERS, CALL PATH (+ ROUTE), RECORD (+ WARUM), AUDIT |
-| Karte unten | Mitmach-Tour: JETZT DU, **AM HANDY** (übersetzt Maus und Tasten), DARAUF ACHTEN, Prüfen, Bedeutung, Grenzen, Begriffe |
-| **TD** | TouchDesigner-Seite: NETZ (Ops, Kabel, versteckte Kanten), PARAMETER (BranchLab, StateLab, Farbmischer, CodeSearch), TIMELINE |
-| **⌨** | Tastenleiste: STRG / ALT / ⇧ einmal antippen = gedrückt halten; die Tasten der aktuellen Station leuchten |
-| **KURS** | Kapitelkarte mit Fortschritt |
-| **ATLAS** | Spickzettel (welche Frage → welcher Tab), Doku, Bilder des echten Fensters und von FlowLens, alle Begriffe |
+- **USES / USED BY:** Quelle und Leser sind wie in der aktuellen Laptop-Version getrennt. Wächter und ausgehende Kabel stehen in USED BY.
+- **State-Atlas:** bekannte StateLab-Werte, Speicherorte und Lebensdauer. `>states beobachten`, `>states stoppen`, `>states verlauf` erfassen bis zu 30 Stichproben im Sekundenabstand. Ein Hintergrundtab kann Timer verzögern.
+- **JSON bearbeiten:** Der Knopf neben dem Suchfeld und auf passenden Lektionskarten öffnet die Pocket-Zwischenablage. Übernehmen führt keinen Code aus. Anschließend `>nachfrage`, `>antwort` oder `>vorschau` verwenden.
+- **Nachfrage und Aussagen:** JSON-Struktur, Source-Revision, IDs und Fundstellen werden tatsächlich ausgewertet. Fehler erzeugen keine feste Erfolgsmeldung. `unknown` bedeutet: Die Belege reichen nicht.
+- **Vorschau:** Pocket unterstützt einen ausdrücklich begrenzten Bereich angehängter einfacher Methoden. Beliebige Python-Änderungen brauchen die native TD-Prüfung; die App behauptet dafür keine vollständige Analyse.
+- **Minimalfall:** Eine eigene StateLab-Simulationsinstanz übernimmt ihren Ausgangszustand. Der Test führt dort Reset/Fire aus und kontrolliert das unveränderte Original. Das ist keine neu erzeugte TD-Komponente.
 
-Gesten: Zeile antippen = markieren · doppelt tippen = Enter · lange drücken = Rechtsklick · ART-Zelle antippen = Tooltip.
+## Was die Prüfungen belegen
 
-## Was echt ist und was simuliert
+| Nachweis | Bedeutung | Grenze |
+|---|---|---|
+| Im Modell geprüft | Die Regeln passen zum aktuellen Pocket-Zustand. | Kein echter TD-Lauf und kein Verständnisnachweis. |
+| Selbst bestätigt | Du hast die geforderte Beobachtung bestätigt. | Die App kann das Lesen nicht überprüfen. |
+| Laptop-Leitfaden | Konkrete Schritte und erwartete Beobachtung im realen Projekt. | Wird nicht automatisch aus Pocket-Häkchen als bestanden markiert. |
 
-- **Echt aus der Quelle:** das Übungsnetz (alle Ops, Parameter, Expressions, Binds, Exports, Kabel, DAT-Texte und Tabellen aus `CodeSearch_Tutorial.tdn`). Dazu die Code-Analyse: Methoden, Aufrufe, State-Lese- und Schreibstellen, Zweige und LANDKARTE-Fakten aus den TD-freien Teilen von `CodeModelExt.py`. Die Op-Verweise im Code kommen aus `_op_refs_by_row` von `CodeSearchExt.py`. Alle Beschriftungen, Tooltips und Hilfetexte stammen ebenfalls aus `CodeSearchExt.py`, die Parameter von CodeSearch aus `CodeSearch.tdn`.
-- **Nachgebaut:** BranchLab, ColorEngine, Farbmischer und StateLab laufen als Simulation, Zeile für Zeile wie ihr Python-Code. Fire, Route, Palette, Doublefire usw. haben echte Wirkungen und landen in RECORD.
-- **Simuliert und so beschriftet:** Cook-Zeiten und RECORD-Dauern. Am Handy gibt es keinen Cook.
+Fünf bisher vorerfüllte Regeln sind korrigiert: Kopieraufgaben verlangen eine neue Kopie aus dem passenden Fenster, FlowLens eine neue Auswahl mit anschließendem Wechsel zum Arbeitsplatz. Reine Lesestationen verlangen die ausdrücklich benannte Selbstbestätigung. Der Kurstest schlägt fehl, wenn eine Station schon unmittelbar nach der Vorbereitung besteht. Bereits gespeicherte Häkchen bleiben erhalten; zum erneuten Prüfen kannst du die Station wieder öffnen.
 
-## Prüfen ist ehrlich
+Code und Netz stammen aus den gepinnten TD-Quellen. Lab-Abläufe laufen in JavaScript. Cook-Zeiten, echte TOP-Bilder, Betriebssystem-Fokus, externe KI-Aufrufe und der Projektneustart werden **nicht** durch Pocket nachgewiesen. Bildfälle enthalten modellierte Werte. State-Fundstellen werden beim Build mit dem originalen, TD-freien StateAtlas-Analyzer erzeugt und nur bei passender Source-Revision verwendet.
 
-`Prüfen` wertet dieselben Regeln aus wie `TourExt.Snapshot` + `checks.evaluate` in TD, inklusive Pythons `str(dict)` für `selected`. Es setzt nie selbst einen Wert.
+## Offline
 
-`tools/verify.mjs` geht alle 476 Schritte der Reihe nach durch, wie ein Mensch:
+Die Seite einmal mit Internet öffnen. **⇩ / ✓ offline** zeigt, ob alle benötigten Dateien gespeichert sind. Dort findest du Installation, Fortschritt sichern/laden und erneutes Nachladen. Nach einer veröffentlichten Aktualisierung die Seite online neu laden und den Versionsstand kontrollieren.
 
-1. Station vorbereiten. Prüfen darf noch **nicht** bestehen.
-2. Nur Handgriffe aus `tools/walkthroughs.mjs`: Tippen, Taste, Feld, Parameter. Dieselben Gesten benutzt die App (`js/core/gestures.js`).
-3. Danach muss Prüfen bestehen.
+[CodeSearch-Pocket-offline.html](CodeSearch-Pocket-offline.html) enthält Code, Daten und Bilder zusammen. Für die installierte Handyseite gilt der Service Worker. Der konkrete Dateizugriff und Offline-Start müssen auf dem jeweiligen Gerät geprüft werden.
 
-Stand: **476/476 bestanden, 0 Fehler.** 5 Schritte bestehen schon ohne Handgriff, genau wie in TD, weil ihre Originalregel nach der Vorbereitung bereits erfüllt ist: #124, #149, #397, #408, #456.
-
-`tools/smoke.mjs` baut für jede Station jeden Tab und für jede Zeile DETAIL, Kopier-Menü und Adresse. Stand: 294 Ansichten, 3.131 Zeilen, 0 Abstürze.
-
-## Korrekturen gegenüber dem TD-Kurs
-
-`tools/course_patches.json`, je mit Grund:
-
-- `n_keys_record` (#462): bekommt `reset_lab`. Seit #379 bleibt Enabled aus. Die neue Aufnahme hätte dann gleich viele Aufrufe wie die letzte, und die Regel „mehr als vorher“ könnte nie bestehen. Derselbe Fehler steckt im TD-Kurs.
-
-## Lokal starten
+## Lokal starten und prüfen
 
 ```sh
 python -m http.server 4173
 ```
 
-Dann `http://127.0.0.1:4173` öffnen.
-
-## Quelle neu bauen
-
-Die Eingaben liegen eingefroren in `source/` (nicht im Repo, siehe `source/FROZEN.sha256`): `lessons.json`, `CodeSearch_Tutorial.tdn`, `CodeSearch.tdn`, `CodeModelExt.py`, `CodeSearchExt.py`, `marker_catalogue.json`, Doku.
+Dann `http://127.0.0.1:4173` öffnen. Entwicklungstests:
 
 ```sh
-python tools/build_data.py     # data/*.json
-node tools/verify.mjs          # 476/476 mit echten Handgriffen
-node tools/smoke.mjs           # alle Ansichten ohne Absturz
-python tools/build_offline.py  # offline.json, sw.js, ?v= in index.html, CodeSearch-Pocket-offline.html
+npm ci
+npm test
 ```
 
-`build_offline.py` muss nach **jeder** Änderung an `js/`, `css/`, `img/` oder `data/` laufen. Die Version ist ein Hash über alle Inhalte. Ändert sie sich, holt der Service Worker beim nächsten Online-Besuch den neuen Stand komplett und löscht den alten.
+- `verify.mjs`: alle 488 Stationen über Gestenfunktionen; **kein Browser-Touchtest**.
+- `parity-tests.mjs`: Gegenfälle für Protokolle, Quellen, Mutation und Testkopien.
+- `smoke.mjs`: Aufbau der Ansichten, Detailfelder und Kopiermenüs.
+- `ui-tests.mjs`: DOM-Integration der echten App-Handler mit jsdom; Lesen/Üben, Lesestelle, Rückmeldung, JSON-Eingabe und Kapitelwechsel. **jsdom besitzt keine Layout- oder Touch-Engine.**
+- `package-tests.mjs`: Start und Grundbedienung der erzeugten Einzeldatei im DOM-Test; enthaltene Dateien und Versionskennung.
 
-## Aufbau des Codes
+Die Prüfung auf einem echten Android/Chrome und iPhone/Safari bleibt eine eigene Abnahme. Sie wurde bei diesem Update nicht ausgeführt. Der Computer-Use-Zugang stoppte die Browserbedienung wegen fehlender URL-Policy-Unterstützung für den Windows-Browser. [Prüfbericht und Gerätetest](docs/AUDIT-2026-10-31.md)
 
+## Quellen reproduzierbar bauen
+
+`upstream.json` enthält Commit und SHA-256-Hashes der 31 Build-Eingaben. `source/` bleibt lokal; eine neue Revision erhält einen eigenen Unterordner. Aus einem Clone von `Tombkn/td-codesearch`:
+
+```sh
+python -m pip install -r requirements-build.txt
+python tools/upstream.py --repo ../td-codesearch --ref 9a3133dc2a7482e6fa46a69ba26a30864ab2b5ed --version 1.8.0 --checked 2026-10-31 --freeze
+python tools/build_data.py
+python tools/build_offline.py
+npm test
 ```
-js/core/   Logik ohne DOM (auch von verify/smoke benutzt)
-  net.js        Netz + Code-Modell, Aufrufgraph
-  lab.js        BranchLab, ColorEngine, Farbmischer, StateLab als Simulation
-  cs.js         CodeSearch-Fenster als Zustandsmaschine
-  views/*.js    Zeilen je Tab (SEARCH … AUDIT, ROUTE, WARUM, State-Atlas)
-  tour.js       Vorbereitung, Snapshot, Prüfregeln wie TourExt
-  gestures.js   jeder Handgriff als Funktion (App und verify rufen nur diese)
-  phone.js      Desktop-Handgriffe → AM HANDY
-js/ui/     Zeichnen: Fenster, Tour-Karte, Ebenen (TD, Kurs, Atlas, FlowLens, Popups, Offline)
-  offline.js    Speicherstand prüfen, Fehlendes nachladen, Speicher schützen, Installieren
-sw.js      Service Worker (erzeugt): speichert jede Datei aus offline.json, liefert ohne Netz aus dem Speicher
-tools/     build_data.py, build_offline.py, verify.mjs, smoke.mjs, walkthroughs.mjs, abschluss.json, course_patches.json
+
+Für einen erneuten Aktualitätscheck zunächst im **TD-Clone** `git fetch origin`, dann im **Pocket-Clone**:
+
+```sh
+python tools/upstream.py --repo ../td-codesearch --ref origin/main
 ```
+
+Der Check meldet einen geänderten Commit, neue Eingaben, fehlende Lektionen und unerklärte Inhaltsabweichungen. Er aktualisiert weder den Kurs noch bestätigt er automatisch fachliche Vollständigkeit. Eine neue Quelle verlangt weiterhin Prüfung von Verhalten, Lernkarten und Gerätetest.
+
+`tools/course_patches.json` dokumentiert Kurskorrekturen. Der RECORD-Reset ist inzwischen auch im Laptop-Kurs behoben. Die Wächter-Lektion enthält noch eine veraltete USES-Anweisung; Pocket korrigiert Anweisung und Prüfziel zusammen.
+
+Nach jeder Änderung an `js/`, `css/`, `img/`, `data/` oder `index.html` muss `python tools/build_offline.py` laufen. Sonst stimmen Seite, Offlinecache und Einzeldatei nicht überein.
