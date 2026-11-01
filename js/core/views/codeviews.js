@@ -18,6 +18,9 @@ export function codeTarget(cs, target) {
   const net = cs.net;
   if (net.extClass(target)) return target;
   if (net.datComp.has(target)) return net.datComp.get(target);
+  // Python-DAT ohne Klasse (Modul) ist wie nativ ein eigenes Analyse-Ziel, nicht sein Eltern-COMP
+  const model = net.code[target];
+  if (model && !model.error && !(model.classes || []).length && (model.functions || []).length) return target;
   const comp = net.compOf(target);
   return comp;
 }
@@ -172,6 +175,7 @@ export function chainText(cs, dat, start, depth = 6, width = 4) {
 
 export function buildStructure(cs, target) {
   const net = cs.net;
+  cs.state.moduleView = null;
   if(net.code[target] && !net.datComp.has(target)) return buildModuleStructure(cs,target);
   const comp = codeTarget(cs, target);
   const ext = net.extClass(comp);
@@ -240,17 +244,43 @@ export function buildStructure(cs, target) {
 }
 
 export function buildModuleStructure(cs, dat) {
+  // Modul-DAT (ohne Klasse) wie eine Extension lesen: je Funktion von → ruft · AUSSEN n, dazu wer das Modul von aussen ruft.
   const net = cs.net;
   const rows = [];
   const model = net.code[dat];
-  const z = hit("target", abs(dat), `${baseName(dat)}   ·   Python-DAT   ·   ${(model.functions || []).length} Funktionen`, { detail: "ZIEL" });
+  const functions = model.functions || [];
+  const callerLabel = (c) => (c.from.dat === dat ? c.from.name : `${baseName(c.from.dat)}:${c.from.name}`);
+  const outside = net.calls.filter((c) => c.to.dat === dat && c.from.dat !== dat);
+  cs.state.moduleView = { path: dat, external: outside.length, functions: functions.length };
+  const z = hit("target", abs(dat), `${baseName(dat)}   ·   ${outside.length ? "MODUL" : "Python-DAT"}   ·   ${functions.length} Funktionen · ${outside.length} Aufrufe von außen`, { detail: "ZIEL" });
   z.art = "ZIEL";
   rows.push(z);
-  rows.push(section("FUNKTIONEN", "Modul-Funktionen dieses DATs", (model.functions || []).length, { num: "1" }));
-  for (const f of model.functions || []) {
-    const callees = net.calleesOf(dat, f.name).map((c) => `${c.to.name}`);
-    const h = hit("method", abs(dat), `${f.name}()   ·   ruft ${listText(callees)}`, { line: f.line, ctx: f.name, detail: "FUNKTION" });
-    h.art = "+ FUNKTION";
+  const pub = functions.filter((f) => !f.name.startsWith("_"));
+  const priv = functions.filter((f) => f.name.startsWith("_"));
+  const fnRow = (f) => {
+    const callers = net.callersOf(dat, f.name);
+    const von = [...new Set(callers.map(callerLabel))];
+    const ruft = [...new Set(net.calleesOf(dat, f.name).map((c) => c.to.name))];
+    const aussen = callers.filter((c) => c.from.dat !== dat).length;
+    const parts = [`${f.name}()`];
+    if (von.length >= 3) parts.push("ZENTRUM");
+    if (!von.length && f.name.startsWith("_")) parts.push("OHNE AUFRUFER im Modell");
+    parts.push(`von ${listText(von)}   →   ruft ${listText(ruft)}`);
+    if (!f.name.startsWith("_")) parts.push(aussen ? `◄ AUSSEN ${aussen}` : "nur intern");
+    if (f.doc) parts.push(f.doc);
+    const h = hit("method", abs(dat), parts.join("   ·   "), { line: f.line, ctx: f.name, detail: `Z.${f.line} · von ${von.length} · ruft ${ruft.length}` });
+    h.art = "FUNKTION";
+    h.mark = aussen ? "public" : (!von.length && f.name.startsWith("_") ? "lint" : "");
+    return h;
+  };
+  rows.push(section("FUNKTIONEN · ÖFFENTLICH", "Namen ohne Unterstrich am Anfang · von → ruft · ◄ AUSSEN n = Aufrufer aus anderen DATs", pub.length, { num: "1" }));
+  for (const f of pub) rows.push(fnRow(f));
+  rows.push(section("FUNKTIONEN · PRIVAT", "Namen mit _ am Anfang · OHNE AUFRUFER = niemand im Modell ruft sie", priv.length, { num: "2" }));
+  for (const f of priv) rows.push(fnRow(f));
+  rows.push(section("AUFRUFER / IMPORTEURE", "wer eine Funktion dieses Moduls aus einem anderen DAT ruft · Enter = Zeile", outside.length, { num: "3" }));
+  for (const c of outside) {
+    const h = hit("call", abs(c.from.dat), `${callerLabel(c)}   ·   ${c.via}   →   ${c.to.name}()`, { line: c.line, ctx: c.from.name, detail: c.via });
+    h.art = "AUFRUFER";
     rows.push(h);
   }
   return { rows, dat, comp: net.op(dat).parent };
@@ -440,7 +470,7 @@ export function entriesFor(cs, comp, context = "selection") {
         if (td && td.kind === "par") {
           const pulse = (td.style || "") === "Pulse";
           out.push({ group: "td", when: pulse ? `Pulse an Par ${td.par}` : `Wert von Par ${td.par}`, source: `${c}`, sourceText: `${baseName(c)}.par.${td.par}`,
-            method: m.name, dat: ext.dat, state: "AN", sure: pulse, line: m.line, comp: c });
+            method: m.name, dat: ext.dat, state: "AN", sure: pulse, line: m.line, comp: c, par: td.par, pulse });
         }
         if (m.name === "onInitTD") {
           out.push({ group: "td", when: "Extension startet", source: c, sourceText: `${baseName(c)} (Extension)`, method: m.name, dat: ext.dat, state: "AN", sure: true, line: m.line, comp: c });
@@ -497,6 +527,9 @@ export function entryHit(cs, e) {
   h.entry_when = e.when;
   h.entry_state = e.state;
   h.entry_dat = abs(e.dat);
+  h.entry_par = e.par || "";
+  h.entry_pulse = Boolean(e.pulse);
+  h.entry_comp = e.comp || "";
   h.entry_group = e.group;
   return h;
 }

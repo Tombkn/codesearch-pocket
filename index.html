@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-180.png">
   <meta name="apple-mobile-web-app-title" content="CodeSearch">
-  <link rel="stylesheet" href="css/app.css?v=2e18196b49">
+  <link rel="stylesheet" href="css/app.css?v=5a34fd9ff4">
 </head>
 <body data-look="classic">
   <div id="app" class="app">
@@ -35,6 +35,8 @@
       <div class="cs-context" id="cs-context"></div>
       <div class="cs-target" id="cs-target" aria-label="Analyseziel und Extension-Code"></div>
       <div class="cs-field">
+        <button class="cs-hist" id="cs-back" title="Zurück (Strg+Alt+←)" aria-label="Zurück">◀</button>
+        <button class="cs-hist" id="cs-forward" title="Vor (Strg+Alt+→)" aria-label="Vor">▶</button>
         <span class="cs-gt" id="cs-mode-label">SEARCH</span>
         <input id="cs-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
         <button class="cs-enter" id="cs-enter" title="Enter">⏎</button>
@@ -80,6 +82,6 @@
   <div class="floats" id="floats"></div>
   <div class="toast" id="toast"></div>
 
-  <script type="module" src="js/app.js?v=2e18196b49"></script>
+  <script type="module" src="js/app.js?v=5a34fd9ff4"></script>
 </body>
 </html>

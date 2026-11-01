@@ -189,7 +189,8 @@ export class Net {
     // Kante: {from: {dat, name}, to: {dat, name}, line, via}
     this.calls = [];
     for (const [dat, model] of Object.entries(this.code)) {
-      if (!model || model.error) continue;
+      // Nicht lesbare DATs liefern nur zeilenweise gefundene Modul-Aufrufe (wie nativ) - sonst ueberspringen
+      if (!model || (model.error && !(model.sites || []).length)) continue;
       const host = this.op(dat);
       const home = host ? (host.parent || "") : "";
       const ownClass = model.classes && model.classes[0] ? model.classes[0].name : "";
@@ -218,6 +219,11 @@ export class Net {
           const ext = comp != null ? this.extClass(comp) : null;
           if (ext && this.member(ext.dat, site.attr)) target = { dat: ext.dat, name: site.attr };
           via = "ext";
+        } else if (site.via === "modof" && site.op) {
+          // op('X').module.f() / mod('X').f() / import X: X liegt im Netz des rufenden DATs (ownercomp-Basis: im COMP selbst)
+          const moduleDat = this.resolveModuleDat(dat, home, site);
+          if (moduleDat && this.member(moduleDat, site.attr)) target = { dat: moduleDat, name: site.attr };
+          via = "module";
         }
         if (target) this.calls.push({ from: { dat, name: site.func }, to: target, line: site.line, via });
       }
@@ -246,6 +252,22 @@ export class Net {
         }
       }
     }
+  }
+
+  resolveModuleDat(callerDat, home, site) {
+    const rel = String(site.op || "").replace(/^\.\//, "");
+    if (!rel) return null;
+    const candidates = [];
+    if (rel.startsWith("/")) candidates.push(rel.replace(/^\/project1\/CodeSearch_Tutorial\//, "").replace(/^\//, ""));
+    const base = site.base === "ownercomp" ? this.datComp.get(callerDat) ?? home : home;
+    candidates.push(base ? `${base}/${rel}` : rel);
+    if (home) candidates.push(`${home}/${rel}`);
+    candidates.push(rel);
+    for (const path of candidates) {
+      const model = this.code[path];
+      if (model && !model.error && (model.functions || []).length) return path;
+    }
+    return null;
   }
 
   findParentShortcut(start, short) {

@@ -69,7 +69,11 @@ function scopeOps(cs, request={}) {
   const flat = request.flat ?? (cs.cs.Scope === "currentflat" && !cs.contextActive());
   // Der Bereichs-COMP selbst gehoert dazu (seine Custom-Pars, z. B. BranchLab.Intensity)
   const self = scope ? [cs.net.op(scope)].filter(Boolean) : [];
-  const list = [...self, ...cs.net.within(scope, !flat)];
+  const all = [...self, ...cs.net.within(scope, !flat)];
+  // REKURSIV mit Tiefe: n Ebenen unter dem Bereich (0 = alle); bei NUR HIER greift die Tiefe nicht
+  const depth = (!flat && cs.state.scopeDepth) || 0;
+  const base = scope ? scope.split("/").length : 0;
+  const list = depth > 0 ? all.filter((o) => o.path === scope || o.path.split("/").length - base <= depth) : all;
   return (request.includeSys ?? cs.cs.Includesys) ? list : list.filter((o) => !o.path.split("/").some((p) => p === "ExtUtils" || p === "Tour" || p === "ExtUtils1"));
 }
 
@@ -180,7 +184,21 @@ export function buildSearch(cs, request={}) {
   if (!query.trim() && (filter === 'op' || filter === 'ext')) return listAllOps(cs, request, filter, family, address, limit);
   if (!query.trim()) {
     cs.regexQueue?.cancel(request.owner || 'main');
-    return { rows: [notice("Suchtext eingeben", "Wort = ganzes Wort · tick* Anfang · *tick* irgendwo · Wörter = UND · ^wort = ohne · ohne Suchtext: OPERATOREN oder EXTENSIONS zeigt alles")], counts, total: 0 };
+    const rows = [];
+    const recent = (cs.state.focusRecent || []).filter((path) => cs.net.op(path));
+    if (recent.length && !request.owner) {
+      // wie nativ: zuletzt fokussierte Ops dieser Sitzung - Enter / Doppeltippen setzt das Ziel wieder
+      rows.push(section("LETZTE FOCUS", "Enter oder Doppeltippen setzt das Ziel wieder. Netz-Tippen ändert es nicht.", recent.length));
+      for (const path of recent) {
+        const o = cs.net.op(path);
+        const h = hit("opfind", abs(path), o.type || "", { detail: "FOCUS" });
+        h.art = "FOCUS";
+        h.family = o.family;
+        rows.push(h);
+      }
+    }
+    rows.push(notice("Suchtext eingeben", "Wort = ganzes Wort · tick* Anfang · *tick* irgendwo · Wörter = UND · ^wort = ohne · ohne Suchtext: OPERATOREN oder EXTENSIONS zeigt alles"));
+    return { rows, counts, total: 0 };
   }
   if(query.length>512){cs.regexQueue?.cancel(request.owner || 'main');return {rows:[notice('Suchtext zu lang: höchstens 512 Zeichen.')],counts,total:0,error:'Suchtext zu lang'};}
   if(options.regex){try {new RegExp(query);}catch(error){cs.regexQueue?.cancel(request.owner || 'main');return {rows:[notice('Ungültiger Regex: '+error.message)],counts,total:0,error:error.message};}}

@@ -1,8 +1,10 @@
 # CodeSearch Pocket
 
-Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **636 Schritte in 52 Kapiteln**, ein bedienbares Übungsnetz und **Laptop-Anleitungen für alle Kapitel**. Quellenstand: **CodeSearch 1.10.0, Commit [2624930](https://github.com/Tombkn/td-codesearch/tree/2624930732c828ae93234887e1abe2a395ae549e)**, abgeglichen am 01.11.2026.
+Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **645 Schritte in 53 Kapiteln**, ein bedienbares Übungsnetz und **Laptop-Anleitungen für alle Kapitel**. Quellenstand: **CodeSearch 1.10.1, Commit [b075e5d](https://github.com/Tombkn/td-codesearch/tree/b075e5d53cffa8d6c70ba2024a4fe5007b5bd242)**, abgeglichen am 01.11.2026.
 
 [Veröffentlichte Handyseite](https://tombkn.github.io/codesearch-pocket/)
+
+**Neu in 1.10.1:** Modul-DATs wie Extensions lesen (von → ruft · ◄ AUSSEN, Aufrufer aus anderen DATs), Zurück/Vor-Knöpfe ◀ ▶ im Eingabekopf, Zusatzsuchen mit dezenten Familienfarben und vollem Halte-Menü (Hinspringen, Viewer, DAT/Editor, Parameter, Pfad kopieren), LETZTE FOCUS in der leeren Suche. **Kapitel 50** übt das in Stationen 23–31.
 
 **Neu in 1.10.0: Arbeitsplatz.** Bis zu zehn unabhängige Suchfenster (Ctrl+F), Überblick ohne Suchtext (OPERATOREN / EXTENSIONS), COMP-Zeilenmenü mit DARIN je Familie und Parameter nach oben, Shift+Rad waagerecht und Strg+Rad-Zoom, Suchfelder in jedem der 24 Looks abgesetzt, Zweitfenster mit 25–250 % Zoom; die Laptop-Fassung bringt zusätzlich REKURSIV-Tiefe, Fenster-Andocken, klickbare Info-Zeile und TRIGGERS-Aktionen. **Kapitel 46–49** üben den Arbeitsplatz in 22 Stationen.
 
@@ -94,7 +96,7 @@ Die Prüfung auf einem echten Android/Chrome und iPhone/Safari bleibt eine eigen
 
 ```sh
 python -m pip install -r requirements-build.txt
-python tools/upstream.py --repo ../td-codesearch --ref 2624930732c828ae93234887e1abe2a395ae549e --version 1.10.0 --checked 2026-11-01 --freeze
+python tools/upstream.py --repo ../td-codesearch --ref b075e5d53cffa8d6c70ba2024a4fe5007b5bd242 --version 1.10.1 --checked 2026-11-01 --freeze
 python tools/build_data.py
 python tools/build_offline.py
 npm test

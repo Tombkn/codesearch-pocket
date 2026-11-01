@@ -1,4 +1,5 @@
 import {searchOptions,searchScopeOptions} from './search-options.js';
+import {MAX_SEARCH_WINDOWS} from '../core/search-sessions.js';
 // Ebenen ueber dem Fenster: TD-Seite (Netz, Parameter, Timeline), Kurs, Atlas, FlowLens, Popup, Schnellsuche, Lesekopien.
 
 import { $, esc, md, updateHtml } from "./dom.js";
@@ -539,6 +540,9 @@ function compareText(ctx) {
 }
 
 // ------------------------------------------------------------------ Schnellsuche (zweites Fenster)
+// Familie einer Suchfenster-Zeile: Op-Familie, Codezeilen gehoeren zu einem DAT
+function familyClass(cs,h){const fam=h.family || (h.kind==='code'?'DAT':(cs.net.op(rel(h.path || ''))?.family || ''));return fam?`fam-${fam}`:'';}
+
 export function renderQuick(ctx) {
   const {cs,ui}=ctx,s=cs.state,box=$('#quick'),windows=s.searchWindows.filter(q=>q.open);
   box.classList.toggle('show',windows.length>0);box.classList.toggle('unfocused',s.focusWin!=='quick');
@@ -547,11 +551,11 @@ export function renderQuick(ctx) {
     let card=box.querySelector(`[data-qid="${q.id}"]`);
     if(!card) {
       card=document.createElement('section');card.className='search-window';card.dataset.qid=q.id;
-      card.innerHTML=`<div class="qh"><span class="t">Suche ${q.number} / 4</span><button data-q="new">+ Neue Suche</button><button data-q="esc" aria-label="Diese Suche schließen">✕</button></div><div class="qf"><input id="${q.number===2?'quick-input':'quick-input-'+q.id}" data-qinput autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Suchtext für Suche ${q.number}"><button data-q="enter">⏎</button></div><label class="qscope">Suchbereich<select data-qscope></select></label><div class="qc row-scroll"></div><div class="qoptions"></div><div class="ql" data-scroll-key="${q.id}"></div><div class="qs" role="status"></div>`;
+      card.innerHTML=`<div class="qh"><span class="t">Suche ${q.number} / ${MAX_SEARCH_WINDOWS}</span><button data-q="new">+ Neue Suche</button><button data-q="esc" aria-label="Diese Suche schließen">✕</button></div><div class="qf"><input id="${q.number===2?'quick-input':'quick-input-'+q.id}" data-qinput autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Suchtext für Suche ${q.number}"><button data-q="enter">⏎</button></div><label class="qscope">Suchbereich<select data-qscope></select></label><div class="qc row-scroll"></div><div class="qoptions"></div><div class="ql" data-scroll-key="${q.id}"></div><div class="qs" role="status"></div>`;
       box.append(card);
     }
     card.classList.toggle('active',s.quick===q&&s.focusWin==='quick');
-    card.querySelector('[data-q=new]').disabled=windows.length>=3;
+    card.querySelector('[data-q=new]').disabled=windows.length>=MAX_SEARCH_WINDOWS;
     const input=card.querySelector('[data-qinput]');if(document.activeElement!==input)input.value=q.query;
     input.placeholder=ui.QUICK_PLACEHOLDER || 'Unabhängig suchen …';
     updateHtml(card.querySelector('[data-qscope]'),searchScopeOptions(cs,q));
@@ -559,7 +563,7 @@ export function renderQuick(ctx) {
     updateHtml(card.querySelector('.qoptions'),searchOptions(q));
     const rows=q.hits.map((h,i)=>h.kind==='section'
       ?`<div class="hit section"><span class="art">${esc(h.num || '')}</span><span class="main"><span class="ttl">${esc(h.text)}</span><span class="cnt">${esc(h.count ?? '')}</span></span></div>`
-      :`<button class="hit ${i===q.selected?'sel':''}" data-qrow="${i}" data-key="q${i}"><span class="art ${artClass(h)}">${esc(artOf(ui,h))}</span><span class="main"><div class="wo">${h.line?`<span class="det">Z.${h.line}</span>`:''}${esc(pathText(cs,h))}</div><div class="txt">${esc(h.text)}</div></span></button>`).join('');
+      :`<button class="hit ${i===q.selected?'sel':''} ${familyClass(cs,h)}" data-qrow="${i}" data-key="q${i}"><span class="art ${artClass(h)}">${esc(artOf(ui,h))}</span><span class="main"><div class="wo">${h.line?`<span class="det">Z.${h.line}</span>`:''}${esc(pathText(cs,h))}</div><div class="txt">${esc(h.text)}</div></span></button>`).join('');
     updateHtml(card.querySelector('.ql'),rows);
     updateHtml(card.querySelector('.qs'),`${q.pending?'Suche läuft …':q.error?esc(q.error):`${q.total} Treffer · Stand der letzten Suche`} · Tippen = wählen · doppelt = springen · halten = im Hauptfenster untersuchen`);
   }

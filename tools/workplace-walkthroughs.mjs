@@ -1,4 +1,4 @@
-// Bedienfolgen für die 22 Arbeitsplatz-Stationen; nur öffentliche Aktionen.
+// Bedienfolgen für die 31 Arbeitsplatz-Stationen; nur öffentliche Aktionen.
 // Scrollposition, Trennkante und Touch-Fokus benötigen zusätzlich einen Browser-/Gerätetest.
 const method = (name) => (hit) => hit.kind === 'method' && hit.ctx === name;
 const followStation = (hit) => hit.kind === 'chain' && hit.dist > 0;
@@ -88,5 +88,34 @@ export const WORKPLACE_SCRIPTS = {
       g.compMenu(); g.menu(label);
     }
     g.compMenu(); g.menu('COMP-Pfad kopieren');
+  }),
+  workspace_23: observed((g) => {
+    g.workspace(); g.netEnter('SignalGarden'); g.tab('search'); g.type(''); g.filter('ext');
+  }),
+  workspace_24: observed((g) => { g.cs.showCompContents('SignalGarden', 'CHOP'); }),
+  workspace_25: observed((g) => { g.tab('map'); g.enter('Farbmischer/werkzeug'); }),
+  workspace_26: observed((g) => { g.tab('search'); g.scope('currentpane'); g.scopeDepth(1); }),
+  workspace_27: observed((g) => {
+    g.scope('currentpane'); g.followNetwork(); g.filter('all'); g.type('Sensor');
+    g.tapRow((h) => h.kind !== 'section' && h.path && !h.line && /Sensor$/.test(h.path));
+  }),
+  workspace_28: observed((g) => {
+    g.tab('entries'); g.enter('SignalGarden/Sensor');
+    g.rowMenu((h) => h.kind === 'entry' && h.entry_par === 'Sample'); g.menu('AUSLÖSEN · Sample');
+  }),
+  workspace_29: observed((g) => {
+    g.tab('map'); g.enter('Farbmischer/werkzeug'); g.cs.floatCopy('details');
+    const f = g.cs.state.floats.at(-1); g.cs.state.floatFocus = f.id; g.key('Ctrl+Plus');
+  }),
+  workspace_30: observed((g) => {
+    g.tab('trace'); g.cs.OpenAt('trace', {target: 'SignalGarden/Sensor'}); g.cs.OpenAt('trace', {target: 'BranchLab'});
+    g.cs.historyBack();
+  }),
+  workspace_31: observed((g) => {
+    const q = g.cs.quickOpen(true); g.cs.quickScope('comp:SignalGarden'); g.quickType('Sensor');
+    const row = q.hits.findIndex((h) => h.kind !== 'section' && h.path);
+    g.cs.state.menu = {title: 'SCHNELLSUCHE', items: g.cs.quickRowMenuItems(q.id, row)};
+    g.cs.state.menu.items.find((item) => item.label === 'PFAD KOPIEREN')?.run();
+    g.cs.quickClose(q.id);
   }),
 };

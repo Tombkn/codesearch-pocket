@@ -125,6 +125,9 @@ export class Gestures {
   family(key) { this.cs.cs.Opfamily = key; this.cs.cs.Searchfilter = "op"; this.cs.rebuild(); }
   address(key) { this.cs.state.opAddress = key; this.cs.rebuild(); }
   scope(kind) { this.cs.setScope(kind); }
+  scopeDepth(depth) { this.cs.setScopeDepth(depth); }
+  followNetwork() { this.cs.toggleNetworkFollow(); }
+  pinTarget(path) { this.cs.cs.Analysistarget = path ? abs(rel(path)) : ''; this.cs.rebuild(); }
   readOrder() {
     const s = this.cs.state;
     if (s.view === "path") s.view = ""; else { s.view = "path"; if (s.mode !== "search" && s.mode !== "chain") s.mode = "search"; }
@@ -244,6 +247,11 @@ export class Gestures {
       }
       items.push({ label: 'PARAMETER NACH OBEN …', run: () => showPromotion(cs, rel(h.path)) });
       items.push({ label: 'IN ZWEITER NETZWERKANSICHT ÖFFNEN', run: () => cs.openNetworkPane(h.path) });
+    }
+    if (h.kind === 'entry' && h.entry_pulse && h.entry_par) {
+      // TRIGGERS: eine Pulse-Tuer selbst oeffnen, Parameter des COMPs ansehen (wie nativ AUSLOESEN / PARAMETER-DIALOG)
+      items.push({ label: `AUSLÖSEN · ${h.entry_par}`, run: () => cs.triggerEntry(h) });
+      items.push({ label: `PARAMETER-DIALOG · ${(h.entry_comp || '').split('/').pop()}`, run: () => { cs.state.dialog = { title: 'PARAMETER', lines: [`${abs(h.entry_comp)} · par.${h.entry_par}`, 'Pocket zeigt die Parameter in der Übungsleiste; am Laptop öffnet sich der Parameter-Dialog.'] }; cs.emit(); } });
     }
     if (h.kind === "state" || h.cat === "state") items.push({ label: "URSACHE", run: () => cs.cause() });
     if (h.ctx && cs.net.member(rel(h.path), h.ctx)) {

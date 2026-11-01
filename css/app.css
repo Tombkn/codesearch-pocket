@@ -90,6 +90,18 @@ button:focus-visible { outline: 2px solid var(--sel-line); outline-offset: -2px;
 .cs-field input { flex: 1; min-width: 0; height: 32px; background: var(--field); border: 1px solid var(--field-line); border-radius: 2px; padding: 0 8px; font-family: var(--mono); font-size: 14px; color: var(--text); }
 .cs-field input:focus { outline: 1px solid var(--accent); }
 .cs-enter { width: 38px; height: 32px; border: 1px solid var(--line2); border-radius: 2px; color: var(--accent); font-size: 15px; flex: 0 0 auto; }
+/* Zurueck / Vor wie im Browser (Verlauf des Hauptfensters) */
+.cs-hist { width: 30px; height: 30px; border: 1px solid var(--line2); border-radius: 2px; color: var(--text); font-size: 13px; flex: 0 0 auto; }
+.cs-hist:disabled { opacity: .4; }
+/* Suchfenster: dezente Familienfarbe je Zeile, wie die Hauptliste */
+.search-window .hit.fam-TOP { background: color-mix(in srgb, var(--purple) 15%, transparent); }
+.search-window .hit.fam-CHOP { background: color-mix(in srgb, var(--green) 15%, transparent); }
+.search-window .hit.fam-SOP { background: color-mix(in srgb, var(--blue) 15%, transparent); }
+.search-window .hit.fam-DAT { background: color-mix(in srgb, var(--dat-fg) 15%, transparent); }
+.search-window .hit.fam-COMP { background: color-mix(in srgb, var(--text) 8%, transparent); }
+.search-window .hit.fam-MAT { background: color-mix(in srgb, var(--yellow) 15%, transparent); }
+.search-window .hit.fam-POP { background: color-mix(in srgb, var(--cyan) 15%, transparent); }
+.search-window .hit.sel { background: var(--sel, rgba(80,120,200,.35)); }
 
 .cs-filters { padding: 2px 6px; background: var(--panel); border-bottom: 1px solid var(--line); align-items: center; }
 .cs-filters:empty, .cs-data:empty, .cs-record:empty { display: none; }

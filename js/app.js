@@ -486,9 +486,9 @@ function wire(ctx) {
     tap:act(el=>{sessionAt(el);g.quickTap(Number(el.dataset.qrow));}),
     double:act(el=>{sessionAt(el);g.quickDoubleTap(Number(el.dataset.qrow));}),
     long:act(el=>{
+      // Langes Druecken = Rechtsklick: dasselbe Zeilenmenue wie nativ (Springen, Viewer, Editor, Parameter, Pfad kopieren)
       const q=sessionAt(el),id=q.id,i=Number(el.dataset.qrow);g.quickTap(i);
-      cs.state.menu={title:'SCHNELLSUCHE',items:[{label:'IM HAUPTFENSTER ÖFFNEN',run:()=>cs.quickToMain(i,id)},
-        {label:'SPRINGEN (Doppelklick)',run:()=>{if(cs.quickActivate(id))cs.quickJump(i);}}]};cs.emit();
+      cs.state.menu={title:'SCHNELLSUCHE',items:cs.quickRowMenuItems(id,i)};cs.emit();
     }),
   });
 
@@ -724,6 +724,8 @@ function bindCSHost(ctx) {
     cs.copy(text);
   });
   $("#cs-enter").addEventListener("click", act(() => { g.enter(input.value); }));
+  $("#cs-back")?.addEventListener("click", act(() => cs.historyBack()));        // nur im Hauptfenster vorhanden
+  $("#cs-forward")?.addEventListener("click", act(() => cs.historyForward()));
 
   // Splitter zwischen Liste und Detail
   const split = $("#cs-split");

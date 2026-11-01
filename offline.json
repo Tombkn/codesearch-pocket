@@ -1,14 +1,14 @@
 {
- "version": "2e18196b49",
- "total": 3831568,
+ "version": "5a34fd9ff4",
+ "total": 3877503,
  "files": [
   {
    "path": "./",
-   "size": 4252
+   "size": 4467
   },
   {
    "path": "index.html",
-   "size": 4252
+   "size": 4467
   },
   {
    "path": "manifest.json",
@@ -36,11 +36,11 @@
   },
   {
    "path": "css/app.css",
-   "size": 59008
+   "size": 60061
   },
   {
    "path": "js/app.js",
-   "size": 48641
+   "size": 48826
   },
   {
    "path": "js/core/analysis-workbench.js",
@@ -56,7 +56,7 @@
   },
   {
    "path": "js/core/cs.js",
-   "size": 78547
+   "size": 82392
   },
   {
    "path": "js/core/float-copies.js",
@@ -68,7 +68,7 @@
   },
   {
    "path": "js/core/gestures.js",
-   "size": 26385
+   "size": 27182
   },
   {
    "path": "js/core/investigation.js",
@@ -88,7 +88,7 @@
   },
   {
    "path": "js/core/net.js",
-   "size": 12706
+   "size": 13908
   },
   {
    "path": "js/core/phone.js",
@@ -120,7 +120,7 @@
   },
   {
    "path": "js/core/tour.js",
-   "size": 20809
+   "size": 22020
   },
   {
    "path": "js/core/util.js",
@@ -128,7 +128,7 @@
   },
   {
    "path": "js/core/views/codeviews.js",
-   "size": 41137
+   "size": 43482
   },
   {
    "path": "js/core/views/common.js",
@@ -148,7 +148,7 @@
   },
   {
    "path": "js/core/views/search.js",
-   "size": 16193
+   "size": 17151
   },
   {
    "path": "js/ui/analysis.js",
@@ -160,7 +160,7 @@
   },
   {
    "path": "js/ui/cswin.js",
-   "size": 29783
+   "size": 30001
   },
   {
    "path": "js/ui/dom.js",
@@ -172,7 +172,7 @@
   },
   {
    "path": "js/ui/layers.js",
-   "size": 50403
+   "size": 50753
   },
   {
    "path": "js/ui/learningview.js",
@@ -212,15 +212,15 @@
   },
   {
    "path": "data/course.json",
-   "size": 1262172
+   "size": 1293390
   },
   {
    "path": "data/net.json",
-   "size": 122925
+   "size": 122946
   },
   {
    "path": "data/code.json",
-   "size": 363684
+   "size": 363960
   },
   {
    "path": "data/ui.json",
@@ -228,7 +228,7 @@
   },
   {
    "path": "data/features.json",
-   "size": 221928
+   "size": 223754
   },
   {
    "path": "img/05_flow.webp",
@@ -281,6 +281,6 @@
  ],
  "single": {
   "path": "CodeSearch-Pocket-offline.html",
-  "size": 4170326
+  "size": 4216049
  }
 }

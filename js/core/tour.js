@@ -116,7 +116,9 @@ export class Tour {
     if (prep.close_quick) cs.closeAllSearchWindows();
     if ("quick_filter" in prep) cs.state.quick.filter = prep.quick_filter;
     if (!lesson.keep) {
-      Object.assign(cs.cs, { Regex: false, Casesensitive: false, Searchfilter: "all", Opfamily: "all", Maxresults: 500, Includetables: true });
+      Object.assign(cs.cs, { Regex: false, Casesensitive: false, Searchfilter: "all", Opfamily: "all", Maxresults: 500, Includetables: true, Analysistarget: "" });
+      cs.state.scopeDepth = 0;     // REKURSIV wieder alle Ebenen
+      cs.state.floatFocus = null;  // offenes Zweitfenster bleibt, faengt aber keine Tasten der neuen Station ab
       // Eine neue Station verspricht ihr eigenes Ziel; alte Pins und Filter dürfen es nicht überlagern.
       cs.state.flow = newFlowState();
     }
@@ -287,6 +289,8 @@ export class Tour {
     }
     for (const [key, value] of Object.entries(lab.garden.Observe())) state[`garden.${key}`] = value;
     state['workflow.investigation_view'] = s.view === 'untersuchung' ? 'investigation' : s.view;
+    // DARIN zaehlt nur, solange die DARIN-Suche (Bereich = dieser COMP) zu sehen ist
+    const darin = Boolean(s.contents && s.mode === 'search' && cs.cs.Scope === 'comp' && rel(cs.cs.Scopecomp || '') === s.contents.path);
     for (const [owner, pars] of Object.entries(lab.garden.pars)) for (const [name, value] of Object.entries(pars)) state[`garden.par.${owner}.${name}`] = value;
     Object.assign(state, {
       "cs.context": s.context,
@@ -309,6 +313,18 @@ export class Tour {
       'workspace.parent_value_exists': Object.hasOwn(lab.garden.pars.root,'Value'),
       'workspace.promotion_cancel_serial': cs.promotionCancelSerial || 0,
       'workspace.sensor_value_connected': cs.promotedBindings?.get('SignalGarden/Sensor:Value')?.parent==='SignalGarden' && Boolean(Object.getOwnPropertyDescriptor(lab.garden.pars.sensor,'Value')?.get),
+      'workspace.scope_mode': cs.cs.Scope,
+      'workspace.scope_depth': s.scopeDepth || 0,
+      'workspace.network_follow': Boolean(s.networkFollow),
+      'workspace.left_hidden': false,
+      'workspace.right_hidden': false,
+      'workspace.contents_comp': darin ? s.contents.path : '',
+      'workspace.contents_family': darin ? s.contents.family : '',
+      'workspace.module_target': s.moduleView ? s.moduleView.path : '',
+      'workspace.module_external': s.moduleView ? s.moduleView.external : 0,
+      'workspace.history_back': cs.historyBackCount || 0,
+      'workspace.session_menu': cs.sessionMenuCount || 0,
+      'workspace.search_overview': (s.mode === 'search' && !String(s.query || '').trim() && ['op', 'ext'].includes(cs.cs.Searchfilter)) ? cs.cs.Searchfilter : '',
       "flowlens.target": s.flowlens.target,
       "flowlens.colors": s.flowlens.colors,
       "flowlens.selected": s.flowlens.selected,

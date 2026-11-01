@@ -59,6 +59,7 @@ export class CodeSearch {
     const quick=newSearchSession(2);
     return {
       mainopen: true, mode: "search", view: "", query: "", targets: [abs("BranchLab")], focus: "BranchLab", paneOwner: "BranchLab",
+      scopeDepth: 0, networkFollow: false, contents: null, moduleView: null,
       networkSelected: [], hits: [], selected: -1, multi: new Set(), overview: "", impact: "", impactSymbol: null,
       tourEntry: "", tourDat: "", tourClosed: new Set(), symbol: "",
       route: { anchor: "", dat: "", name: "", hop: 0, mode: "ganz", thread: "" },
@@ -115,6 +116,7 @@ export class CodeSearch {
   OpenAt(mode, { target = null, query = "", symbol = "", scope = null } = {}) {
     const t = target != null ? rel(target) : this.state.focus;
     this.state.mainopen = true;
+    if (target != null) this.rememberFocus(t);
     this.state.focus = t;
     this.state.targets = [abs(t)];
     this.state.paneOwner = this.net.isComp(t) ? t : (this.net.op(t)?.parent || "");
@@ -147,6 +149,7 @@ export class CodeSearch {
 
   // DARIN: direkte Kinder eines COMPs als Trefferliste - ueber die Suche ohne Suchtext (Bereich = dieser COMP).
   showCompContents(path, family = 'all') {
+    this.state.contents = { path: rel(path), family };   // DARIN-Zustand fuer die Tour-Pruefung
     const target = rel(path);
     if (!this.net.isComp(target)) { this.state.status = 'DARIN: kein COMP unter ' + abs(path); return this.emit(); }
     this.cs.Searchfilter = 'op';
@@ -180,6 +183,16 @@ export class CodeSearch {
     return Boolean(o && o.type === "tableDAT");
   }
 
+  // LETZTE FOCUS: zuletzt gezielt fokussierte Ops dieser Sitzung (neueste zuerst, wie nativ hoechstens 15)
+  rememberFocus(path) {
+    const list = this.state.focusRecent || (this.state.focusRecent = []);
+    if (!path && path !== '') return;
+    const at = list.indexOf(path);
+    if (at >= 0) list.splice(at, 1);
+    list.unshift(path);
+    list.length = Math.min(list.length, 15);
+  }
+
   _remember() {
     const entry = { mode: this.state.mode, focus: this.state.focus, view: this.state.view };
     const last = this.state.history[this.state.history.length - 1];
@@ -194,6 +207,7 @@ export class CodeSearch {
     if (this.state.history.length < 2) return;
     this.state.future.push(this.state.history.pop());
     const prev = this.state.history[this.state.history.length - 1];
+    this.historyBackCount = (this.historyBackCount || 0) + 1;   // Tour: Zurueck wurde benutzt
     this._restore(prev);
   }
 
@@ -224,6 +238,33 @@ export class CodeSearch {
   setScope(kind) {
     this.cs.Scope = kind;
     if (kind === "comp" && !this.cs.Scopecomp) this.cs.Scopecomp = abs(this.state.paneOwner);
+    if (kind === "currentpane") this.state.scopeDepth = 0;   // Linksklick REKURSIV = alle Ebenen; Tiefe nur ueber das Menue
+    this.rebuild();
+  }
+
+  // REKURSIV mit Tiefe (Rechtsklick-Menue am Laptop): 0 = alle Ebenen, n = bis n Ebenen unter dem Bereich
+  setScopeDepth(depth) {
+    this.state.scopeDepth = Math.max(0, Number(depth) || 0);
+    this.state.status = this.state.scopeDepth ? `REKURSIV · bis Tiefe ${this.state.scopeDepth}` : 'REKURSIV · alle Ebenen';
+    this.rebuild();
+  }
+
+  // NETZ FOLGT KLICK: eine Op-Zeile zeigt den Op in der zweiten Netzwerkansicht, die Hauptansicht bleibt
+  toggleNetworkFollow() {
+    this.state.networkFollow = !this.state.networkFollow;
+    this.state.status = this.state.networkFollow ? 'NETZ FOLGT KLICK: Op-Zeilen zeigen den Op in der zweiten Netzwerkansicht' : 'NETZ FIXIERT: Klicks bewegen das Netz nicht';
+    this.emit();
+  }
+
+  // TRIGGERS: AUSLOESEN einer Pulse-Tuer im Uebungsnetz (SignalGarden-Familie), sonst nur Hinweis
+  triggerEntry(h) {
+    const comp = rel(h.entry_comp || h.path || '');
+    const par = h.entry_par || '';
+    const owner = comp.endsWith('SignalGarden/Sensor') ? 'sensor' : comp.endsWith('SignalGarden/Scenes') ? 'scenes'
+      : comp.endsWith('SignalGarden/Palette') ? 'palette' : comp.endsWith('SignalGarden') ? 'root' : '';
+    if (!owner || !par) { this.state.status = `AUSLÖSEN: ${comp}.${par} ist im Übungsnetz nicht ausführbar.`; return this.emit(); }
+    this.lab.garden.pulse(owner, par);
+    this.state.status = `AUSGELÖST · ${comp}.par.${par}`;
     this.rebuild();
   }
 
@@ -314,6 +355,7 @@ export class CodeSearch {
       this.emit();
       return;
     }
+    if (s.networkFollow && !ctrl && h.path && !h.line && this.net.op(rel(h.path))) this.openNetworkPane(h.path);
     if (ctrl) {
       if (s.multi.has(index)) s.multi.delete(index); else s.multi.add(index);
       if(!selectableHit(h))s.multi.delete(index);
@@ -606,7 +648,7 @@ export class CodeSearch {
       if (first >= 0) return this.activate(s.selected >= 0 ? s.selected : first);
       return;
     }
-    if (["trace", "refs", "chain"].includes(s.mode) && value) {
+    if (["trace", "refs", "chain", "map", "entries"].includes(s.mode) && value) {
       const t = rel(value.replace(/^op\(['"]|['"]\)$/g, ""));
       const found = this.net.op(t) ? t : [...this.net.ops.keys()].find((p) => baseName(p) === value);
       if (found != null) { if(s.mode==='chain')return this.flowSetTarget(found); s.focus = found; s.targets = [abs(found)]; return this.rebuild(); }
@@ -1328,6 +1370,23 @@ export class CodeSearch {
   }
 
   quickToMain(i,id=this.state.quick.id) {return transferSearch(this,id,i);}
+  // Halte-Menue einer Suchfenster-Zeile (wie das native Zeilenmenue der Schnellsuche)
+  quickRowMenuItems(id,i) {
+    const q=this.state.searchWindows.find(item=>item.id===id);const h=q?.hits?.[i];
+    if(!h || h.kind==='section')return [{label:'Diese Zeile hat kein Menü',run:()=>{}}];
+    this.sessionMenuCount=(this.sessionMenuCount || 0)+1;   // Tour: Zeilenmenue einer Zusatzsuche geoeffnet
+    const path=rel(h.path || '');const target=this.net.op(path);
+    const items=[{label:'IM HAUPTFENSTER ÖFFNEN',run:()=>this.quickToMain(i,id)},
+      {label:'HINSPRINGEN (Doppelklick)',run:()=>{if(this.quickActivate(id))this.quickJump(i);}}];
+    if(target)items.push({label:'VIEWER ÖFFNEN',run:()=>{this.state.viewer={path,line:null};}});
+    if(h.line || target?.family==='DAT')items.push({label:'IM DAT / EDITOR ÖFFNEN',run:()=>{this.state.viewer={path,line:h.line || null};}});
+    if(target && target.family!=='DAT')items.push({label:'PARAMETER ZEIGEN',run:()=>{
+      const pars=Object.entries(target.pars || {}).slice(0,40).map(([name,p])=>`${name} = ${p && typeof p==='object' && 'v' in p ? p.v : p}`);
+      this.state.dialog={title:'PARAMETER · '+baseName(abs(path)),lines:pars.length?pars:['keine Parameter im Übungsnetz']};}});
+    if(path)items.push({label:'PFAD KOPIEREN',run:()=>this.copy(abs(path))});
+    for(const [label,value] of this.copyOptions(h))items.push({label:`KOPIEREN · ${label}`,run:()=>this.copy(value)});
+    return items;
+  }
 
   // ------------------------------------------------------------------ Lesekopien, Definitionen
   floatList(size = 'side') { return openCopy(this, 'list', size); }

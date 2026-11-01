@@ -228,6 +228,9 @@ export function renderCrumb(ctx) {
   const label = s.view === "path" ? "READ ORDER" : ((ui.TAB_LABELS || {})[s.mode] || s.mode);
   const view = { landkarte: "LANDKARTE", why: "WARUM", route: "ROUTE", system: "SYSTEM", guide: "FUNKTIONEN", states: "STATE-ATLAS" }[s.view] || "";
   const target = s.mode === "chain" ? cs.flowTarget() : s.mode === "table" ? s.table.path : (CODE_TABS.has(s.mode) ? cs.codeTargetPath() : s.focus);
+  const back = document.getElementById("cs-back"), forward = document.getElementById("cs-forward");
+  if (back) back.disabled = (s.history || []).length < 2;
+  if (forward) forward.disabled = !(s.future || []).length;
   $("#cs-crumb").innerHTML = `<b>FOCUS</b> ${esc(baseName(abs(s.focus)) || "CodeSearch_Tutorial")} › ${esc(group)} › <b>${esc(label)}</b>${view ? ` › <b>${view}</b>` : ""} › ${esc(baseName(abs(target)) || "")}
     &nbsp; sieht: ${esc((ui.MODE_SEES || {})[s.view === "path" ? "path" : s.mode] || "")} · braucht: ${esc((ui.MODE_NEEDS || {})[s.view === "path" ? "path" : s.mode] || "")}`;
 }

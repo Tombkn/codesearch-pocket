@@ -177,7 +177,7 @@ try {
   await click("[data-atlas=laptop]");
   check("Laptop-Start und sämtliche Kapitel sind zugänglich", () => {
     assert.equal(document.querySelectorAll("[data-learn-chapter]").length, window.__POCKET_DATA__["course.json"].chapters.length);
-    assert.match($("#layer-atlas").textContent, /610 Lektionen/);
+    assert.match($("#layer-atlas").textContent, /619 Lektionen/);
   });
   const atlasBody = $("#layer-atlas .lbody");
   const stableSearchButton = $('[data-mode="search"]');
@@ -498,9 +498,10 @@ try {
   searchInput().value='Sample';searchInput().dispatchEvent(new window.Event('input',{bubbles:true}));await delay(25);
   await click('#quick .active [data-q="new"]');searchInput().value='Fire';searchInput().dispatchEvent(new window.Event('input',{bubbles:true}));await delay(25);
   await click('#quick .active [data-q="new"]');searchInput().value='gain';searchInput().dispatchEvent(new window.Event('input',{bubbles:true}));await delay(25);
-  check('Drei unabhängige Suchkarten behalten Texte; vierte Zusatzsuche ist gesperrt',()=>{
+  check('Drei unabhängige Suchkarten behalten Texte; weitere Zusatzsuchen bleiben bis zehn möglich',()=>{
     assert.deepEqual([...document.querySelectorAll('[data-qinput]')].map(el=>el.value),['Sample','Fire','gain']);
-    assert.equal(document.querySelectorAll('[data-qid]').length,3);assert.ok([...document.querySelectorAll('[data-q="new"]')].every(el=>el.disabled));
+    assert.equal(document.querySelectorAll('[data-qid]').length,3);assert.ok([...document.querySelectorAll('[data-q="new"]')].every(el=>!el.disabled));
+    assert.match(document.querySelector('#quick .search-window .qh .t').textContent,/\/ 10$/);
     assert.equal(document.activeElement,searchInput());
   });
   while(document.querySelector('#quick [data-q="esc"]'))await click('#quick [data-q="esc"]');

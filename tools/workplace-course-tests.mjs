@@ -36,8 +36,8 @@ const mainSummary = (cs) => ({query: cs.state.query, mode: cs.state.mode, focus:
   owner: cs.state.paneOwner, scope: cs.cs.Scope, scopeComp: cs.cs.Scopecomp, filter: cs.cs.Searchfilter});
 const parentControls = (app) => Object.keys(app.lab.garden.pars.root).sort();
 
-test('22 Arbeitsplatz-Stationen bestehen in Reihenfolge erst nach Bedienaktionen', async (t) => {
-  assert.equal(lessons.length, 22);
+test('31 Arbeitsplatz-Stationen bestehen in Reihenfolge erst nach Bedienaktionen', async (t) => {
+  assert.equal(lessons.length, 31);
   assert.deepEqual(lessons.map(({id}) => id), Object.keys(WORKPLACE_SCRIPTS));
   const app = create();
   for (const lesson of lessons) {

@@ -193,6 +193,16 @@ def site_target(site: dict) -> dict:
         out["extclass"] = recv[2]
     elif kind == "name" and len(recv) > 1:
         out["name"] = recv[1]
+    elif kind == "modof" and len(recv) > 1:
+        # op('X').module.f / mod('X').f / mod.X.f / import X: Basis ist ein Op-Pfad oder <basis>.op('X')
+        inner = recv[1]
+        if isinstance(inner, (list, tuple)) and inner:
+            if inner[0] == "op" and len(inner) > 1:
+                out["op"] = inner[1]
+            elif inner[0] == "opof" and len(inner) > 2:
+                out["op"] = inner[2]
+                base = inner[1]
+                out["base"] = base[0] if isinstance(base, (list, tuple)) and base else ""
     if site.get("text"):
         out["text"] = site["text"]
     if site.get("dynamic"):
@@ -248,7 +258,21 @@ def load_code(net: dict) -> dict:
             print(f"WARN Analyse {entry['path']}: {error}", file=sys.stderr)
             raw = None
         if raw is None:
-            result[entry["path"]] = {"error": "parse"}
+            # Wie nativ (_add_external_line): ein nicht lesbarer DAT wird Zeile fuer Zeile geparst.
+            # Nur Modul-Aufrufe (op('X').module.f / mod('X').f) werden so Kanten; sonst bleibt der DAT ohne Modell.
+            line_sites = []
+            for number, line in enumerate(text.split(chr(10)), 1):
+                source = line.strip()
+                if not source or source.startswith("#"):
+                    continue
+                try:
+                    line_raw = ns["_analyze_source"](source)
+                except Exception:  # noqa: BLE001 - eine fremde Zeile, die die Analyse nicht versteht, zaehlt nicht
+                    line_raw = None
+                for site in (line_raw or {}).get("sites", []):
+                    if site["type"] == "call" and (site.get("recv") or [None])[0] == "modof":
+                        line_sites.append(dict(site_target(site), line=number))
+            result[entry["path"]] = {"error": "parse", "sites": line_sites} if line_sites else {"error": "parse"}
             continue
         dat = codemodel.FakeDat(f"{PREFIX}/{entry['path']}", text)
         classes = []
