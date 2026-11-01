@@ -1,0 +1,75 @@
+{
+  "content": {
+    "title": "Licht – café 🌈",
+    "goal": "  Raum verstehen\n",
+    "scope": "/project1/Sensor",
+    "non_goals": "",
+    "constraints": "",
+    "requirements": [
+      {
+        "id": "r1",
+        "title": "Schwelle",
+        "given": "Reset",
+        "when": "Sample",
+        "then": "false",
+        "counterexample": "true",
+        "assertion": {
+          "state_id": "/project1/Sensor|attribute|_present",
+          "expected_json": "false"
+        }
+      }
+    ]
+  },
+  "revision": "sha256:69dfd85b03d635b5bfe0070bf8e3168a740d425363579fd36cdd4b5888eae7d7",
+  "scalar_cases": [
+    {
+      "expected": "false",
+      "observed": {
+        "type": "bool",
+        "value": false
+      },
+      "result": "match"
+    },
+    {
+      "expected": "true",
+      "observed": {
+        "type": "int",
+        "value": 1
+      },
+      "result": "mismatch"
+    },
+    {
+      "expected": "1.0",
+      "observed": {
+        "type": "int",
+        "value": 1
+      },
+      "result": "match"
+    },
+    {
+      "expected": "\"1\"",
+      "observed": {
+        "type": "int",
+        "value": 1
+      },
+      "result": "mismatch"
+    },
+    {
+      "expected": "null",
+      "observed": {
+        "type": "NoneType",
+        "value": null
+      },
+      "result": "match"
+    },
+    {
+      "expected": "false",
+      "observed": {
+        "type": "bool",
+        "value": false,
+        "truncated": true
+      },
+      "result": "unknown"
+    }
+  ]
+}

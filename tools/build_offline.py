@@ -35,7 +35,7 @@ def app_files() -> list[str]:
 
 
 # ------------------------------------------------------------------ Einzel-Datei: ES-Module zu einem Skript buendeln
-IMPORT_RE = re.compile(r'^import\s*\{([^}]*)\}\s*from\s*"([^"]+)";\s*$', re.M | re.S)
+IMPORT_RE = re.compile(r'''^import\s*\{([^}]*)\}\s*from\s*["']([^"']+)["'];\s*$''', re.M | re.S)
 EXPORT_DECL_RE = re.compile(r"^export\s+(async\s+function|function|class|const|let|var)\s+([A-Za-z_$][\w$]*)", re.M)
 EXPORT_LIST_RE = re.compile(r"^export\s*\{([^}]*)\};?\s*$", re.M)
 
@@ -81,7 +81,8 @@ def bundle(entry: str) -> str:
             return ""
 
         text = EXPORT_LIST_RE.sub(lst, text)
-        if re.search(r"^\s*(import|export)\b", text, re.M):
+        # Nur echte Modul-Statements am Zeilenanfang; eingerueckte Klassenmethoden import()/export() sind erlaubt.
+        if re.search(r"^(import|export)\b", text, re.M):
             raise SystemExit(f"{path}: unbekannte import/export-Form uebrig")
         parts.append(f'// ---- {path}\n__m["{path}"] = (() => {{\n{text}\nreturn {{ {", ".join(exports)} }};\n}})();')
     return "\n".join(parts).replace("</script", "<\\/script")

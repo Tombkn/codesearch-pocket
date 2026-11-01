@@ -20,7 +20,9 @@ const verbose = args.includes("--verbose");
 const only = args.includes("--only") ? args[args.indexOf("--only") + 1] : null;
 
 const data = { course: load("course.json"), net: load("net.json"), code: load("code.json"), ui: load("ui.json") };
-const app = createApp(data);
+// Gleicher Speichervertrag wie localStorage; kein Browser- oder Dateidialogtest.
+const memory = new Map();
+const app = createApp(data, {getItem: (key) => memory.get(key) ?? null, setItem: (key, value) => memory.set(key, value)});
 const { tour, gestures: g } = app;
 
 const report = { total: tour.lessons.length, passed: 0, failed: [], gifted: [], errors: [] };

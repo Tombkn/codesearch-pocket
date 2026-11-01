@@ -287,7 +287,9 @@ export class Lab {
     this.branch = "bereit";
     this.control = { gain: 0.8, route: 0 };
     this.palette = PALETTE.map((r) => r.slice());
-    this.paletteHistory = [];
+    this.tableUndo = [];
+    this.tableRedo = [];
+    this.tableHistoryError = '';
     this.writes = 0;
     this.last = [0, 0, 0];
     this.ceStatus = "Bereit";
@@ -431,16 +433,66 @@ export class Lab {
     if (kind === "invalid") this.palette[1][1] = "kaputt";
   }
 
-  // Tabelle aendern (TABLE-Tab): fuer Strg+Z im TD-Hauptfenster merken
-  editCell(row, col, value) {
-    this.paletteHistory.push(this.palette.map((r) => r.slice()));
-    this.palette[row][col] = String(value);
+  editableTable(path) {
+    if (path === 'BranchLab/ColorEngine/palette') return this.palette;
+    if (path === 'SignalGarden/Palette/colors') return this.garden.table;
+    return null;
   }
 
-  undoTable() {
-    const prev = this.paletteHistory.pop();
-    if (prev) this.palette = prev;
-    return Boolean(prev);
+  _replaceTable(path, rows) {
+    const copy = rows.map(row => row.slice());
+    if (path === 'BranchLab/ColorEngine/palette') this.palette = copy;
+    else if (path === 'SignalGarden/Palette/colors') this.garden.table = copy;
+  }
+
+  // Jede abgeschlossene Bearbeitung ist genau ein Schritt, auch über Tabellen hinweg.
+  mutateTable(path, update) {
+    const table = this.editableTable(path);
+    if (!table) return false;
+    const before = table.map(row => row.slice());
+    const after = before.map(row => row.slice());
+    update(after);
+    if (JSON.stringify(before) === JSON.stringify(after)) return false;
+    this._replaceTable(path, after);
+    this.tableUndo.push({path, before, after});
+    if (this.tableUndo.length > 100) this.tableUndo.shift();
+    this.tableRedo = [];
+    this.tableHistoryError = '';
+    return true;
+  }
+
+  editCell(row, col, value, path = 'BranchLab/ColorEngine/palette') {
+    const table = this.editableTable(path);
+    if (!Number.isInteger(row) || !Number.isInteger(col) || row < 0 || col < 0
+      || !table?.[row] || col >= table[row].length) return false;
+    return this.mutateTable(path, rows => { rows[row][col] = String(value); });
+  }
+
+  _tableHistoryStep(redo) {
+    const from = redo ? this.tableRedo : this.tableUndo;
+    const to = redo ? this.tableUndo : this.tableRedo;
+    const entry = from.at(-1);
+    this.tableHistoryError = '';
+    if (!entry) return false;
+    if(entry.operation){
+      try{(redo?entry.redo:entry.undo)();}catch(error){this.tableHistoryError=error.message;return false;}
+      from.pop();to.push(entry);return true;
+    }
+    const expected = redo ? entry.before : entry.after;
+    if (JSON.stringify(this.editableTable(entry.path)) !== JSON.stringify(expected)) {
+      this.tableHistoryError = 'Die Tabelle wurde inzwischen außerhalb von TABLE verändert. Der alte Schritt wird nicht angewendet.';
+      return false;
+    }
+    this._replaceTable(entry.path, redo ? entry.after : entry.before);
+    from.pop(); to.push(entry);
+    return true;
+  }
+
+  undoTable() { return this._tableHistoryStep(false); }
+  redoTable() { return this._tableHistoryStep(true); }
+  recordEdit(undo,redo) {
+    this.tableUndo.push({operation:true,undo,redo});if(this.tableUndo.length>100)this.tableUndo.shift();
+    this.tableRedo=[];this.tableHistoryError='';
   }
 
   setError() {

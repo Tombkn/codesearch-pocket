@@ -1,8 +1,16 @@
 # CodeSearch Pocket
 
-Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **584 Schritte in 45 Kapiteln**, ein bedienbares Übungsnetz und **Laptop-Anleitungen für alle Kapitel**. Quellenstand: **CodeSearch 1.9.1, Commit [b5ebfe3](https://github.com/Tombkn/td-codesearch/tree/b5ebfe3b54f588eb990586a5bb8a446bed52c691)**, abgeglichen am 31.10.2026.
+Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **636 Schritte in 52 Kapiteln**, ein bedienbares Übungsnetz und **Laptop-Anleitungen für alle Kapitel**. Quellenstand: **CodeSearch 1.10.0, Commit [2624930](https://github.com/Tombkn/td-codesearch/tree/2624930732c828ae93234887e1abe2a395ae549e)**, abgeglichen am 01.11.2026.
 
 [Veröffentlichte Handyseite](https://tombkn.github.io/codesearch-pocket/)
+
+**Neu in 1.10.0: Arbeitsplatz.** Bis zu zehn unabhängige Suchfenster (Ctrl+F), Überblick ohne Suchtext (OPERATOREN / EXTENSIONS), COMP-Zeilenmenü mit DARIN je Familie und Parameter nach oben, Shift+Rad waagerecht und Strg+Rad-Zoom, Suchfelder in jedem der 24 Looks abgesetzt, Zweitfenster mit 25–250 % Zoom; die Laptop-Fassung bringt zusätzlich REKURSIV-Tiefe, Fenster-Andocken, klickbare Info-Zeile und TRIGGERS-Aktionen. **Kapitel 46–49** üben den Arbeitsplatz in 22 Stationen.
+
+**Neu in 1.10.0: LLM ANALYSE.** Frage und Ziel wählen, ein festes Belegpaket in deinen Chat kopieren, fehlenden Kontext nachfordern und Antworten oder Änderungsvorschläge nachvollziehbar prüfen. **Kapitel 44–45** üben den vollständigen Ablauf in **16 Mitmach-Stationen**, jeweils mit Laptop- und iPhone-Anleitung. Paket-ID und Revision verhindern vertauschte Belege; freier LLM-Kommentar bleibt ausdrücklich ungeprüft. [Bedienung, Übungen und Grenzen](docs/LLM-1.10.0.md).
+
+**SPEC** hält gewünschtes Verhalten und dokumentierte Versuche dauerhaft fest: lokale Speicherung, portable JSON-Dateien, Markdown-Export und begrenzte Snapshot-Vergleiche. **Kapitel 46 mit 14 Stationen** führt durch eine echte Settings-Änderung im nachgebildeten SignalGarden. Importierte Reports werden nicht als neu ausgeführte Tests ausgegeben. [Vollständiger Ablauf](https://github.com/Tombkn/td-codesearch/blob/main/docs/SPEC-WORKSPACE.md).
+
+**Lesekopien** übernehmen den gewählten Look und halten Code, Listen, Details, Fehlerberichte, Analyse oder Spec zum Vergleichen fest. **Groß ↗ / Klein ↙** wechselt die Größe; Inhalt und Lesestelle bleiben erhalten. Vier bestehende Kursstationen erklären die Bedienung am Laptop und iPhone. **NUR / REKURSIV** folgen jetzt dem aktuellen Network; ein ausdrücklich gewählter **IN**-Bereich bleibt gebunden.
 
 **Neu in der Oberfläche:** DAT-farbige Extension-Menüs, 16 direkt auswählbare Looks, Blau/Violett statt gelben UI-Markern und klar umrandete **AUSWAHL / DIESE COMP**-Buttons. FlowLens öffnet den gewählten Bereich; **?** enthält alle 27 nativen Shortcutgruppen. [Bedienung und Prüfgrenzen](docs/INTERFACE-1.9.1.md).
 
@@ -20,7 +28,7 @@ Die acht Themen: Orientierung → komplette Extension → Datenfluss → State �
 
 **KURS** öffnet die Kapitel. **TD** enthält Übungsnetz, Parameter und Timeline. **⌨** öffnet die Tastenleiste. Zeile antippen = markieren; doppelt tippen = Enter; lange drücken = Kontextmenü. Die Lektionskarte übersetzt die Laptop-Handgriffe in „AM HANDY“.
 
-Alle 462 bisherigen TD-Lektionen bleiben mit stabilen IDs erhalten. Dazu kommen 96 SignalGarden-Stationen sowie 14 Abschlussaufgaben ohne Hilfen und zwölf Werkstattfälle: State-Verlauf, ungültige/aktuelle/veraltete JSON-Pakete, belegte/unbekannte/widersprochene Aussagen, begrenzte Vorschau und eine isolierte Testkopie.
+Alle 462 bisherigen TD-Lektionen bleiben mit stabilen IDs erhalten. Dazu kommen 96 SignalGarden-Stationen, 16 Stationen zur geführten LLM-Analyse, 14 Spec-Stationen sowie 14 Abschlussaufgaben ohne Hilfen und zwölf Werkstattfälle: State-Verlauf, ungültige/aktuelle/veraltete JSON-Pakete, belegte/unbekannte/widersprochene Aussagen, begrenzte Vorschau und eine isolierte Testkopie.
 
 ## Neue Funktionen praktisch beurteilen
 
@@ -62,14 +70,19 @@ npm ci
 npm test
 ```
 
-- `verify.mjs`: alle 584 Stationen über Gestenfunktionen; **kein Browser-Touchtest**.
+- `verify.mjs`: alle 636 Stationen über Gestenfunktionen; **kein Browser-Touchtest**.
 - `progress-tests.mjs` und `workflow-tests.mjs`: alte Lesestellen/Häkchen, frische Aufnahmen, Scope-Gegenprobe, isolierte Fallvergleiche und Wiederaufnahme.
 - `signalgarden-tests.mjs`: zwölf gemeinsame Szenarien mit derselben Erwartungsdatei wie die Python- und nativen TD-Tests.
 - `gesture-tests.mjs`: acht Gegenproben für Tap, Double-Tap, Hold, horizontales/vertikales Wischen, Pointer-Abbruch, zweiten Finger, Scroll-Events und nachlaufende Clicks. **Synthetische Ereignisse, keine Messung der iPhone-Flüssigkeit.**
 - `parity-tests.mjs`: Gegenfälle für Protokolle, Quellen, Mutation und Testkopien.
+- `analysis-tests.mjs` und `analysis-course-tests.mjs`: Paketbindung, Folgeanfragen, Status und alle 16 neuen Stationen mit Gegenproben.
+- `spec-tests.mjs`, `spec-ui-tests.mjs` und `spec-course-tests.mjs`: portable Specs, unverwechselbare Requirements, historische Reports, Dialoge und alle 14 Spec-Stationen.
+- `float-tests.mjs`: LIVE-Ansichten und historische Belege, Look-Wechsel, eigener Zoom, Groß/Klein, Fokus und Rückkehr zur Hauptansicht.
+- `workplace-course-tests.mjs`: 22 zusammenhängende Arbeitsplatzstationen plus Gegenproben für Suchen, FLOW, Promotion, Mehrfachauswahl und Undo/Redo.
+- `browser-layout-tests.py`: echte Headless-Browser WebKit/Chromium, kleine Viewports, Scrollflächen, Regler und Menüs; keine physischen iPhone-Swipes. Benötigt lokal installiertes Playwright und Browser.
 - `smoke.mjs`: Aufbau der Ansichten, Detailfelder und Kopiermenüs.
 - `ui-tests.mjs`: DOM-Integration der echten App-Handler mit jsdom; Lesen/Üben, Lesestelle, Schriftgröße, Rückmeldung, JSON-Eingabe, überlagernde Fenster und Kapitelwechsel. **jsdom besitzt keine Layout- oder Touch-Engine.**
-- `ui-upgrade-tests.mjs`: Extension-Menüs, Alt-Hilfe, Shortcutkatalog und Textkontraste aller 16 Looks einschließlich der Kontext-Buttons.
+- `ui-upgrade-tests.mjs`: Extension-Menüs, Alt-Hilfe, Shortcutkatalog und Textkontraste aller 24 Looks einschließlich der Kontext-Buttons.
 - `viewport-tests.mjs`: simulierte Ereignisse für Bildschirmtastatur, Drehung, Pinch-Zoom und Browser ohne VisualViewport. **Kein Safari-Gerätetest.**
 - `package-tests.mjs`: Start und Grundbedienung der erzeugten Einzeldatei im DOM-Test; enthaltene Dateien und Versionskennung.
 
@@ -77,11 +90,11 @@ Die Prüfung auf einem echten Android/Chrome und iPhone/Safari bleibt eine eigen
 
 ## Quellen reproduzierbar bauen
 
-`upstream.json` enthält Commit und SHA-256-Hashes der 33 Build-Eingaben. `source/` bleibt lokal; eine neue Revision erhält einen eigenen Unterordner. Aus einem Clone von `Tombkn/td-codesearch`:
+`upstream.json` enthält Commit und SHA-256-Hashes der 38 Build-Eingaben. `source/` bleibt lokal; eine neue Revision erhält einen eigenen Unterordner. Aus einem Clone von `Tombkn/td-codesearch`:
 
 ```sh
 python -m pip install -r requirements-build.txt
-python tools/upstream.py --repo ../td-codesearch --ref b5ebfe3b54f588eb990586a5bb8a446bed52c691 --version 1.9.0 --checked 2026-10-31 --freeze
+python tools/upstream.py --repo ../td-codesearch --ref 2624930732c828ae93234887e1abe2a395ae549e --version 1.10.0 --checked 2026-11-01 --freeze
 python tools/build_data.py
 python tools/build_offline.py
 npm test

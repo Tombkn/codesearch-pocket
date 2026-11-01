@@ -1,3 +1,7 @@
+import {newFlowState,flowAnchor,presentFlow,pinFlow,refreshFlow,flowStoryText} from './flow-session.js';
+import {selectableHit,selectionIdentity,selectedHits,copySelection} from './multi-selection.js';
+import {newSearchSession,openSearch,searchSession,scopeSession,transferSearch} from './search-sessions.js';
+import {buildCompCode} from './views/comp-context.js';
 // CodeSearch-Fenster als Zustandsmaschine: Tabs, Feld, Liste, Detail, Tasten, Befehle, RECORD, TABLE,
 // Schnellsuche, DATEN-Leiste, Lesekopien. Kein DOM - die App zeichnet, verify.mjs bedient es direkt.
 
@@ -13,11 +17,17 @@ import {
   buildErrors, errorReport, buildGuide, buildInvestigation, stateAtlas,
 } from "./views/miscviews.js";
 import { headers, groupsOf, countRows } from "./views/common.js";
-import { collectEvidence, parseProtocol, answerRequest, checkExplanation, previewChange, makeSample } from "./investigation.js";
+import { collectEvidence, parseProtocol, answerRequest, checkExplanation, previewChange, makeSample, revisionFor } from "./investigation.js";
 import { Lab } from "./lab.js";
+import { rememberPacket, openAnalysis, exportAnalysis, importAnalysis, refreshAnalysis, analysisSnapshot, analysisTemplate, copyAnalysisResult, runProtocol } from "./analysis-workbench.js";
+import { SpecWorkbench } from './spec-workbench.js';
+import {captureCode, openCopy, copyMenu, sizeCopy} from './float-copies.js';
 
 export const TAB_ORDER = ["search", "trace", "refs", "impact", "errors", "chain", "table", "map", "entries", "tour", "record", "check"];
 const CODE_MODES = new Set(["map", "entries", "tour", "record", "check"]);
+export const CONTEXT_CONTENT_MODES = new Set(['search', 'errors', 'map', 'entries', 'check']);
+export const CONTEXT_OP_MODES = new Set(['trace', 'refs', 'chain']);
+export const CONTEXT_MODES = new Set([...CONTEXT_CONTENT_MODES, ...CONTEXT_OP_MODES]);
 const DATA_FORMATS = ["name", "relative", "full", "op_relative", "op_full"];
 export const DATA_LABELS = { name: "NAME", relative: "RELATIV", full: "FULL PATH", op_relative: "op(RELATIV)", op_full: "op(FULL)" };
 
@@ -29,7 +39,8 @@ export const CS_DEFAULTS = {
 };
 
 export class CodeSearch {
-  constructor({ net, lab, ui }) {
+  constructor({ net, lab, ui, storage = null }) {
+    this.spec = new SpecWorkbench(this, storage);
     this.net = net;
     this.lab = lab;
     this.ui = ui;
@@ -45,6 +56,7 @@ export class CodeSearch {
   }
 
   _freshState() {
+    const quick=newSearchSession(2);
     return {
       mainopen: true, mode: "search", view: "", query: "", targets: [abs("BranchLab")], focus: "BranchLab", paneOwner: "BranchLab",
       networkSelected: [], hits: [], selected: -1, multi: new Set(), overview: "", impact: "", impactSymbol: null,
@@ -53,7 +65,7 @@ export class CodeSearch {
       record: { recording: false, records: [], chainIndex: 0, liveHold: null, liveMini: false, liveContinuous: false, target: "BranchLab" },
       why: { cases: [], index: -1, compare: null },
       table: { path: "BranchLab/ColorEngine/palette", query: "", sort: [-1, false], sel: null, dups: -1 },
-      quick: { open: false, query: "", filter: "all", hits: [], selected: -1 },
+      quick, searchWindows:[quick], flow:newFlowState(), secondaryPane:{open:false,owner:'',target:null},
       display: { format: "name", base: abs("BranchLab"), details: false, prevFormat: "name" },
       learning: false, collapsedBlocks: new Set(), savedMaps: [], changeFeed: [], expandedStates: new Set(),
       codeView: { path: "", focus: "", definition: false, back: [], forward: [] }, chainReader: { index: -1, reader: false },
@@ -80,7 +92,15 @@ export class CodeSearch {
         if (!(rec.recording && inScope && !frameNoise) && !capture) return null;
         const member = cs.net.member(dat, name);
         const entry = { t: performanceNow(), frame: cs.lab.frame, name, dat, line: member ? member.line : null, depth, dur: 0, state: "" };
-        if (rec.recording && inScope && !frameNoise) rec.records.push(entry);
+        if (rec.recording && inScope && !frameNoise) {
+          entry.recording_id = rec.provenance?.recording_id || '';
+          entry.symbol = `${abs(dat)}:${cs.net.extClass(dat)?.cls.name ? cs.net.extClass(dat).cls.name + '.' : ''}${name}`;
+          const sourceText = cs.net.lines(dat).join('\n');
+          const cached = rec.sourceHashes[dat];
+          if (!cached || cached.text !== sourceText) rec.sourceHashes[dat] = {text: sourceText, hash: revisionFor({[abs(dat)]: sourceText})};
+          entry.recorded_source_hash = rec.sourceHashes[dat].hash;
+          rec.records.push(entry);
+        }
         if (capture) capture.push(entry);
         return entry;
       },
@@ -119,7 +139,23 @@ export class CodeSearch {
       }
     }
     this.state.mode = mode;
+    if(mode==='chain' && target!==null)this.state.context='selection';
     this._remember();
+    if(mode==='chain' && target!==null && this.state.flow.pinned)return refreshFlow(this,t);
+    this.rebuild();
+  }
+
+  // DARIN: direkte Kinder eines COMPs als Trefferliste - ueber die Suche ohne Suchtext (Bereich = dieser COMP).
+  showCompContents(path, family = 'all') {
+    const target = rel(path);
+    if (!this.net.isComp(target)) { this.state.status = 'DARIN: kein COMP unter ' + abs(path); return this.emit(); }
+    this.cs.Searchfilter = 'op';
+    this.cs.Opfamily = family === 'all' ? 'all' : family.toLowerCase();
+    this.cs.Scope = 'comp';
+    this.cs.Scopecomp = abs(target);
+    this.state.opAddress = 'all';
+    this.OpenAt('search', { target, query: '' });
+    this.state.status = `DARIN · ${abs(target)} · ${family === 'all' ? 'alle Operatoren' : family}`;
     this.rebuild();
   }
 
@@ -178,6 +214,7 @@ export class CodeSearch {
   }
 
   scopeRoot() {
+    if (this.contextActive() && CONTEXT_CONTENT_MODES.has(this.state.mode)) return this.state.paneOwner;
     const scope = this.cs.Scope;
     if (scope === "project") return "";
     if (scope === "comp") return rel(this.cs.Scopecomp || abs(this.state.paneOwner));
@@ -195,9 +232,21 @@ export class CodeSearch {
     return pin || codeTarget(this, this.state.focus);
   }
 
+  contextActive() {
+    return this.state.context === 'comp' && CONTEXT_MODES.has(this.state.mode)
+      && !this.state.overview && !['states', 'untersuchung', 'request', 'compare', 'explanation', 'preview', 'visual', 'analysis', 'spec', 'guide', 'path'].includes(this.state.view);
+  }
+
+  contextDescription() {
+    if(this.state.mode==='chain' && this.state.flow.pinned)return `FLOW fixiert · ${abs(this.state.flow.anchor)}`;
+    if (!this.contextActive()) return 'AUSWAHL · ausgewählter Operator';
+    return `DIESE COMP · ${abs(this.state.paneOwner)} · ${CONTEXT_OP_MODES.has(this.state.mode) ? 'COMP selbst' : 'Inhalt inkl. Unter-COMPs'}`;
+  }
+
   // ------------------------------------------------------------------ Ansicht bauen
   rebuild() {
     const s = this.state;
+    const selectedKey=selectionIdentity(s.hits[s.selected]),multiKeys=new Set([...s.multi].map(index=>selectionIdentity(s.hits[index])).filter(Boolean));
     let result = { rows: [] };
     try {
       result = this._build();
@@ -207,23 +256,28 @@ export class CodeSearch {
     }
     s.hits = result.rows;
     s.meta = result;
+    s.multi=new Set(s.hits.flatMap((hit,index)=>multiKeys.has(selectionIdentity(hit))?[index]:[]));
+    if(selectedKey)s.selected=s.hits.findIndex(hit=>selectionIdentity(hit)===selectedKey);
     if (s.selected >= s.hits.length) s.selected = -1;
     this.emit();
   }
 
   _build() {
     const s = this.state;
-    const t = s.focus;
+    const t = this.contextActive() && CONTEXT_OP_MODES.has(s.mode) ? s.paneOwner : s.focus;
     if (s.overview) return buildOverview(this, s.overview);
-    if (["states", "untersuchung", "request", "compare", "explanation", "preview", "visual"].includes(s.view)) return buildInvestigation(this);
+    if (["states", "untersuchung", "request", "compare", "explanation", "preview", "visual", "analysis"].includes(s.view)) return buildInvestigation(this);
     if (s.view === "guide") return buildGuide(this);
     if (s.view === "path") return buildReadOrder(this);
+    if(s.mode==='chain' && s.flow.pinned)return presentFlow(this);
+    if (this.contextActive() && !this.net.isComp(s.paneOwner)) return {rows:[emptyRow('Der geöffnete Netzwerk-COMP ist nicht mehr vorhanden.')]};
     switch (s.mode) {
       case "search": return buildSearch(this);
       case "trace": return buildUses(this, t);
-      case "refs": return s.view === "symbolrefs" ? buildSymbolRefs(this, s.symbolRefs.dat, s.symbolRefs.name) : buildUsedBy(this, t);
-      case "chain": return buildFlow(this, t);
+      case "refs": return s.view === "symbolrefs" && !this.contextActive() ? buildSymbolRefs(this, s.symbolRefs.dat, s.symbolRefs.name) : buildUsedBy(this, t);
+      case "chain": return presentFlow(this);
       case "map":
+        if(this.contextActive()) return buildCompCode(this,s.paneOwner);
         if (s.view === "landkarte") return buildLandkarte(this, this.codeTargetPath());
         if (s.view === "system") return buildSystem(this, this.codeTargetPath());
         return buildStructure(this, this.codeTargetPath());
@@ -238,7 +292,7 @@ export class CodeSearch {
       case "record":
         if (s.view === "why") return buildWhy(this);
         return buildRecord(this);
-      case "check": return buildAudit(this, this.codeTargetPath());
+      case "check": return this.contextActive() ? buildCompCode(this,s.paneOwner,true) : buildAudit(this, this.codeTargetPath());
       case "errors": return buildErrors(this);
       case "table": return { rows: [], table: this.tableView() };
       default: return { rows: [] };
@@ -262,10 +316,14 @@ export class CodeSearch {
     }
     if (ctrl) {
       if (s.multi.has(index)) s.multi.delete(index); else s.multi.add(index);
-      if (s.selected >= 0 && s.selected !== index) s.multi.add(s.selected);
-      s.multi.add(index);
+      if(!selectableHit(h))s.multi.delete(index);
+      if(!s.multi.has(index)){
+        s.selected=[...s.multi].at(-1) ?? -1;const remaining=s.hits[s.selected];
+        if(remaining?.line&&remaining.path)this._showCode(rel(remaining.path),remaining.line,remaining.ctx || '');
+        this.emit();return;
+      }
     } else {
-      s.multi = new Set([index]);
+      s.multi = new Set(selectableHit(h)?[index]:[]);
     }
     // LANDKARTE: ein Klick auf einen State klappt seine Stellen auf (zweiter Klick zu)
     if (s.mode === "map" && s.view === "landkarte" && h.cat === "state" && h.kind === "symbol" && !ctrl) {
@@ -302,6 +360,11 @@ export class CodeSearch {
     if (h.kind === "button") return this.runAction(h.action_key, h);
     if (h.evidence?.length) {
       const site = h.evidence.find((e) => e.source && e.line);
+      const stored = h.captured_sources?.find((entry) => entry.source === site?.source);
+      if (stored && stored.hash !== revisionFor({[stored.source]: this.net.lines(rel(stored.source)).join('\n')})) {
+        s.dialog = {title: 'GESPEICHERTER BELEG · QUELLE INZWISCHEN GEÄNDERT', lines: [stored.source, `Gespeicherter Ausschnitt ab Zeile ${stored.excerpt.start_line}:`, stored.excerpt.text, 'Enter: heutige Quelle bewusst öffnen, ohne die alte Zeilennummer zu übernehmen. Esc: zurück.'], confirm: () => { this._showCode(rel(stored.source), 1, ''); this.jumpTo({path: stored.source}); }};
+        return this.emit();
+      }
       if (site && this.net.op(rel(site.source))) { this._showCode(rel(site.source), site.line, site.method || ""); this.jumpTo({ path: site.source, line: site.line }); }
       return this.emit();
     }
@@ -344,6 +407,48 @@ export class CodeSearch {
     this.emit();
   }
 
+  flowPin(on) {return pinFlow(this,on);}
+  flowRefresh(anchor=null) {return refreshFlow(this,anchor);}
+  flowTarget() {return flowAnchor(this);}
+  setCodeFull(enabled=!this.state.codeFull) {
+    this.state.codeFull=Boolean(enabled);this.emit();
+  }
+  setCodeZoom(multiplier,notify=true) {
+    if(!Number.isFinite(multiplier))throw new Error('Code-Schriftgröße muss eine endliche Zahl sein.');
+    this.state.codeZoom=Math.max(.25,Math.min(2.5,Math.round(multiplier*20)/20));
+    if(notify)this.emit();
+  }
+  flowSetTarget(path) {
+    path=rel(path);if(!this.net.op(path))return;
+    Object.assign(this.state,{focus:path,targets:[abs(path)],context:'selection',selected:-1});this._remember();
+    if(this.state.flow.pinned)refreshFlow(this,path);
+    else this.rebuild();
+    // Der neue Bezugspunkt muss auch als Auswahl die folgenden Aktionen bestimmen.
+    const anchor=this.state.hits.findIndex(hit=>hit.anchor && rel(hit.path)===path);
+    if(anchor>=0)this.select(anchor);
+  }
+  flowFilter(name,value) {
+    const allowed={direction:['both','up','down'],family:['all','top','chop','sop','dat','comp','mat','pop'],links:['all','wire','refs'],depth:[1,2,4,8,16,64]};
+    if(name==='depth')value=Number(value);
+    if(!allowed[name]?.includes(value))return;
+    this.state.flow.filters[name]=value;this.rebuild();
+  }
+  openNetworkPane(path) {
+    path=rel(path);const target=this.net.op(path);
+    if(!target){this.state.status='Operator nicht mehr vorhanden; keine andere Pane geöffnet.';return this.emit();}
+    Object.assign(this.state.secondaryPane,{open:true,owner:target.parent || '',target:path});
+    this.state.networkViewRequested=true;this.emit();
+  }
+  secondaryNetwork(action,path=null) {
+    const pane=this.state.secondaryPane;
+    if(action==='close')pane.open=false;
+    else if(action==='up'){pane.owner=this.net.op(pane.owner)?.parent || '';pane.target=null;}
+    else if(action==='enter' && this.net.isComp(rel(path))){pane.owner=rel(path);pane.target=null;}
+    else if(action==='select' && this.net.op(rel(path)))pane.target=rel(path);
+    else if(action==='zoom')pane.zoom=Math.min(4,Math.max(.4,(pane.zoom || 1)*Number(path)));
+    this.emit();
+  }
+
   // Zur Fundstelle im TD-Netz: Pane auf den Parent, Op markieren (ohne den FOCUS zu aendern)
   jumpTo(h) {
     const path = rel(h.path);
@@ -362,6 +467,7 @@ export class CodeSearch {
     if (["chain", "trace", "refs"].includes(s.mode) && h.path) {
       const t = rel(h.path);
       if (this.net.op(t)) {
+        if(s.mode==='chain')return this.flowSetTarget(t);
         s.focus = t;
         s.targets = [abs(t)];
         s.selected = -1;
@@ -441,12 +547,12 @@ export class CodeSearch {
   // ------------------------------------------------------------------ Esc
   escape() {
     const s = this.state;
-    if (s.dialog) { s.dialog = null; return this.emit(); }
+    if (s.dialog) { const d = s.dialog; d.cancel?.(); if (s.dialog === d) s.dialog = null; return this.emit(); }
     if (s.menu) { s.menu = null; return this.emit(); }
     if (s.viewer) { s.viewer = null; return this.emit(); }
     if (s.editor) { s.editor = null; return this.emit(); }
     // Esc wirkt im Fenster mit dem Fokus: zweites Fenster (Schnellsuche) oder Hauptfenster
-    if (s.quick.open && s.focusWin === "quick") { s.quick.open = false; s.focusWin = "main"; return this.emit(); }
+    if (s.quick.open && s.focusWin === "quick") return this.quickClose(s.quick.id);
     if (s.help) { s.help = null; return this.emit(); }
     if (s.view === "route") {
       if (s.route.thread) { s.route.thread = ""; return this.rebuild(); }
@@ -503,7 +609,7 @@ export class CodeSearch {
     if (["trace", "refs", "chain"].includes(s.mode) && value) {
       const t = rel(value.replace(/^op\(['"]|['"]\)$/g, ""));
       const found = this.net.op(t) ? t : [...this.net.ops.keys()].find((p) => baseName(p) === value);
-      if (found != null) { s.focus = found; s.targets = [abs(found)]; return this.rebuild(); }
+      if (found != null) { if(s.mode==='chain')return this.flowSetTarget(found); s.focus = found; s.targets = [abs(found)]; return this.rebuild(); }
     }
   }
 
@@ -528,15 +634,47 @@ export class CodeSearch {
       throw new Error(matches.length > 1 ? `Ziel mehrdeutig: ${value}; vollständigen Pfad verwenden` : `Ziel nicht vorhanden: ${value}`);
     };
     const openTarget = (mode) => { const path = target(); this.OpenAt(mode, { target: path }); return done(`${mode.toUpperCase()} · ${abs(path)}`); };
-    const packet = () => { const p = collectEvidence(this, stateAtlas(this)); inv.packet = p; return p; };
+    const packet = () => { const p = rememberPacket(this, collectEvidence(this, stateAtlas(this))); inv.packet = p; return p; };
     try {
     switch ((head || "").toLowerCase()) {
+      case "spec": {
+        const [action, ...parts] = arg.split(/\s+/), value=parts.join(' ');
+        if (!action) return this.SpecView();
+        if (action==='neu') return this.NewSpec(value);
+        if (action==='anforderung') return this.AddSpecRequirement(value);
+        if (action==='waehlen') return this.SelectSpecRequirement(value);
+        if (action==='setzen') {
+          const [field,...words]=parts;
+          return this.SetSpecField(field,words.join(' '),['title','given','when','then','counterexample','state_id','expected_json'].includes(field) ? this.spec.selected : '');
+        }
+        if (action==='zustand') return this.SetSpecField('state_id',value,this.spec.selected);
+        if (action==='erwartet') return this.SetSpecField('expected_json',value,this.spec.selected);
+        if (action==='pruefen') return this.CheckSpecRequirement();
+        if (action==='auftrag') return this.SpecBrief();
+        if (action==='speichern') return this.SaveSpec();
+        if (action==='laden') return this.LoadSpec(value);
+        if (action==='importieren') return this.ImportSpec(this.clipboard);
+        if (action==='exportieren') return this.ExportSpec();
+        if (action==='markdown') return this.ExportSpecMarkdown();
+        return done('Unbekannter Spec-Befehl',false);
+      }
+      case "analyse": {
+        const [action, ...question] = arg.split(/\s+/);
+        const goals = { verstehen: 'understand', fehler: 'debug', aenderung: 'change', 'änderung': 'change', understand: 'understand', debug: 'debug', change: 'change' };
+        if (action === 'kopieren') { this.analysisBrief(); return {ok: true}; }
+        if (action === 'importieren') { const result = this.importAnalysis(); return {ok: result.ok !== false}; }
+        if (action === 'aktualisieren') { this.refreshAnalysis(); return {ok: true}; }
+        if (action === 'vorlage') { this.analysisTemplate(question.join(' ')); return {ok: true}; }
+        if (action === 'ergebnis' && question.join(' ') === 'kopieren') { this.copyAnalysisResult(); return {ok: true}; }
+        if (action && !Object.hasOwn(goals, action)) return done('>analyse verstehen | fehler | aenderung <Frage> | kopieren | importieren | aktualisieren', false);
+        this.analysis(goals[action] || '', question.join(' ')); return {ok: true};
+      }
       case "hilfe": s.view = "guide"; return done("Funktionsübersicht");
       case "landkarte":
         if (arg === "kopieren") { this.copy(landkarteText(this, this.codeTargetPath())); this.clipboardOrigin = "landkarte"; return done("LANDKARTE kopiert"); }
         s.mode = "map"; s.view = "landkarte"; return done("LANDKARTE");
       case "snapshot": return this.saveMap();
-      case "story": this.copy(flowStory(this, s.focus)); return done("Story der Strecke kopiert");
+      case "story": this.copy(flowStoryText(this)); return done("Story der Strecke kopiert");
       case "export":
         s.dialog = { title: "EXPORT", lines: ["KARTE (JSON) → Karten-Ordner codemaps/", "KONTEXT (Markdown für Agenten) → codemaps/<COMP>_context.md", "LANDKARTE kopieren → Zwischenablage", "STORY kopieren → Zwischenablage", "REVIEW kopieren → Zwischenablage"] };
         return done("Exportwege");
@@ -628,19 +766,19 @@ export class CodeSearch {
       }
       case "nachfrage": {
         inv.request = null;
-        inv.request = answerRequest(packet(), parseProtocol(this.clipboard));
+        inv.request = runProtocol(this, parseProtocol(this.clipboard), "request").result;
         s.mode = "map"; s.view = "request";
         return done(inv.request.status === "stale" ? "stale: Quellenrevision passt nicht; keine aktuellen Antworten" : "Nachfrage aus dem begrenzten Pocket-Paket beantwortet");
       }
       case "antwort": {
         inv.explanation = null;
-        inv.explanation = checkExplanation(packet(), parseProtocol(this.clipboard));
+        inv.explanation = runProtocol(this, parseProtocol(this.clipboard), "explanation").result;
         s.mode = "map"; s.view = "explanation";
         return done("Aussagen geprüft");
       }
       case "vorschau": {
         inv.preview = null;
-        inv.preview = previewChange(packet(), parseProtocol(this.clipboard, 3500000));
+        inv.preview = runProtocol(this, parseProtocol(this.clipboard, 3500000), "preview").result;
         s.mode = "map"; s.view = "preview";
         return done(`Pocket-Vorschau: ${inv.preview.status} · ${inv.preview.violations.length} Regelverletzungen · Quelle unverändert · keine Runtime-Prüfung`);
       }
@@ -673,6 +811,29 @@ export class CodeSearch {
     } catch (error) { return done(`Nicht übernommen: ${error.message}`, false); }
   }
 
+  analysis(goal = '', question = '') { return openAnalysis(this, goal, question); }
+  analysisBrief() { return exportAnalysis(this); }
+  importAnalysis(text = '') { return importAnalysis(this, text); }
+  refreshAnalysis() { return refreshAnalysis(this); }
+  analysisTemplate(kind) { return analysisTemplate(this, kind); }
+  copyAnalysisResult() { return copyAnalysisResult(this); }
+  investigationSnapshot() { return {...analysisSnapshot(this),...this.spec.snapshot()}; }
+  SpecView() { return this.spec.view(); }
+  SpecStates() { return this.spec.states(); }
+  NewSpec(title='') { return this.spec.new(title); }
+  SelectSpecRequirement(id) { return this.spec.select(id); }
+  AddSpecRequirement(title='') { return this.spec.add(title); }
+  SetSpecField(field,value,id='') { return this.spec.set(field,value,id); }
+  CheckSpecRequirement(id='') { return this.spec.check(id); }
+  RecordSpecObservation(procedure,observation,id='') { return this.spec.observe(procedure,observation,id); }
+  SpecBrief() { return this.spec.brief(); }
+  SaveSpec() { return this.spec.save(); }
+  LoadSpec(id) { return this.spec.load(id); }
+  ImportSpec(text) { return this.spec.import(text); }
+  ExportSpec() { return this.spec.export(); }
+  ExportSpecMarkdown() { return this.spec.markdown(); }
+  ConfirmSpecReplace(discard) { return this.spec.confirm(discard); }
+
   sampleStates() {
     const inv = this.state.inv;
     if (!inv.watching) return;
@@ -691,11 +852,11 @@ export class CodeSearch {
   }
 
   // ------------------------------------------------------------------ Kopieren
-  copy(text, kind = "") {
+  copy(text, kind = "", origin = "") {
     this.clipboard = String(text);
     // Gleicher Text kann erneut kopiert werden; Inhalt allein beweist keinen neuen Handgriff.
     this.clipboardSerial += 1;
-    this.clipboardOrigin = "";
+    this.clipboardOrigin = origin;
     if (kind) this.state.inv.sample = kind;
     this.state.status = `kopiert: ${String(text).split("\n")[0].slice(0, 80)}`;
   }
@@ -730,15 +891,28 @@ export class CodeSearch {
     return abs(path);
   }
 
-  ctrlC() {
+  ctrlC(origin = "") {
     const s = this.state;
-    if (s.mode === "record" && s.view !== "why") return this.copyChain();
-    if (s.mode === "table") return this.tableCopyCell();
+    if(selectedHits(this).length>1)return copySelection(this, 'rows', origin);
+    if (s.mode === "record" && s.view !== "why") return this.copyChain(origin);
+    if (s.mode === "table") return this.tableCopyCell(origin);
     const opts = this.copyOptions();
     if (!opts.length) { s.status = "nichts markiert"; return this.emit(); }
-    if (opts.length === 1) { this.copy(opts[0][1]); return this.emit(); }
-    s.menu = { title: "KOPIEREN", items: opts.map(([label, value]) => ({ label: `${label}:  ${value.split("\n")[0]}`, run: () => { this.copy(value); } })) };
+    if (opts.length === 1) { this.copy(opts[0][1], "", origin); return this.emit(); }
+    s.menu = { title: "KOPIEREN", items: opts.map(([label, value]) => ({ label: `${label}:  ${value.split("\n")[0]}`, run: () => { this.copy(value, "", origin); } })) };
     this.emit();
+  }
+  selectionCopy(kind='rows') {return copySelection(this,kind);}
+  selectionClear() {this.state.multi.clear();this.state.selected=-1;this.emit();}
+  selectionMenu() {
+    const count=selectedHits(this).length;
+    this.state.menu={title:`AUSWAHL · ${count} Einträge`,items:[
+      {label:'Ausgewählte Zeilen kopieren',run:()=>this.selectionCopy('rows')},
+      {label:'Quellcode der Auswahl kopieren',run:()=>this.selectionCopy('code')},
+      {label:'Fundstellen kopieren',run:()=>this.selectionCopy('paths')},
+      {label:'Analysepaket aus ausgewählten Quellen',run:()=>this.selectionCopy('analysis')},
+      {label:'Auswahl aufheben',run:()=>this.selectionClear()},
+    ]};this.emit();
   }
 
   altP() {
@@ -831,6 +1005,8 @@ export class CodeSearch {
     rec.target = this.codeTargetPath();
     rec.recording = true;
     rec.records = [];
+    rec.sourceHashes = Object.create(null);
+    rec.provenance = {recording_id: uid('pocket-record'), origin: 'pocket-simulation', started: new Date().toISOString(), source_revisions: {}, completeness: ['JavaScript-Lab-Simulation; keine beobachteten Python-Codeobjekte.']};
     rec.chainIndex = 0;
     rec.liveHold = null;
     this.state.status = "RECORD läuft – Aktion auslösen, dann STOP";
@@ -840,6 +1016,7 @@ export class CodeSearch {
   recordStop() {
     const rec = this.state.record;
     rec.recording = false;
+    if (rec.provenance) rec.provenance.ended = new Date().toISOString();
     const chains = chainsOf(rec.records);
     const withRoute = chains.findIndex((c) => c.some((r) => r.name === "RouteEvent"));
     rec.chainIndex = withRoute >= 0 ? withRoute : Math.max(0, chains.length - 1);
@@ -875,10 +1052,10 @@ export class CodeSearch {
     this.rebuild();
   }
 
-  copyChain() {
+  copyChain(origin = "") {
     const chains = chainsOf(this.state.record.records);
     const chain = chains[this.state.record.chainIndex] || [];
-    this.copy(chainText(chain) || "(keine Kette)");
+    this.copy(chainText(chain) || "(keine Kette)", "", origin);
     this.emit();
   }
 
@@ -993,6 +1170,9 @@ export class CodeSearch {
   runAction(key, h) {
     const s = this.state;
     switch (key) {
+      case 'OPENCONTEXTSOURCE':
+        s.context='selection';s.mode='map';s.view='';s.overview='';s.focus=rel(h.path);this.cs.Analysistarget=h.path;s.selected=-1;
+        return this.rebuild();
       case "LANDKARTE": s.view = "landkarte"; s.selected = -1; return this.rebuild();
       case "SYSTEM": s.view = "system"; s.selected = -1; return this.rebuild();
       case "REVIEW": this.copy(reviewTable(this, this.codeTargetPath())); return this.emit();
@@ -1061,7 +1241,7 @@ export class CodeSearch {
     if (this.state.table.path === 'SignalGarden/Palette/colors') {
       const table = this.lab.garden.table;
       if (row > 0 && row < table.length && col > 0 && col < table[row].length) {
-        table[row][col] = String(value); this.state.status = `colors[${row}, ${col}] = ${value}`;
+        this.lab.editCell(row, col, value, this.state.table.path); this.state.status = `colors[${row}, ${col}] = ${value}`;
       } else this.state.status = 'Nur vorhandene RGB-Zellen bearbeiten; Namen und Header bleiben fest.';
       return this.rebuild();
     }
@@ -1071,14 +1251,14 @@ export class CodeSearch {
     this.rebuild();
   }
 
-  tableCopyCell() {
+  tableCopyCell(origin = "") {
     const h = this.tableSelectedHit();
     if (!h) { this.state.status = "erst eine Zelle markieren"; return this.emit(); }
     const header = this.tableData()[0] || [];
     this.state.menu = { title: "KOPIEREN", items: [
-      { label: `Zell-Zugriff:  op('${this._relTo(rel(h.path))}')[${h.row}, '${header[h.col]}']`, run: () => this.copy(`op('${this._relTo(rel(h.path))}')[${h.row}, '${header[h.col]}']`) },
-      { label: `Index:  [${h.row}, ${h.col}]`, run: () => this.copy(`op('${this._relTo(rel(h.path))}')[${h.row}, ${h.col}]`) },
-      { label: `Wert:  ${h.text}`, run: () => this.copy(h.text) },
+      { label: `Zell-Zugriff:  op('${this._relTo(rel(h.path))}')[${h.row}, '${header[h.col]}']`, run: () => this.copy(`op('${this._relTo(rel(h.path))}')[${h.row}, '${header[h.col]}']`, "", origin) },
+      { label: `Index:  [${h.row}, ${h.col}]`, run: () => this.copy(`op('${this._relTo(rel(h.path))}')[${h.row}, ${h.col}]`, "", origin) },
+      { label: `Wert:  ${h.text}`, run: () => this.copy(h.text, "", origin) },
     ] };
     this.emit();
   }
@@ -1095,14 +1275,14 @@ export class CodeSearch {
       { label: "Zeile als Dict kopieren", run: () => this.copy(pyStr(Object.fromEntries(header.map((h, i) => [h, cells[i]])))) },
       { label: "Spalte als Liste kopieren", run: () => this.copy(pyStr(data.slice(1).map((r) => r[col]))) },
       { label: "Tabelle als CSV kopieren", run: () => this.copy(data.map((r) => r.join(",")).join("\n")) },
-      { label: "Zeile einfügen …", run: () => { if (editable) { lab.paletteHistory.push(lab.palette.map((r) => r.slice())); lab.palette.splice(row + 1, 0, header.map(() => "")); this.state.status = "Testzeile eingefügt – sieh im DAT nach"; } } },
-      { label: "Zeile löschen …", run: () => { if (editable && row > 0) { lab.paletteHistory.push(lab.palette.map((r) => r.slice())); lab.palette.splice(row, 1); this.state.status = "Zeile gelöscht"; } } },
-      { label: "Spalte einfügen …", run: () => { if (editable) { lab.paletteHistory.push(lab.palette.map((r) => r.slice())); lab.palette.forEach((r, i) => r.splice(col + 1, 0, i === 0 ? "" : "")); this.state.status = "Spalte ohne Namen eingefügt"; } } },
-      { label: "Spalte löschen …", run: () => { if (editable && col > 0) { lab.paletteHistory.push(lab.palette.map((r) => r.slice())); lab.palette.forEach((r) => r.splice(col, 1)); this.state.status = "Spalte gelöscht"; } } },
+      { label: "Zeile einfügen …", run: () => { if (editable) { lab.mutateTable(path, rows => rows.splice(row + 1, 0, header.map(() => ""))); this.state.status = "Testzeile eingefügt – Strg+Z macht sie rückgängig"; } } },
+      { label: "Zeile löschen …", run: () => { if (editable && row > 0) { lab.mutateTable(path, rows => rows.splice(row, 1)); this.state.status = "Zeile gelöscht"; } } },
+      { label: "Spalte einfügen …", run: () => { if (editable) { lab.mutateTable(path, rows => rows.forEach(r => r.splice(col + 1, 0, ""))); this.state.status = "Spalte ohne Namen eingefügt"; } } },
+      { label: "Spalte löschen …", run: () => { if (editable && col > 0) { lab.mutateTable(path, rows => rows.forEach(r => r.splice(col, 1))); this.state.status = "Spalte gelöscht"; } } },
       { label: "Sortierung in den DAT schreiben …", run: () => {
         if (!editable) return;
         this.state.dialog = { title: "SORTIERUNG SCHREIBEN", lines: ["Die angezeigte Reihenfolge wird in den echten DAT geschrieben.", "SCHREIBEN (Enter) · ABBRECHEN (Esc)"],
-          confirm: () => { const view = this.tableView(); lab.paletteHistory.push(lab.palette.map((r) => r.slice())); lab.palette = [header.slice(), ...view.rows.map((r) => r.cells.slice())]; this.state.status = "Sortierung in den DAT geschrieben"; } };
+          confirm: () => { const view = this.tableView(); lab.mutateTable(path, rows => rows.splice(0, rows.length, header.slice(), ...view.rows.map(r => r.cells.slice()))); this.state.status = "Sortierung in den DAT geschrieben"; } };
       } },
       { label: "Duplikate in Spalte markieren", run: () => { this.state.table.dups = col; this.state.status = `Duplikate in Spalte ${header[col]} markiert`; } },
     ] };
@@ -1110,36 +1290,32 @@ export class CodeSearch {
   }
 
   undoTD() {
-    if (this.lab.undoTable()) this.state.status = "Strg+Z im TD-Hauptfenster: letzte DAT-Änderung zurück";
+    this.state.status = this.lab.undoTable() ? "Letzte Änderung rückgängig · Strg+Y stellt sie wieder her"
+      : this.lab.tableHistoryError || "Keine Änderung zum Rückgängigmachen";
+    this.rebuild();
+  }
+
+  redoTD() {
+    this.state.status = this.lab.redoTable() ? "Änderung wiederhergestellt"
+      : this.lab.tableHistoryError || "Keine Änderung zum Wiederherstellen";
     this.rebuild();
   }
 
   // ------------------------------------------------------------------ Schnellsuche (Strg+P)
-  quickOpen() {
-    const q = this.state.quick;
-    q.open = true;
-    this.state.focusWin = "quick";
-    this.emit();
+  quickOpen(fresh=false) {return openSearch(this,fresh);}
+  closeAllSearchWindows() {for(const q of this.state.searchWindows){q.open=false;this.regexQueue?.cancel(q.id);}this.state.focusWin='main';this.state.quickFocusRequested=null;}
+  quickActivate(id) {const q=this.state.searchWindows.find(item=>item.id===id);if(q){this.state.quick=q;this.state.focusWin='quick';this.state.floatFocus=null;}return q;}
+  quickSearch(text,id=this.state.quick.id) {return searchSession(this,text,id);}
+  quickScope(value,id=this.state.quick.id) {return scopeSession(this,value,id);}
+  quickOption(name,value,id=this.state.quick.id) {
+    const q=this.state.searchWindows.find(item=>item.id===id);if(!q)throw new Error('Suchfenster nicht vorhanden.');
+    if(['regex','caseSensitive','includeTables','includeSys'].includes(name))q[name]=Boolean(value);
+    else if(name==='maxResults' && Number.isInteger(value) && value>=1 && value<=5000)q[name]=value;
+    else throw new Error('Ungültiger Suchfilter.');
+    return this.quickSearch(q.query,id);
   }
-
-  quickSearch(text) {
-    const q = this.state.quick;
-    q.query = text;
-    const saved = { query: this.state.query, filter: this.cs.Searchfilter, mode: this.state.mode };
-    this.state.query = text;
-    this.cs.Searchfilter = q.filter === "all" ? "all" : q.filter;
-    const result = buildSearch(this);
-    this.state.query = saved.query;
-    this.cs.Searchfilter = saved.filter;
-    q.hits = result.rows;
-    q.selected = -1;
-    this.emit();
-  }
-
-  quickFilter(filter) {
-    this.state.quick.filter = filter;
-    this.quickSearch(this.state.quick.query);
-  }
+  quickFilter(filter) {this.state.quick.filter=filter;return this.quickSearch(this.state.quick.query);}
+  quickClose(id=this.state.quick.id) {const q=this.state.searchWindows.find(item=>item.id===id);if(q)q.open=false;this.regexQueue?.cancel(id);this.state.focusWin='main';this.emit();}
 
   quickSelect(i) { this.state.quick.selected = i; this.emit(); }
 
@@ -1151,39 +1327,27 @@ export class CodeSearch {
     this.emit();
   }
 
-  quickToMain(i) {
-    const q = this.state.quick;
-    const h = q.hits[i];
-    q.open = false;
-    this.state.mode = "search";
-    this.state.view = "";
-    this.state.query = q.query;
-    this.state.mainopen = true;
-    this.rebuild();
-    if (h) {
-      const idx = this.state.hits.findIndex((x) => x.path === h.path && x.line === h.line);
-      if (idx >= 0) this.state.selected = idx;
-    }
-    this.emit();
-  }
+  quickToMain(i,id=this.state.quick.id) {return transferSearch(this,id,i);}
 
   // ------------------------------------------------------------------ Lesekopien, Definitionen
-  floatList() {
-    const label = (this.ui.TAB_LABELS || {})[this.state.mode] || this.state.mode.toUpperCase();
-    const title = this.state.view === "states" ? "STATE-ATLAS · Liste · Lesekopie" : `${label} · Liste · Lesekopie`;
-    this.state.floats.push({ id: uid("f"), title, rows: clone(this.state.hits), selected: -1, zoom: 1, zoomStart: 1 });
-    this.emit();
-  }
+  floatList(size = 'side') { return openCopy(this, 'list', size); }
+  floatCopy(kind = 'list', size = 'side') { return openCopy(this, kind, size); }
+  floatMenu() { copyMenu(this); }
+  floatSize(id, size) { sizeCopy(this, id, size); }
 
   floatDefinition(dat, name) {
     const member = this.net.member(dat, name);
     if (!member) return;
-    this.state.floats.push({ id: uid("f"), title: `Definition · ${name} · ${abs(dat)}:${member.line}`, code: { dat, line: member.line, end: member.end }, selected: -1, zoom: 1, zoomStart: 1 });
-    this.emit();
+    this._showCode(dat, member.line, name);
+    this.state.codeView.definition = true;
+    const f = openCopy(this, 'code', 'side');
+    if(f) f.title = `Definition · ${name} · Zweitansicht`;
+    return f;
   }
 
   floatClose(id) {
     this.state.floats = this.state.floats.filter((f) => f.id !== id);
+    if (this.state.floatFocus === id) this.state.floatFocus = null;
     this.emit();
   }
 
@@ -1231,6 +1395,7 @@ export class CodeSearch {
     if (path != null) {
       this.state.targets = [abs(path)];
       this.state.focus = path;
+      if(this.state.mode==='chain' && this.state.flow.pinned)return this.emit();
       const followMode = ["trace", "refs", "chain"].includes(this.state.mode) || CODE_MODES.has(this.state.mode);
       if (this.cs.Followselection && followMode) {
         this.state.selected = -1;

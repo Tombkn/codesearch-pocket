@@ -1,3 +1,4 @@
+import {browserRegexQueue} from '../regex-queue.js';
 // SEARCH: Code, Operatoren, Parameter, Kanaele, Tabellen im Bereich - mit derselben Abfrage-Sprache wie CodeSearch.
 
 import { abs, compileQuery, fmtNum } from "../util.js";
@@ -63,18 +64,18 @@ function enclosing(net, dat, line) {
   return member && member.property ? name : `${name}()`;
 }
 
-function scopeOps(cs) {
-  const scope = cs.scopeRoot();
-  const flat = cs.cs.Scope === "currentflat";
+function scopeOps(cs, request={}) {
+  const scope = request.scopeRoot ?? cs.scopeRoot();
+  const flat = request.flat ?? (cs.cs.Scope === "currentflat" && !cs.contextActive());
   // Der Bereichs-COMP selbst gehoert dazu (seine Custom-Pars, z. B. BranchLab.Intensity)
   const self = scope ? [cs.net.op(scope)].filter(Boolean) : [];
   const list = [...self, ...cs.net.within(scope, !flat)];
-  return cs.cs.Includesys ? list : list.filter((o) => !o.path.split("/").some((p) => p === "ExtUtils" || p === "Tour" || p === "ExtUtils1"));
+  return (request.includeSys ?? cs.cs.Includesys) ? list : list.filter((o) => !o.path.split("/").some((p) => p === "ExtUtils" || p === "Tour" || p === "ExtUtils1"));
 }
 
-export function searchIndex(cs) {
+export function searchIndex(cs, request={}) {
   const net = cs.net;
-  const ops = scopeOps(cs);
+  const ops = scopeOps(cs,request);
   const opRows = [];
   const codeRows = [];
   const parRows = [];
@@ -92,8 +93,9 @@ export function searchIndex(cs) {
     if (o.ext && o.ext.length) address.push("ext");
     opRows.push({ o, match: [o.name, o.type, ...parts].join(" "), text: parts.join("   ·   "), address });
     if (typeof o.text === "string") {
-      const lines = o.text.split("\n");
-      const comments = net.code[o.path] ? pythonCommentLines(o.text) : new Set();
+      const text = o.path==='BranchLab/experiment_script'?cs.lab.script:o.text;
+      const lines = text.split("\n");
+      const comments = net.code[o.path] ? pythonCommentLines(text) : new Set();
       const isExt = net.datComp.has(o.path);
       const isCallback = ["chopexecuteDAT", "datexecuteDAT", "parameterexecuteDAT", "panelexecuteDAT", "opexecuteDAT", "executeDAT"].includes(o.type)
         || o.name.endsWith("_callbacks");
@@ -104,7 +106,8 @@ export function searchIndex(cs) {
       });
     }
     if (Array.isArray(o.table)) {
-      o.table.forEach((row, i) => tableRows.push({ o, line: i, text: row.join("  ") }));
+      const table=o.path==='BranchLab/ColorEngine/palette'?cs.lab.palette:o.path==='SignalGarden/Palette/colors'?cs.lab.garden.table:o.table;
+      table.forEach((row, i) => tableRows.push({ o, line: i, text: row.join("  ") }));
     }
     for (const [name, val] of Object.entries(o.pars || {})) {
       if ("e" in val) parRows.push({ o, name, kind: "expr", text: val.e });
@@ -133,25 +136,75 @@ function codeHit(cs, r) {
   return h;
 }
 
-export function buildSearch(cs) {
-  const query = cs.state.query;
-  const filter = cs.cs.Searchfilter || "all";
-  const family = cs.cs.Opfamily || "all";
-  const address = cs.state.opAddress || "all";
-  const limit = Math.max(1, Number(cs.cs.Maxresults) || 500);
-  const options = { caseSensitive: Boolean(cs.cs.Casesensitive), regex: Boolean(cs.cs.Regex) };
-  const counts = { op: 0, code: 0, ext: 0, callback: 0, par: 0, chan: 0, table: 0, dat: 0 };
-  if (!query.trim()) {
-    return { rows: [notice("Suchtext eingeben", "Wort = ganzes Wort · tick* Anfang · *tick* irgendwo · Wörter = UND · ^wort = ohne")], counts, total: 0 };
+// Kleine gemeinsame LRU: gleiche Quelle/Scope wird bei neuen Queries nicht neu zerlegt.
+export function sharedSearchIndex(cs,request) {
+  const key=JSON.stringify([request.scopeRoot??cs.scopeRoot(),request.flat??(cs.cs.Scope==='currentflat'&&!cs.contextActive()),request.includeSys??cs.cs.Includesys]);
+  const revision=JSON.stringify([cs.lab.script,cs.lab.palette,cs.lab.garden.table]);
+  if(cs.searchIndexRevision!==revision){cs.searchIndexCache=new Map();cs.searchIndexRevision=revision;}
+  const cache=cs.searchIndexCache;
+  if(cache.has(key)){const index=cache.get(key);cache.delete(key);cache.set(key,index);return {index,key};}
+  const index=searchIndex(cs,request);cache.set(key,index);cs.searchIndexBuilds=(cs.searchIndexBuilds || 0)+1;
+  while(cache.size>4)cache.delete(cache.keys().next().value);
+  return {index,key};
+}
+
+// Überblick ohne Suchtext: eine Zeile pro Operator, begrenzt wie jede Suche (Maxresults).
+function listAllOps(cs, request, filter, family, address, limit) {
+  cs.regexQueue?.cancel(request.owner || 'main');
+  const {index:idx,key:indexKey}=sharedSearchIndex(cs,request);
+  const wantFamily = filter === 'ext' ? 'comp' : family;
+  const wantAddress = filter === 'ext' ? 'ext' : address;
+  const list = idx.opRows.filter((r) => (wantFamily === 'all' || r.o.family.toLowerCase() === wantFamily)
+    && (wantAddress === 'all' || r.address.includes(wantAddress)));
+  const counts = { op: list.length, code: 0, ext: filter === 'ext' ? list.length : 0, callback: 0, par: 0, chan: 0, table: 0, dat: 0 };
+  const title = filter === 'ext' ? 'ALLE COMPs MIT EXTENSION' : 'ALLE OPERATOREN' + (wantFamily === 'all' ? '' : ' · ' + wantFamily.toUpperCase());
+  const rows = [notice('Ohne Suchtext: Überblick', filter === 'ext' ? 'Eine Zeile pro COMP mit Extension. Suchtext filtert wieder Zeilen.' : 'Familie und Adresse grenzen ein; z. B. baseCOMP eintippen für nur baseCOMPs.'),
+    section(title, '', list.length, { num: '1' })];
+  for (const r of list.slice(0, limit)) {
+    const h = hit('opfind', abs(r.o.path), r.text, { detail: r.o.type });
+    h.art = r.o.family; h.family = r.o.family;
+    rows.push(h);
   }
-  const idx = searchIndex(cs);
-  const lineMatch = compileQuery(query, { ...options, whole: true });
-  const nameMatch = compileQuery(query, { ...options, whole: false });
+  return { rows, counts, total: list.length, indexKey, listAll: true };
+}
+
+export function buildSearch(cs, request={}) {
+  const query = request.query ?? cs.state.query;
+  const filter = request.filter ?? cs.cs.Searchfilter ?? 'all';
+  const family = request.family ?? cs.cs.Opfamily ?? 'all';
+  const address = request.address ?? cs.state.opAddress ?? 'all';
+  const limit = Math.max(1, Math.min(2000,Number(request.maxResults ?? cs.cs.Maxresults) || 300));
+  const options = {caseSensitive:Boolean(request.caseSensitive ?? cs.cs.Casesensitive),regex:Boolean(request.regex ?? cs.cs.Regex)};
+  const counts = { op: 0, code: 0, ext: 0, callback: 0, par: 0, chan: 0, table: 0, dat: 0 };
+  // Ohne Suchtext: OPERATOREN listet alles der gewählten Familie/Adresse, EXTENSIONS alle COMPs mit Extension.
+  if (!query.trim() && (filter === 'op' || filter === 'ext')) return listAllOps(cs, request, filter, family, address, limit);
+  if (!query.trim()) {
+    cs.regexQueue?.cancel(request.owner || 'main');
+    return { rows: [notice("Suchtext eingeben", "Wort = ganzes Wort · tick* Anfang · *tick* irgendwo · Wörter = UND · ^wort = ohne · ohne Suchtext: OPERATOREN oder EXTENSIONS zeigt alles")], counts, total: 0 };
+  }
+  if(query.length>512){cs.regexQueue?.cancel(request.owner || 'main');return {rows:[notice('Suchtext zu lang: höchstens 512 Zeichen.')],counts,total:0,error:'Suchtext zu lang'};}
+  if(options.regex){try {new RegExp(query);}catch(error){cs.regexQueue?.cancel(request.owner || 'main');return {rows:[notice('Ungültiger Regex: '+error.message)],counts,total:0,error:error.message};}}
+  const {index:idx,key:indexKey}=sharedSearchIndex(cs,request);
+  let regexMatch=null;
+  if(options.regex && (typeof Worker!=='undefined' || typeof window!=='undefined')) {
+    cs.regexQueue ??= browserRegexQueue();
+    if(!cs.regexQueue)return {rows:[notice('Regex-Worker nicht verfügbar. Suche ohne Regex bleibt bedienbar.')],counts,total:0,error:'Regex-Worker nicht verfügbar'};
+    cs.searchIndexIds ??= new WeakMap();
+    if(!cs.searchIndexIds.has(idx))cs.searchIndexIds.set(idx,(cs.searchIndexId=(cs.searchIndexId || 0)+1));
+    const key=JSON.stringify([cs.searchIndexIds.get(idx),query,options.caseSensitive]);
+    const texts=[...new Set([...idx.opRows.map(r=>r.match),...idx.codeRows.map(r=>r.text),...idx.parRows.map(r=>`${r.o.name} ${r.name} ${r.text}`),...idx.chanRows.map(r=>r.name),...idx.tableRows.map(r=>r.text)])];
+    const result=cs.regexQueue.request(request.owner || 'main',key,{query,caseSensitive:options.caseSensitive,texts},request.onReady || (()=>cs.rebuild()));
+    if(!result)return {rows:[notice('Regex wird geprüft …','Die Oberfläche bleibt bedienbar. Ein langsames Muster wird abgebrochen.')],counts,total:0,pending:true,indexKey};
+    if(result.error)return {rows:[notice(result.error)],counts,total:0,error:result.error,indexKey};
+    regexMatch=text=>result.matches.has(text);
+  } else cs.regexQueue?.cancel(request.owner || 'main');
+  const lineMatch = regexMatch || compileQuery(query, { ...options, whole: true });
+  const nameMatch = regexMatch || compileQuery(query, { ...options, whole: false });
   const ops = idx.opRows.filter((r) => nameMatch(r.match));
   const code = idx.codeRows.filter((r) => lineMatch(r.text));
   const pars = idx.parRows.filter((r) => nameMatch(`${r.o.name} ${r.name} ${r.text}`));
   const chans = idx.chanRows.filter((r) => nameMatch(r.name));
-  const tables = cs.cs.Includetables ? idx.tableRows.filter((r) => nameMatch(r.text)) : [];
+  const tables = (request.includeTables ?? cs.cs.Includetables) ? idx.tableRows.filter((r) => nameMatch(r.text)) : [];
   counts.op = ops.length;
   counts.code = code.filter((r) => r.isPython).length;
   counts.ext = code.filter((r) => r.isExt).length;

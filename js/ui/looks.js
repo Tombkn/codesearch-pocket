@@ -37,6 +37,8 @@ export function lookVariables(palette) {
     bg: base, win: surface, panel: surface, panel2: raised, line, line2: line, text, muted: safeMuted, dim: safeMuted,
     sel: selected, "sel-line": accent, "look-accent": accent, accent: uiAccent,
     "on-accent": onAccent,
+    // Eingabefelder heben sich in jedem Look ab (wie nativ _look_field_colors): Feldfarbe + Akzentrahmen.
+    field: light ? mix([1, 1, 1], accent, 0.08) : mix(raised, accent, 0.18), "field-line": uiAccent,
     chip: raised, code: base, tour: base, tour2: surface,
     ...colors, "dat-fg": colors.magenta, "dat-bg": mix(surface, colors.magenta, 0.09),
   };

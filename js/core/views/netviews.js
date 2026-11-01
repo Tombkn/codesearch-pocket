@@ -41,7 +41,7 @@ function exprRefsText(net, edges) {
 export function buildUses(cs, target) {
   const net = cs.net;
   const o = net.op(target);
-  if (!o) return { rows: [info("INFO", "", `${target} gibt es nicht`)] };
+  if (!o) return { rows: [info("INFO", "", `${target} gibt es nicht`)],up:[],down:[] };
   const rows = [];
   const inEdges = net.edgesTo(target);
   const sources = inEdges.filter((e) => e.kind !== "code" && e.src !== null && e.src !== undefined);
@@ -203,7 +203,7 @@ export function triggerRows(cs, comp) {
 export function buildUsedBy(cs, target) {
   const net = cs.net;
   const o = net.op(target);
-  if (!o) return { rows: [info("INFO", "", `${target} gibt es nicht`)] };
+  if (!o) return { rows: [info("INFO", "", `${target} gibt es nicht`)],up:[],down:[] };
   const home = o.parent || "";
   const groups = { NEBENAN: [], WOANDERS: [], INNEN: [] };
   const place = (path) => {
@@ -278,7 +278,7 @@ export function isFeedbackEdge(net, e) {
   return e.kind === "oppar" && e.par === "top" && net.opType(e.dst) === "feedbackTOP";
 }
 
-function flowNeighbors(net, path, direction, arrivedBy) {
+function flowNeighbors(net, path, direction, arrivedBy, scope) {
   // Datenwege: Kabel, Parameter-Quellen und COMP-Grenzen (In/Out-OPs). Ein COMP ist nur ueber Kabel eine Station
   // der Strecke; ueber Binds/Expressions gelesen ist er Quelle eines Parameters, kein Bildweg.
   const out = [];
@@ -304,6 +304,12 @@ function flowNeighbors(net, path, direction, arrivedBy) {
     }
   } else {
     for (const e of net.edgesFrom(path)) {
+      // Der Indexbereich begrenzt Parameterleser, nicht die Kabelstrecke.
+      if(scope && ['expr','export','bind','oppar'].includes(e.kind)) {
+        const reader=net.op(e.dst), inside=net.isInside(e.dst,scope.root);
+        if(!inside || scope.flat && e.dst!==scope.root && reader?.parent!==scope.root)continue;
+        if(!scope.includeSys && e.dst.split('/').some(part=>['ExtUtils','ExtUtils1','Tour'].includes(part)))continue;
+      }
       if (!["wire", "expr", "export", "bind", "oppar"].includes(e.kind) || !e.dst) continue;
       if (o.family === "COMP" && e.kind !== "wire") continue;
       if (e.kind === "expr" && ["autoexportroot", "rate"].includes(e.par)) continue;
@@ -319,10 +325,10 @@ function flowNeighbors(net, path, direction, arrivedBy) {
   return out;
 }
 
-export function buildFlow(cs, target) {
+export function buildFlow(cs, target, scope=null) {
   const net = cs.net;
   const o = net.op(target);
-  if (!o) return { rows: [info("INFO", "", `${target} gibt es nicht`)] };
+  if (!o) return { rows: [info("INFO", "", `${target} gibt es nicht`)],up:[],down:[] };
   const walk = (direction) => {
     const seen = new Map([[target, 0]]);
     const list = [];
@@ -330,7 +336,7 @@ export function buildFlow(cs, target) {
     while (frontier.length) {
       const next = [];
       for (const item of frontier) {
-        for (const n of flowNeighbors(net, item.path, direction, item.art)) {
+        for (const n of flowNeighbors(net, item.path, direction, item.art, scope)) {
           if (seen.has(n.path)) continue;
           seen.set(n.path, item.dist + 1);
           const entry = { path: n.path, art: n.art, dist: item.dist + 1, from: item.path };

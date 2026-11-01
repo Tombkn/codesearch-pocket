@@ -284,7 +284,8 @@ export function auditQuestion(cs, row, comp) {
 export function buildErrors(cs) {
   const lab = cs.lab;
   const rows = [];
-  if (lab.errorActive) {
+  if (lab.errorActive && cs.net.isInside('BranchLab/error_probe', cs.scopeRoot())
+    && (cs.contextActive() || cs.cs.Scope !== 'currentflat' || cs.net.op('BranchLab/error_probe')?.parent === cs.scopeRoot())) {
     rows.push(section("FEHLER", "Cook- und Python-Fehler im Bereich, jetzt", 1, { num: "1", accent: "red" }));
     const h = hit("error", abs("BranchLab/error_probe"), "Expression-Fehler   ·   Par opacity   ·   op('absichtlich_fehlend')['gain']: 'NoneType' object is not subscriptable", { par: "opacity", detail: "EXPR", ctx: "opacity" });
     h.art = "FEHLER";
@@ -398,7 +399,16 @@ export function buildInvestigation(cs) {
     rows.push(h);
     return h;
   };
-  if (view === "states" && inv.watchView) {
+  if (view === "analysis") {
+    const a = inv.analysis;
+    const packet = a?.packets.find((p) => p.id === a.packetId);
+    rows.push(section("LLM ANALYSE", "Ziel → Paket → Auftrag → Belege → Prüfung", 0, {num: "1"}));
+    add("ZIEL", a?.goal || "understand", a?.question || "Frage im Analyse-Arbeitsplatz eingeben");
+    if (packet) add("PAKET", packet.id, `${packet.scope} · ${packet.captured.utc}`);
+    const result = a?.result?.data;
+    for (const c of result?.claims || []) add(c.status.toUpperCase(), c.checked_statement, c.reason);
+    if (a?.error) add("FEHLER", "Nicht übernommen", a.error);
+  } else if (view === "states" && inv.watchView) {
     rows.push(section("STICHPROBEN", `${inv.watchHistory.length} Aufnahmen · Pocket-Simulation · ${inv.watching ? "läuft" : "gestoppt"}`, inv.watchHistory.length, { num: "1" }));
     inv.watchHistory.forEach((p, i) => {
       const previous = inv.watchHistory[i - 1];
@@ -436,9 +446,15 @@ export function buildInvestigation(cs) {
     rows.push(section("AUSSAGEN", "jede Behauptung gegen Fundstellen geprüft", inv.explanation ? inv.explanation.claims.length : 0, { num: "1" }));
     (inv.explanation ? inv.explanation.claims : []).forEach((c) => {
       const site = c.evidence.find((e) => e.source);
-      const h = add({ supported: "BELEGT", contradicted: "WIDERSPROCHEN", unknown: "UNKLAR", stale: "VERALTET" }[c.status], c.text, c.status, c.reason, site?.source || cs.state.focus);
-      h.evidence = c.evidence; h.reason = c.reason; h.line = site?.line || null;
+      const h = add({ supported: "BELEGT", contradicted: "WIDERSPROCHEN", unknown: "UNKLAR", stale: "VERALTET" }[c.status], c.checked_statement, c.status, c.reason, site?.source || cs.state.focus);
+      // Eine alte Zeilennummer darf nicht blind in die heutige Quelle springen.
+      h.evidence = c.evidence; h.captured_sources = c.captured_sources; h.reason = c.reason; h.line = null;
+      if (c.commentary) add("KOMMENTAR", "Freie Einordnung · ungeprüft", c.commentary);
     });
+    if (inv.explanation) {
+      const copy = add("KOPIEREN", "Prüfergebnisse für den Chat kopieren", "geprüfte Aussagen, Belegbindung und Grenzen");
+      copy.kind = 'guide'; copy.guide_command = 'analyse ergebnis kopieren';
+    }
   } else if (view === "preview") {
     rows.push(section("VORSCHAU", "was der Vorschlag ändern würde – der DAT bleibt unverändert", inv.preview ? inv.preview.items.length : 0, { num: "1" }));
     (inv.preview ? inv.preview.items : []).forEach((p) => add(p.status.toUpperCase(), p.name, p.text));

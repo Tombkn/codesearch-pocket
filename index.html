@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-180.png">
   <meta name="apple-mobile-web-app-title" content="CodeSearch">
-  <link rel="stylesheet" href="css/app.css?v=8fd5186146">
+  <link rel="stylesheet" href="css/app.css?v=2e18196b49">
 </head>
 <body data-look="classic">
   <div id="app" class="app">
@@ -43,9 +43,12 @@
       <div class="cs-filters" id="cs-filters"></div>
       <div class="cs-data" id="cs-data"></div>
       <div class="cs-record" id="cs-record"></div>
+      <div class="cs-flow" id="cs-flow"></div>
       <div class="cs-crumb" id="cs-crumb"></div>
       <div class="cs-groups" id="cs-groups"></div>
       <div class="cs-body" id="cs-body">
+        <div class="cs-analysis" id="cs-analysis" role="region" aria-label="Geführter LLM-Analyse-Arbeitsplatz" tabindex="0" hidden></div>
+        <div class="cs-spec cs-analysis" id="cs-spec" role="region" aria-label="Spec-Arbeitsplatz" tabindex="0" hidden></div>
         <div class="cs-list" id="cs-list"></div>
         <div class="cs-split" id="cs-split" title="ziehen: Liste / Detail"></div>
         <aside class="cs-detail" id="cs-detail"></aside>
@@ -77,6 +80,6 @@
   <div class="floats" id="floats"></div>
   <div class="toast" id="toast"></div>
 
-  <script type="module" src="js/app.js?v=8fd5186146"></script>
+  <script type="module" src="js/app.js?v=2e18196b49"></script>
 </body>
 </html>

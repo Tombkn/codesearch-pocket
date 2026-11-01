@@ -1,16 +1,12 @@
 // Kapitelhilfen beschreiben erwartete Versuche. Sie setzen keinen Lernfortschritt.
-// Quellenpfade beziehen sich auf SOURCE_REF.repo am unten genannten Commit.
-export const SOURCE_REF = {
-  repo: 'Tombkn/td-codesearch',
-  commit: '9a9dac1f21a86050073c9f7b729e33597b3e87e5',
-  version: '1.9.0',
-  checked: '2026-10-31',
-};
+// Build erzeugt dieselbe Quellenbindung wie den Kurs; keine zweite Versionspflege.
+import { SOURCE_REF } from './source-ref.js';
+export { SOURCE_REF };
 
 export const LAPTOP_START = [
   { title: 'Eine eigene Testdatei anlegen', text: 'Speichere ein leeres TouchDesigner-Projekt in einem eigenen Übungsordner. Arbeite für diese Versuche in einer Kopie, nicht in deiner laufenden Installation. Notiere den tatsächlich geöffneten Dateinamen. Pocket und TouchDesigner haben getrennte Werte und getrennten Fortschritt; die Handy-Anzeige ist kein Beleg für den Laptop-Zustand.' },
-  { title: 'Version und Dateien zusammenhalten', text: 'Die Referenz ist td-codesearch 1.9.0 am oben genannten Commit. Die README nennt TouchDesigner 2025.30000+ und einen Prüfstand auf Windows 2025.33230; das bestätigt noch nicht deinen Rechner. Lade release/CodeSearch.tox und release/CodeSearch_Tutorial.tox aus demselben Stand. Für FlowLens kommt release/FlowLens.tox hinzu, für optionale Netzmarkierungen release/ReadPath.tox.' },
-  { title: 'Komponenten einsetzen und Pfade prüfen', text: 'Ziehe CodeSearch einmal in die Projektwurzel, sodass /CodeSearch entsteht, und setze das Tutorial ein. Vermeide eine zweite CodeSearch-Instanz. Öffne mit Shift+K. Lies den tatsächlichen Tutorial-Pfad im Netzwerk: /project1/CodeSearch_Tutorial ist nur ein möglicher Ort. Verwende für StateLab und BranchLab die vorhandenen Pfade; kopiere keinen fremden Rechnerpfad.' },
+  { title: 'Version und Dateien zusammenhalten', text: `Die Referenz ist td-codesearch ${SOURCE_REF.version} am oben genannten Commit. Die README nennt TouchDesigner 2025.30000+ und einen Prüfstand auf Windows 2025.33230; das bestätigt noch nicht deinen Rechner. Lade release/CodeSearch.tox und release/CodeSearch_Tutorial.tox aus demselben Stand. Für FlowLens kommt release/FlowLens.tox hinzu, für optionale Netzmarkierungen release/ReadPath.tox.` },
+  { title: 'Komponenten einsetzen und Pfade prüfen', text: 'Ziehe CodeSearch einmal in die Projektwurzel, sodass /CodeSearch entsteht, und setze das Tutorial ein. Vermeide eine zweite CodeSearch-Instanz. Öffne mit Shift+K oder dem optionalen </> CodeSearch-Button in der FNSTools-Toolbar. Der Button verwendet die vorhandene Instanz und benötigt die eingerichtete Toolbar-Integration; Pocket zeigt diese Laptop-Anleitung. Lies den tatsächlichen Tutorial-Pfad im Netzwerk: /project1/CodeSearch_Tutorial ist nur ein möglicher Ort. Verwende für StateLab und BranchLab die vorhandenen Pfade; kopiere keinen fremden Rechnerpfad.' },
   { title: 'Den Arbeitsplatz bewusst öffnen', text: 'Starte das Mitmach-Tutorial und klicke Arbeitsplatz. Prüfe FOCUS, Suchbereich und die laufende Timeline. FOCUS ist der untersuchte Operator; Scope begrenzt die Suche. RECORD und TABLE besitzen eigene Ziele. Wenn das Bild stillsteht, prüfe zuerst, ob der Versuch laufende Frames voraussetzt. Ein offenes Fenster allein bestätigt keinen passenden Analysebereich.' },
   { title: 'Einen bekannten Fall wirklich auslösen', text: 'Bereite BranchLab vor, stelle Enabled an, Route warm und Intensity 0.8 ein. Notiere Events und ColorEngine.Writes. Starte RECORD im Bereich BranchLab, drücke einmal Fire und stoppe. Prüfe _warm, _send, ApplyPreset und _writeColor sowie den CHOP rgb. Erst diese eigene Aufnahme beschreibt deinen ausgeführten Laptop-Versuch.' },
   { title: 'State-Lebensdauer getrennt untersuchen', text: 'Bereite ausschließlich StateLab vor. Vergleiche _count, Gain und lesson_session vor und nach Fire und anschließend nach Nur StateLab neu initialisieren. Die erwartete neue Instanz setzt hier _count zurück; Parameter und Storage bleiben. Initialisiere dabei weder CodeSearch noch die Tour neu. Ein Re-Init ersetzt eine Extension-Instanz und öffnet keine Projektdatei erneut.' },
@@ -19,8 +15,8 @@ export const LAPTOP_START = [
 ];
 
 export function guideForLesson(lesson) {
-  if (lesson.workflow_id) return {
-    title: lesson.title, goal: lesson.workflow_goal, before: lesson.before,
+  if (lesson.workflow_id || lesson.sequence_id) return {
+    title: lesson.title, goal: lesson.workflow_goal || lesson.question || lesson.why, before: lesson.before,
     action: lesson.action, after: lesson.expected, laptop: lesson.laptop_steps,
     proof: lesson.expected, limit: lesson.limit, source: lesson.source,
   };
@@ -526,17 +522,17 @@ export const CHAPTER_GUIDES = [
   },
   {
     title: 'Neu: Daten, Definitionen und Lesekopien',
-    goal: 'Eine Definition gezielt nachschlagen und dabei den Ausgangspunkt sowie den Status einer Lesekopie behalten.',
+    goal: 'Eine Definition gezielt nachschlagen und bedienbare LIVE-Ansichten von historischen Belegen unterscheiden.',
     before: 'StateLab.Fire ruft _finish auf. Die Hauptansicht zeigt Fire; eine Adressdarstellung entscheidet nur, wie seine Fundstelle geschrieben wird.',
     action: 'Vergleiche F6 und Alt+D. Folge _finish mit Ctrl+Klick und kehre zurück. Öffne danach dieselbe Definition mit Ctrl+Alt+Klick separat.',
-    after: 'Der direkte Sprung ändert die untersuchte Definition. Die zusätzliche Lesekopie lässt den Ausgangskontext im Hauptfenster bestehen.',
+    after: 'Der direkte Sprung ändert die untersuchte Definition. Die zusätzliche LIVE-Ansicht teilt Auswahl und Aktionen mit dem Hauptfenster.',
     laptop: [
       'Prüfe nach dem Definitionssprung den tatsächlichen DAT-Pfad und die angegebene Zeilennummer.',
       'Öffne LISTE ↗ FENSTER und teste Auswahl, Kopieren und Zoom ausschließlich in dieser Kopie.',
       'Schließe die aktive Kopie mit Esc und kontrolliere, dass Hauptfenster und andere Kopien erhalten bleiben.',
     ],
     proof: 'Du findest die definierte Methode und danach den Ausgangspunkt wieder; die kopierte Zeile stammt aus dem bewusst gewählten Fenster.',
-    limit: 'Eine Lesekopie ist ein eigener sichtbarer Stand, kein zusätzlicher ausführbarer COMP. Änderungen und aktuelle Analysewerte brauchen ihren ursprünglichen Projektbezug.',
+    limit: 'Eine LIVE-Ansicht wirkt am gleichen Projektziel. Nur ausdrücklich historische Quellen bleiben eingefroren und schreibgeschützt. Unabhängige Fragen gehören in eigene Suchfenster.',
     source: 'docs/floating-copies.md',
   },
   {

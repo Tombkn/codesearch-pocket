@@ -1,9 +1,11 @@
+import {searchOptions,searchScopeOptions} from './search-options.js';
 // Ebenen ueber dem Fenster: TD-Seite (Netz, Parameter, Timeline), Kurs, Atlas, FlowLens, Popup, Schnellsuche, Lesekopien.
 
 import { $, esc, md, updateHtml } from "./dom.js";
 import { laptopOverview } from "./learningview.js";
 import { abs, rel, baseName, fmtNum } from "../core/util.js";
-import { artOf, pathText, codeHtml } from "./cswin.js";
+import { artOf, artClass, pathText, codeHtml, snapshotCodeHtml, renderCS } from "./cswin.js";
+import {createHostContext,hostTemplate,normalizeHostIds,hostQuery} from './cs-host.js';
 import { rgb } from "./looks.js";
 
 // ------------------------------------------------------------------ TD-Seite
@@ -17,7 +19,7 @@ export function renderTD(ctx) {
   if (!td.open) return;
   const tabs = [["net", "NETZ"], ["par", "PARAMETER"], ["time", "TIMELINE"]];
   let body = "";
-  if (td.tab === "net") body = netHtml(ctx);
+  if (td.tab === "net") body = `<div class="network-panes ${cs.state.secondaryPane.open?'split':''}"><section class="network-pane" data-network-pane="primary">${netHtml(ctx)}</section>${cs.state.secondaryPane.open?`<section class="network-pane secondary" data-network-pane="secondary"><div class="secondary-title">ZWEITE NETZWERKANSICHT · Pocket-Nachbau<button data-act="net-secondary-close" aria-label="Zweite Netzwerkansicht schließen">✕</button></div>${netHtml(ctx,cs.state.secondaryPane)}</section>`:''}</div>`;
   if (td.tab === "par") body = parHtml(ctx);
   if (td.tab === "time") body = timeHtml(ctx);
   if (layer.contains(document.activeElement) && document.activeElement.matches('input,select,textarea')) return;
@@ -25,10 +27,10 @@ export function renderTD(ctx) {
   void cs;
 }
 
-function netHtml(ctx) {
+function netHtml(ctx, pane=null) {
   const { cs, td } = ctx;
   const net = cs.net;
-  const owner = cs.state.paneOwner;
+  const owner = pane ? pane.owner : cs.state.paneOwner;
   const kids = net.kids(owner);
   const ownerOp = net.op(owner);
   const anns = (ownerOp && ownerOp.annotations) || [];
@@ -43,12 +45,12 @@ function netHtml(ctx) {
   const w = maxX - minX;
   const h = maxY - minY;
   // Feste, lesbare Groesse wie im Network Editor; das Netz wird verschoben (scrollen), nicht winzig gerechnet
-  const scale = 0.62 * td.zoom;
+  const scale = 0.62 * (pane ? pane.zoom || 1 : td.zoom);
   const W = Math.round(w * scale);
   const H = Math.round(h * scale);
   const X = (x) => (x - minX) * scale;
   const Y = (y) => (maxY - y) * scale;   // TD: y nach oben
-  const selected = new Set(cs.state.networkSelected);
+  const selected = new Set(pane ? [pane.target] : cs.state.networkSelected);
   const shapes = [];
   for (const a of anns) {
     if (!a.position || !a.size) continue;
@@ -80,15 +82,16 @@ function netHtml(ctx) {
       <text class="ty" x="${x + 4}" y="${y + fs * 2 + 4}" font-size="${fs * 0.8}">${esc(o.type.replace(/(TOP|CHOP|SOP|DAT|COMP|MAT|POP)$/, " $1"))}</text>
     </g>`);
   }
-  const sel = cs.state.networkSelected[0];
+  const sel = pane ? pane.target : cs.state.networkSelected[0];
   return `<div class="netbar"><button data-act="net-up" ${owner === "" ? "disabled" : ""}>↑ hoch</button>
       <span class="path">${esc(abs(owner))}</span>
       <button data-act="net-hidden" class="${td.hidden ? "on" : ""}">versteckte Kanten</button>
       <button data-act="net-zoom-out">−</button><button data-act="net-zoom-in">+</button>
       <button data-act="td-rec" title="Alt+Shift+A: RECORD von überall">Alt+Shift+A</button>
-      <button data-act="td-undo" title="Strg+Z im TD-Hauptfenster">Strg+Z</button>
+      <button data-act="td-undo" title="Letzte Änderung rückgängig">↶ Rückgängig</button>
+      <button data-act="td-redo" title="Letzte Änderung wiederherstellen">↷ Wiederherstellen</button>
       <button data-act="td-down" title="↓ im TD-Netzwerk">↓</button></div>
-    <div class="netwrap"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${shapes.join("")}</svg></div>
+    <div class="netwrap" data-scroll-key="network-${pane?'secondary':'primary'}-${esc(owner)}"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${shapes.join("")}</svg></div>
     ${sel != null ? netSelHtml(ctx, sel) : `<div class="netsel">Op antippen = markieren · Doppeltippen auf einen COMP = hineingehen · Kabel durchgezogen, versteckte Kanten gestrichelt (EXPR/PAR-REF blauviolett, EXPORT grün, BIND lila, Wächter magenta).</div>`}`;
 }
 
@@ -150,6 +153,7 @@ function gardenSheet(ctx) {
     else if (p.style === 'Pulse') control = `<button class="pulse" data-garden-pulse="${p.name}" data-owner="${owner}">${p.name}</button>`;
     else if (p.style === 'Toggle') control = `<button class="tog ${v ? 'on' : ''}" data-garden-toggle="${p.name}" data-owner="${owner}">${v ? '1 · an' : '0 · aus'}</button>`;
     else if (p.style === 'Menu') control = `<select data-garden-menu="${p.name}" data-owner="${owner}">${(p.menuNames || []).map((m) => `<option ${v === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select>`;
+    else if(p.style==='Str') control = `<input type="text" value="${esc(v)}" data-garden-text="${p.name}" data-owner="${owner}">`;
     else control = `<input type="number" inputmode="decimal" step="0.05" value="${esc(v)}" data-garden-num="${p.name}" data-owner="${owner}">`;
     return parRow(p.name, p.name, p.name === 'Prepare' ? 'Setzt das gesamte eigene Lab auf Anfang. Führt keinen Versuch aus.' : '', control);
   }).join('');
@@ -239,6 +243,8 @@ function opSheet(ctx, path) {
   if (path === "BranchLab") return branchSheet(ctx);
   if (path === "StateLab") return stateSheet(ctx);
   if (path === "Farbmischer") return fmSheet(ctx);
+  const gardenOwner={'SignalGarden':'root','SignalGarden/Sensor':'sensor','SignalGarden/Scenes':'scenes','SignalGarden/Palette':'palette'}[path];
+  if(gardenOwner)return gardenSheet({...ctx,td:{...ctx.td,gardenOwner}});
   for (const p of o.custom || []) rows.push(parRow(p.name, p.label || p.name, p.help || "", `<span class="ro">${esc(p.value ?? p.default ?? "")}</span>`));
   for (const [k, v] of Object.entries(o.pars || {})) {
     const text = "e" in v ? `= ${v.e}` : ("b" in v ? `⟷ ${v.b}` : String(v.v));
@@ -481,17 +487,17 @@ export function renderPopup(ctx) {
   const box = $("#popup");
   let html = "";
   if (popup.json) {
-    html = `<div class="box" role="dialog" aria-modal="true" aria-labelledby="json-title"><div class="bh"><span class="t" id="json-title">JSON BEARBEITEN</span></div>
-      <div class="bb"><p>Hier steht die Pocket-Zwischenablage. Du kannst den Text ändern oder eine Antwort einfügen. „In Pocket übernehmen“ führt nichts aus; anschließend prüfst du mit &gt;nachfrage, &gt;antwort oder &gt;vorschau.</p>
-      <label for="json-text">Datenpaket</label><textarea id="json-text" spellcheck="false" autocorrect="off" autocapitalize="off">${esc(cs.clipboard)}</textarea></div>
-      <div class="bf"><button data-pop="json-cancel">Abbrechen</button><button class="ok" data-pop="json-apply">In Pocket übernehmen</button></div></div>`;
+    html = `<div class="box" role="dialog" aria-modal="true" aria-labelledby="json-title"><div class="bh"><span class="t" id="json-title">${popup.json === "analysis" ? "LLM-ANTWORT PRÜFEN" : "JSON BEARBEITEN"}</span></div>
+      <div class="bb"><p>${popup.json === 'analysis' ? 'Request, Explanation oder Preview einfügen und direkt prüfen. Die Aufnahme-ID muss noch vorhanden sein. Es wird kein Code ausgeführt.' : 'Hier steht die Pocket-Zwischenablage. Text ändern oder eine Antwort einfügen. „In Pocket übernehmen“ führt nichts aus; anschließend mit >nachfrage, >antwort oder >vorschau prüfen.'}</p>
+      ${popup.jsonError ? `<p class="analysis-error" role="alert">${esc(popup.jsonError)}</p>` : ""}<label for="json-text">Datenpaket</label><textarea id="json-text" spellcheck="false" autocorrect="off" autocapitalize="off">${esc(popup.jsonDraft ?? cs.clipboard)}</textarea></div>
+      <div class="bf"><button data-pop="json-cancel">Abbrechen</button><button class="ok" data-pop="json-apply">${popup.json === 'analysis' ? 'Import prüfen' : 'In Pocket übernehmen'}</button></div></div>`;
   } else if (s.editor) {
     html = `<div class="box"><div class="bh"><span class="t">BEARBEITEN · ${esc(abs(s.editor.path))}</span></div>
       <div class="bb"><textarea id="editor-text" spellcheck="false" autocapitalize="off">${esc(s.editor.text)}</textarea>${s.editor.error ? `<div class="err">${esc(s.editor.error)}</div>` : ""}</div>
       <div class="bf"><button data-pop="edit-cancel">ABBRECHEN</button><button class="ok" data-pop="edit-apply">ÜBERNEHMEN</button></div></div>`;
   } else if (s.dialog) {
     html = `<div class="box"><div class="bh"><span class="t">${esc(s.dialog.title)}</span></div><div class="bb">${esc(s.dialog.lines.join("\n"))}</div>
-      <div class="bf"><button data-pop="esc">Esc</button>${s.dialog.confirm ? `<button class="ok" data-pop="enter">Enter · übernehmen</button>` : `<button class="ok" data-pop="esc">OK</button>`}</div></div>`;
+      <div class="bf"><button data-pop="esc">${esc(s.dialog.cancelLabel || 'Esc')}</button>${s.dialog.confirm ? `<button class="ok" data-pop="enter">${esc(s.dialog.confirmLabel || 'Enter · übernehmen')}</button>` : `<button class="ok" data-pop="esc">OK</button>`}</div></div>`;
   } else if (s.menu) {
     html = `<div class="box menu-box" role="dialog" aria-modal="true" aria-label="${esc(s.menu.title)}"><div class="bh"><span class="t">${esc(s.menu.title)}</span><button data-pop="esc" aria-label="Menü schließen">✕</button></div>
       ${s.menu.description ? `<div class="menu-description">${esc(s.menu.description)}</div>` : ""}<div class="bb" style="padding:0">${s.menu.items.map((it, i) => `${it.group && it.group !== s.menu.items[i - 1]?.group ? `<h2 class="menu-group">${esc(it.group)}</h2>` : ''}<button class="mi" data-menu="${i}">${it.swatches ? `<span class="look-swatches" aria-hidden="true">${it.swatches.map((color) => `<i style="background:${rgb(color)}"></i>`).join("")}</span>` : ""}${esc(it.label)}</button>`).join("")}</div></div>`;
@@ -534,44 +540,75 @@ function compareText(ctx) {
 
 // ------------------------------------------------------------------ Schnellsuche (zweites Fenster)
 export function renderQuick(ctx) {
-  const { cs, ui } = ctx;
-  const q = cs.state.quick;
-  const box = $("#quick");
-  box.classList.toggle("show", q.open);
-  box.classList.toggle("unfocused", cs.state.focusWin !== "quick");
-  if (!q.open) { box.innerHTML = ""; return; }
-  const input = document.getElementById("quick-input");
-  const keepFocus = input && document.activeElement === input;
-  const filters = ["all", "code", "op", "par"];
-  const rows = q.hits.map((h, i) => {
-    if (h.kind === "section") return `<button class="hit section" data-qrow="${i}" data-key="q${i}"><span class="art">${esc(h.num || "")}</span><span class="main"><span class="ttl">${esc(h.text)}</span><span class="cnt">${esc(h.count ?? "")}</span></span></button>`;
-    return `<button class="hit ${i === q.selected ? "sel" : ""}" data-qrow="${i}" data-key="q${i}"><span class="art">${esc(artOf(ui, h))}</span><span class="main"><div class="wo">${h.line ? `<span class="det">Z.${h.line}</span>` : ""}${esc(pathText(cs, h))}</div><div class="txt">${esc(h.text)}</div></span></button>`;
-  }).join("");
-  if (!keepFocus) {
-    box.innerHTML = `<div class="qh"><span class="t">${esc(ui.QUICK_PLACEHOLDER ? "Code Search · Schnellsuche" : "Schnellsuche")}</span><button data-q="esc">Esc ✕</button></div>
-      <div class="qf"><input id="quick-input" value="${esc(q.query)}" placeholder="${esc(ui.QUICK_PLACEHOLDER || "Schnellsuche …")}" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"><button data-q="enter">⏎</button></div>
-      <div class="qc row-scroll">${filters.map((f) => `<button class="chip ${q.filter === f ? "on" : ""}" data-qfilter="${f}">${esc((ui.FILTER_LABELS || {})[f] || f)}</button>`).join("")}</div>
-      <div class="ql" id="quick-list">${rows}</div>
-      <div class="qs">antippen = wählen · doppelt = springen · lange drücken = IM HAUPTFENSTER ÖFFNEN</div>`;
-  } else {
-    $("#quick-list").innerHTML = rows;
-    box.querySelectorAll("[data-qfilter]").forEach((b) => b.classList.toggle("on", b.dataset.qfilter === q.filter));
+  const {cs,ui}=ctx,s=cs.state,box=$('#quick'),windows=s.searchWindows.filter(q=>q.open);
+  box.classList.toggle('show',windows.length>0);box.classList.toggle('unfocused',s.focusWin!=='quick');
+  for(const card of box.querySelectorAll('[data-qid]'))if(!windows.some(q=>q.id===card.dataset.qid))card.remove();
+  for(const q of windows) {
+    let card=box.querySelector(`[data-qid="${q.id}"]`);
+    if(!card) {
+      card=document.createElement('section');card.className='search-window';card.dataset.qid=q.id;
+      card.innerHTML=`<div class="qh"><span class="t">Suche ${q.number} / 4</span><button data-q="new">+ Neue Suche</button><button data-q="esc" aria-label="Diese Suche schließen">✕</button></div><div class="qf"><input id="${q.number===2?'quick-input':'quick-input-'+q.id}" data-qinput autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Suchtext für Suche ${q.number}"><button data-q="enter">⏎</button></div><label class="qscope">Suchbereich<select data-qscope></select></label><div class="qc row-scroll"></div><div class="qoptions"></div><div class="ql" data-scroll-key="${q.id}"></div><div class="qs" role="status"></div>`;
+      box.append(card);
+    }
+    card.classList.toggle('active',s.quick===q&&s.focusWin==='quick');
+    card.querySelector('[data-q=new]').disabled=windows.length>=3;
+    const input=card.querySelector('[data-qinput]');if(document.activeElement!==input)input.value=q.query;
+    input.placeholder=ui.QUICK_PLACEHOLDER || 'Unabhängig suchen …';
+    updateHtml(card.querySelector('[data-qscope]'),searchScopeOptions(cs,q));
+    updateHtml(card.querySelector('.qc'),['all','code','ext','callback','op','par','chan','table','dat'].map(f=>`<button class="chip ${q.filter===f?'on':''}" data-qfilter="${f}">${esc((ui.FILTER_LABELS || {})[f] || f)}</button>`).join(''));
+    updateHtml(card.querySelector('.qoptions'),searchOptions(q));
+    const rows=q.hits.map((h,i)=>h.kind==='section'
+      ?`<div class="hit section"><span class="art">${esc(h.num || '')}</span><span class="main"><span class="ttl">${esc(h.text)}</span><span class="cnt">${esc(h.count ?? '')}</span></span></div>`
+      :`<button class="hit ${i===q.selected?'sel':''}" data-qrow="${i}" data-key="q${i}"><span class="art ${artClass(h)}">${esc(artOf(ui,h))}</span><span class="main"><div class="wo">${h.line?`<span class="det">Z.${h.line}</span>`:''}${esc(pathText(cs,h))}</div><div class="txt">${esc(h.text)}</div></span></button>`).join('');
+    updateHtml(card.querySelector('.ql'),rows);
+    updateHtml(card.querySelector('.qs'),`${q.pending?'Suche läuft …':q.error?esc(q.error):`${q.total} Treffer · Stand der letzten Suche`} · Tippen = wählen · doppelt = springen · halten = im Hauptfenster untersuchen`);
   }
 }
 
 // ------------------------------------------------------------------ Lesekopien
 export function renderFloats(ctx) {
-  const { cs, ui } = ctx;
-  const s = cs.state;
-  updateHtml($("#floats"), s.floats.map((f) => {
-    const focus = s.floatFocus === f.id;
-    let body;
-    if (f.code) body = codeHtml(cs, f.code.dat, f.code.line, { from: f.code.line, to: f.code.end || f.code.line + 10 });
-    else body = (f.rows || []).map((h, i) => (h.kind === "section"
-      ? `<button class="hit section" data-frow="${i}" data-fid="${f.id}"><span class="art">${esc(h.num || "")}</span><span class="main"><span class="ttl">${esc(h.text)}</span></span></button>`
-      : `<button class="hit ${i === f.selected ? "sel" : ""}" data-frow="${i}" data-fid="${f.id}"><span class="art">${esc(artOf(ui, h))}</span><span class="main"><div class="txt">${esc(h.ctx ? `${h.ctx}   ${h.text}` : h.text)}</div></span></button>`)).join("");
-    return `<div class="float ${focus ? "focus" : ""}" data-float="${f.id}" style="font-size:${f.zoom * 100}%"><div class="fh"><span class="t" data-ffocus="${f.id}">${esc(f.title)}${f.zoom !== 1 ? ` · ${Math.round(f.zoom * 100)} %` : ""}</span><button data-fclose="${f.id}">Esc ✕</button></div><div class="fb">${body}</div></div>`;
-  }).join(""));
+  const {cs,ui}=ctx, s=cs.state, root=$('#floats');
+  for (const card of root.querySelectorAll('[data-float]')) {
+    if (!s.floats.some(f=>f.id===card.dataset.float)) {card.hostContext?.tabHelp?.dispose();card.remove();}
+  }
+  for (const f of s.floats) {
+    const focus=s.floatFocus===f.id;
+    let card=root.querySelector(`[data-float="${f.id}"]`);
+    if (!card) {
+      card=document.createElement('section');card.dataset.float=f.id;
+      card.innerHTML='<div class="fh"></div><div class="fb" tabindex="0"></div><div class="float-copy-status" role="status"></div><div class="float-hint">Eingefrorener Stand · gleicher Look wie die Hauptansicht</div>';
+      root.append(card);
+    }
+    card.className=`float ${f.live?'live':'historical'} ${focus?'focus':''} ${f.size==='full'?'full':'side'}`;
+    card.style.fontSize=`${f.zoom*100}%`;card.setAttribute('aria-label',f.title);
+    card.style.setProperty('--copy-zoom',String(f.zoom));
+    updateHtml(card.querySelector('.fh'),`<button class="t" data-ffocus="${f.id}" title="${esc(f.title)}">${esc(f.title)}${f.zoom!==1?` · ${Math.round(f.zoom*100)} %`:''}</button>${f.live?`<button data-flayout="${f.id}" title="Zwischen Liste, Details und ganzem Arbeitsplatz wechseln">${["details","code"].includes(f.kind)?"Details":f.kind==="workspace"?"Alles":"Liste"} ▾</button>`:""}<button data-fsize="${f.id}" title="${f.size==='full'?'Kleines Fenster wiederherstellen':'Groß öffnen'}">${f.size==='full'?'Klein ↙':'Groß ↗'}</button><button data-fcopy="${f.id}" title="Aktuellen Inhalt kopieren">Kopieren</button><button data-fclose="${f.id}" aria-label="Zweitansicht schließen">✕</button>`);
+    const content=card.querySelector('.fb'); content.dataset.scrollKey=`float-${f.id}`;
+    card.querySelector('.float-hint').textContent=f.live?'Gemeinsame Auswahl und Änderungen · gleiche Aktionen wie im Original':'Historische Quelle · eingefrorener Stand · nur lesen';
+    if(f.live) {
+      if(!card.hostContext) {
+        const host=document.createElement('div');host.className='cs cs-secondary';host.innerHTML=hostTemplate();normalizeHostIds(host,f.id);content.append(host);
+        card.hostContext=createHostContext(ctx,host,f.id);
+      }
+      const hostCtx=card.hostContext, host=hostCtx.host;
+      renderCS(hostCtx);
+      const detailOnly=['details','code'].includes(f.kind) && !['analysis','spec'].includes(s.view);
+      // Derselbe Renderer erzeugt auch die schmale Ansicht. Nur ihre Aufteilung ist anders.
+      hostQuery(hostCtx,'#cs-list').hidden=detailOnly;
+      hostQuery(hostCtx,'#cs-split').hidden=true;
+      hostQuery(hostCtx,'#cs-detail').hidden=!detailOnly && f.kind!=='workspace';
+      host.dataset.layout=detailOnly?'details':f.kind==='workspace'?'workspace':'list';
+      host.style.zoom=String(f.zoom);
+      normalizeHostIds(host,f.id);
+      if(ctx.bindCSHost && !card.hostBound) {ctx.bindCSHost(hostCtx);card.hostBound=true;}
+    } else {
+      const body=f.code?snapshotCodeHtml(f.code):`<pre class="float-text">${esc(f.text)}</pre>`;
+      updateHtml(content,body);
+    }
+    const operation=ctx.deviceCopy, status=card.querySelector('.float-copy-status');
+    status.hidden=!(focus && operation?.kind==='float' && !operation.dismissed);
+    updateHtml(status,status.hidden?'':`${esc(operation.message)}${operation.status==='failed'?'<button data-fmanual="true">Text manuell kopieren</button>':''}`);
+  }
 }
 
 // ------------------------------------------------------------------ Offline

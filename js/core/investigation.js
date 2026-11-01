@@ -14,7 +14,7 @@ function string(value, name, max = 4000, empty = false) {
 }
 
 // JSON.parse allein verliert doppelte Keys. Dieser Parser lehnt sie vor der Übernahme ab.
-export function parseProtocol(text, limit = 100000) {
+export function parseProtocol(text, limit = 100000, maxNodes = 40000, maxDepth = 30) {
   requireThat(typeof text === "string" && new TextEncoder().encode(text).length <= limit, `JSON überschreitet ${limit} UTF-8-Bytes`);
   let pos = 0;
   let nodes = 0;
@@ -29,7 +29,7 @@ export function parseProtocol(text, limit = 100000) {
     throw new Error("Unvollständiger JSON-String");
   };
   const value = (depth = 0) => {
-    requireThat(depth <= 30 && ++nodes <= 40000, "JSON zu tief oder zu viele Einträge");
+    requireThat(depth <= maxDepth && ++nodes <= maxNodes, "JSON zu tief oder zu viele Einträge");
     ws();
     if (text[pos] === '"') return tokenString();
     if (text[pos] === "{" || text[pos] === "[") {
@@ -153,93 +153,123 @@ export function collectEvidence(cs, atlas, target = cs.codeTargetPath()) {
   const symbol = (ref) => `${abs(ref.dat)}:${cs.net.extClass(ref.dat)?.cls.name ? cs.net.extClass(ref.dat).cls.name + "." : ""}${ref.name}`;
   const calls = [...nativeModels.values()].flatMap((model) => clone(model.calls || []));
   calls.push(...cs.net.calls.filter((c) => Object.hasOwn(sources, abs(c.from.dat)) && !nativeModels.has(abs(c.from.dat)) && !rejectedSources.has(abs(c.from.dat))).map((c) => ({ caller: symbol(c.from), callee: symbol(c.to), source: abs(c.from.dat), line: c.line, confidence: "static" })));
-  const events = cs.state.record.records.filter((r) => Object.hasOwn(sources, abs(r.dat))).slice(-300).map((r) => ({ symbol: symbol(r), source: abs(r.dat), method: r.name, line: r.line, frame: r.frame, origin: "pocket-simulation" }));
+  const symbols = Object.assign(Object.create(null), ...[...nativeModels.values()].map((model) => clone(model.symbols || {})));
+  const events = cs.state.record.records.filter((r) => Object.hasOwn(sources, abs(r.dat))).slice(-300).map((r) => ({ symbol: r.symbol || symbol(r), source: abs(r.dat), method: r.name, line: r.line, frame: r.frame, origin: "pocket-simulation", recording_id: r.recording_id || "", recorded_source_hash: r.recorded_source_hash || "", source_relation: r.recorded_source_hash === revisionFor({ [abs(r.dat)]: sources[abs(r.dat)] }) ? "simulated_source_unchanged" : "unknown" }));
   return { schema: "codesearch.evidence.v1", id: uid("ev"), revision: revisionFor(sources), scope: abs(target),
     captured: { utc: new Date().toISOString(), start_frame: cs.lab.frame, end_frame: cs.lab.frame, generation: cs.lab.stateLab.generation, origin: "pocket-simulation" },
-    sources, owners, states, calls, events, outputs: [], coverage: ["Pocket: eingebetteter Quellstand und bekannte JavaScript-Lab-Werte; keine Verbindung zu TouchDesigner.",
+    sources, owners, states, calls, symbols, events, recording: clone(cs.state.record.provenance || {}), outputs: [], coverage: ["Pocket: eingebetteter Quellstand und bekannte JavaScript-Lab-Werte; keine Verbindung zu TouchDesigner.",
       `${nativeModels.size}/${Object.keys(sources).length} Quellen nutzen per SHA256 geprüfte Fakten des nativen StateAtlas-Analyzers. Das bleibt statische Analyse; dynamische Zugriffe und Alias-Wirkungen können fehlen.`,
       "Beim CodeModel-Fallback können zusätzlich verschachtelte Mutationen (z. B. self._dependent.val[0]), Par-Attribute und Storage-Zugriffe fehlen. Ein Read-Fund ohne erfassten Write widerlegt keine Write-Aussage.",
       "RECORD enthält nur tatsächlich erfasste Aufrufe der Pocket-Simulation; keine TD-Runtime-Beobachtung.", ...new Set(analysisCoverage)] };
 }
 
+function protocolVersion(input, name, names, optional = []) {
+  const v2 = input?.schema === `codesearch.${name}.v2`;
+  fields(input, [...names, ...optional, ...(v2 ? ["evidence_id"] : [])], [...names, ...(v2 ? ["evidence_id"] : [])]);
+  requireThat(input.schema === `codesearch.${name}.${v2 ? "v2" : "v1"}`, `Unbekanntes ${name}-Schema`);
+  string(input.revision, "revision", 10000, true);
+  if (v2) string(input.evidence_id, "evidence_id");
+  return v2;
+}
+export function packetBinding(packet, input, v2 = input?.schema?.endsWith(".v2")) {
+  if (input.revision !== packet.revision || packet.revision !== revisionFor(packet.sources) || (v2 && input.evidence_id !== packet.id)) return "stale";
+  return v2 ? "bound" : "legacy_unbound";
+}
+
 export function answerRequest(packet, request) {
-  fields(request, ["schema", "id", "revision", "questions"]);
-  requireThat(request.schema === "codesearch.request.v1", "Schema codesearch.request.v1 erwartet");
-  string(request.id, "id", 200); string(request.revision, "revision", 10000, true);
+  const v2 = protocolVersion(request, "request", ["schema", "id", "revision", "questions"]);
+  string(request.id, "id", 200);
   requireThat(Array.isArray(request.questions) && request.questions.length >= 1 && request.questions.length <= 40, "1–40 questions erforderlich");
-  const allowed = { overview: [], state: ["state_id"], readers: ["state_id"], writers: ["state_id"], calls: ["symbol"], source: ["source"] };
+  const allowed = { overview: [], state: ["state_id"], readers: ["state_id"], writers: ["state_id"], calls: ["symbol"], source: ["source"], ...(v2 ? {symbol: ["symbol"], source_range: ["source", "start_line", "end_line"], events: [], coverage: [], states: [], symbols: []} : {}) };
+  const optional = v2 ? {calls: ["direction", "offset", "limit"], events: ["symbol", "offset", "limit"], coverage: ["offset", "limit"], states: ["offset", "limit"], symbols: ["offset", "limit"]} : {};
   for (const q of request.questions) {
     requireThat(object(q) && Object.hasOwn(allowed, q.kind), "Unbekannte question-Art");
-    fields(q, ["kind", ...allowed[q.kind]]);
-    for (const key of allowed[q.kind]) string(q[key], key);
+    fields(q, ["kind", ...allowed[q.kind], ...(optional[q.kind] || [])], ["kind", ...allowed[q.kind]]);
+    for (const key of ["symbol", "source", "state_id"]) if (key in q) string(q[key], key);
+    for (const key of ["offset", "limit", "start_line", "end_line"]) if (key in q) requireThat(Number.isSafeInteger(q[key]) && q[key] >= (key === "offset" ? 0 : 1), `${key}: gültiger Integer erforderlich`);
+    requireThat((q.limit ?? 20) <= 80 && ["in", "out", "both"].includes(q.direction ?? "both"), "Ungültiges Listenlimit oder Richtung");
+    if (q.kind === "source_range") requireThat(q.end_line >= q.start_line && q.end_line - q.start_line < 120, "source_range: 1–120 Zeilen erforderlich");
   }
-  const out = { schema: "codesearch.response.v1", id: request.id, revision: packet.revision, requested_revision: request.revision, status: request.revision === packet.revision ? "ok" : "stale", answers: [], evidence_id: packet.id, captured: packet.captured, coverage: packet.coverage.slice() };
+  const binding = packetBinding(packet, request, v2);
+  const out = { schema: `codesearch.response.${v2 ? "v2" : "v1"}`, id: request.id, revision: packet.revision, requested_revision: request.revision, binding, status: binding === "stale" ? "stale" : "ok", answers: [], evidence_id: packet.id, captured: clone(packet.captured), coverage: packet.coverage.slice() };
   if (out.status === "stale") return out;
   for (const q of request.questions) {
-    const a = { question: q, kind: q.kind, status: "supported" };
+    const a = { question: clone(q), kind: q.kind, status: "supported" };
     if (q.kind === "overview") a.value = { scope: packet.scope, sources: Object.keys(packet.sources), state_count: packet.states.length, call_count: packet.calls.length, event_count: packet.events.length, captured: packet.captured };
     else if (["state", "writers", "readers"].includes(q.kind)) {
       const state = packet.states.find((s) => s.id === q.state_id);
-      if (state) a.value = q.kind === "state" ? state : state[q.kind];
-      else { a.status = "unknown"; a.reason = "State nicht im begrenzten Paket"; }
-    } else if (q.kind === "calls") {
-      a.value = packet.calls.filter((c) => [c.caller, c.callee].includes(q.symbol));
-      if (!a.value.length) { a.status = "unknown"; a.reason = "Keine Kante im begrenzten Paket"; }
-    } else if (Object.hasOwn(packet.sources, q.source)) a.value = { source: q.source, text: packet.sources[q.source] };
-    else { a.status = "unknown"; a.reason = "Quelle nicht im Paket"; }
-    a.text = `${a.status} · ${a.reason || JSON.stringify(a.value)}`;
+      if (state) a.value = q.kind === "state" ? clone(state) : clone(state[q.kind]);
+    } else if (q.kind === "symbol") { if (Object.hasOwn(packet.symbols || {}, q.symbol)) a.value = clone(packet.symbols[q.symbol]); }
+    else if (["calls", "events", "coverage", "states", "symbols"].includes(q.kind)) {
+      let found = packet[q.kind] || [];
+      if (q.kind === 'states') found = packet.states.map((state) => Object.fromEntries(['id', 'name', 'kind', 'owner'].filter((key) => key in state).map((key) => [key, state[key]])));
+      if (q.kind === 'symbols') found = Object.entries(packet.symbols || {}).map(([symbol, value]) => ({symbol, ...Object.fromEntries(['name', 'source', 'line', 'end_line', 'kind'].filter((key) => key in value).map((key) => [key, value[key]]))}));
+      if (q.kind === "calls") found = found.filter((c) => ((q.direction ?? "both") !== "in" && c.caller === q.symbol) || ((q.direction ?? "both") !== "out" && c.callee === q.symbol));
+      if (q.kind === "events" && q.symbol) found = found.filter((e) => (e.qualified_symbol || e.symbol || `${e.source}:${e.method}`) === q.symbol);
+      const offset = q.offset ?? 0, limit = q.limit ?? 20;
+      a.value = clone(v2 ? found.slice(offset, offset + limit) : found);
+      if (v2) {
+        const end = Math.min(offset + limit, found.length);
+        a.coverage = { total: found.length, offset, returned: a.value.length, truncated: end < found.length };
+        if (a.coverage.truncated) a.next_request = {...clone(request), questions: [{...q, offset: end, limit}]};
+      }
+    } else if (Object.hasOwn(packet.sources, q.source)) {
+      if (q.kind === "source_range") {
+        const lines = packet.sources[q.source].split("\n"), end = Math.min(q.end_line, lines.length);
+        if (q.start_line <= lines.length) a.value = {source: q.source, start_line: q.start_line, end_line: end, text: lines.slice(q.start_line - 1, end).join("\n"), total_lines: lines.length};
+      } else a.value = { source: q.source, text: packet.sources[q.source] };
+    }
+    if (!("value" in a) || (["calls", "events"].includes(q.kind) && !a.value.length)) { a.status = "unknown"; a.reason = "Nicht im begrenzten Paket gefunden; Abwesenheit ist kein Gegenbeweis"; }
+    a.text = `${a.status} · ${a.reason || JSON.stringify(a.value)}${a.coverage?.truncated ? " · gekürzt; next_request nachreichen" : ""}`;
     out.answers.push(a);
   }
   return out;
 }
 
 export function checkExplanation(packet, explanation) {
-  fields(explanation, ["schema", "revision", "claims"]);
-  requireThat(explanation.schema === "codesearch.explanation.v1", "Schema codesearch.explanation.v1 erwartet");
-  string(explanation.revision, "revision", 10000, true);
+  const v2 = protocolVersion(explanation, "explanation", ["schema", "revision", "claims"]);
   requireThat(Array.isArray(explanation.claims) && explanation.claims.length >= 1 && explanation.claims.length <= 80, "1–80 claims erforderlich");
-  const ids = new Set();
-  const required = { writes: ["state_id", "symbol"], reads: ["state_id", "symbol"], called: ["symbol"], source: ["source", "line"] };
+  const ids = new Set(), binding = packetBinding(packet, explanation, v2);
+  const required = { writes: ["state_id", "symbol"], reads: ["state_id", "symbol"], called: ["symbol"], source: ["source", "line", "text"] };
   const claims = explanation.claims.map((c) => {
-    fields(c, ["id", "text", "kind", "state_id", "symbol", "source", "line"], ["id", "text", "kind"]);
+    fields(c, ["id", "text", "kind", "state_id", "symbol", "source", "line", ...(v2 ? ["commentary"] : [])], v2 ? ["id", "kind"] : ["id", "text", "kind"]);
     requireThat(Object.hasOwn(required, c.kind), "Unbekannte Claim-Art");
     for (const [key, val] of Object.entries(c)) if (key !== "line") string(val, key, 10000, key !== "id");
     requireThat(!ids.has(c.id), "Claim-IDs müssen eindeutig sein"); ids.add(c.id);
     requireThat(required[c.kind].every((key) => Object.hasOwn(c, key)), `Claim benötigt ${required[c.kind].join(", ")}`);
-    if (Object.hasOwn(c, "line")) requireThat(Number.isInteger(c.line) && c.line > 0, "line muss positiver Integer sein");
-    const row = { ...c, status: "unknown", evidence: [], reason: "Nicht durch das begrenzte Paket belegt" };
-    if (explanation.revision !== packet.revision) { row.status = "stale"; row.reason = "Andere Quellenrevision"; return row; }
+    if (Object.hasOwn(c, "line")) requireThat(Number.isSafeInteger(c.line) && c.line > 0, "line muss positiver Integer sein");
+    const statements = { writes: `Statische Analyse: ${c.symbol} ist als Writer von ${c.state_id} erfasst.`, reads: `Statische Analyse: ${c.symbol} ist als Reader von ${c.state_id} erfasst.`, called: `Pocket-Simulation: ${c.symbol} wurde in der Aufnahme als Call erfasst.`, source: `Exaktes Quellzitat: ${c.source}:${c.line} stimmt mit dem angegebenen Text überein.` };
+    const row = { ...clone(c), text: c.text || "", checked_statement: "Prüfaussage: " + statements[c.kind], commentary: c.commentary ?? (c.kind === "source" ? "" : c.text || ""), commentary_checked: false, binding, evidence_kind: c.kind === "called" ? "simulated_event" : c.kind === "source" ? "source_quote" : "static_access", source_relation: c.kind === "called" ? "unknown" : "not_applicable", limits: ["Freier Kommentar wird nicht semantisch geprüft."], status: "unknown", evidence: [], reason: "Nicht durch das begrenzte Paket belegt" };
+    if (c.kind === "called") row.limits.push("Pocket-RECORD ist ein JavaScript-Modell; kein Nachweis einer ausgeführten TD-/Python-Funktion.");
+    if (binding === "stale") { row.status = "stale"; row.reason = "Anderes Belegpaket oder andere Quellenrevision"; return row; }
     if (c.kind === "source") {
       const actual = packet.sources[c.source]?.split("\n")[c.line - 1];
-      if (actual !== undefined) { row.status = actual.trim() === c.text.trim() ? "supported" : "contradicted"; row.evidence = [{ source: c.source, line: c.line, text: actual }]; row.reason = "Exakter Quellzeilenvergleich; keine Freitextprüfung"; }
+      if (actual !== undefined) { row.status = (v2 ? actual === c.text : actual.trim() === c.text.trim()) ? "supported" : "contradicted"; row.evidence = [{ source: c.source, line: c.line, text: actual }]; row.reason = "Exakter Quellzeilenvergleich; keine Freitextprüfung"; }
     } else if (c.kind === "called") {
-      row.evidence = packet.events.filter((e) => e.symbol === c.symbol && (c.source === undefined || c.source === e.source) && (c.line === undefined || c.line === e.line));
-      if (row.evidence.length) { row.status = "supported"; row.reason = "Aufruf in Pocket-RECORD beobachtet; kein TD-Nachweis"; }
+      row.evidence = clone(packet.events.filter((e) => (e.qualified_symbol || e.symbol) === c.symbol && (c.source === undefined || c.source === e.source) && (c.line === undefined || c.line === e.line)));
+      if (row.evidence.length) { row.status = "supported"; row.reason = "Aufruf in Pocket-RECORD simuliert; kein TD-Nachweis"; const relations = new Set(row.evidence.map((e) => e.source_relation || "unknown")); row.source_relation = relations.size === 1 ? [...relations][0] : "unknown"; }
     } else {
       const state = packet.states.find((s) => s.id === c.state_id);
       const matches = (e) => e.method === c.symbol && (c.source === undefined || c.source === e.source) && (c.line === undefined || c.line === e.line);
-      row.evidence = (state?.[c.kind === "writes" ? "writers" : "readers"] || []).filter(matches);
+      row.evidence = clone((state?.[c.kind === "writes" ? "writers" : "readers"] || []).filter(matches));
       if (row.evidence.length) {
         row.status = "supported";
         const notes = [...new Set(row.evidence.map((e) => e.note).filter(Boolean))];
-        const inferred = row.evidence.some((e) => e.confidence === "inferred");
-        row.reason = `Statischer Zugriff ${inferred ? "teilweise aus Konventionen abgeleitet" : "belegt"}; keine beobachtete Ausführung${notes.length ? "; " + notes.join("; ") : ""}`;
+        row.reason = `Statischer Zugriff ${row.evidence.some((e) => e.confidence === "inferred") ? "teilweise aus Konventionen abgeleitet" : "belegt"}; keine beobachtete Ausführung${notes.length ? '; ' + notes.join('; ') : ''}`;
       }
       else if (c.kind === "writes" && c.source !== undefined && c.line !== undefined) {
-        row.evidence = (state?.readers || []).filter(matches);
-        // CodeModel ist kein vollständiger StateAtlas: ein verschachtelter Write kann dort
-        // nur als Read auftauchen. Aus diesem fehlenden Write folgt kein Gegenbeleg.
-        if (row.evidence.length) row.reason = "Nur ein Read ist im begrenzten Modell erfasst; Mutationen, Aliase und Par-Attribute können zusätzliche Writes enthalten. Die Write-Aussage bleibt unknown.";
+        row.evidence = clone((state?.readers || []).filter(matches));
+        if (row.evidence.length) row.reason = "Nur ein Read ist im begrenzten Modell erfasst; Mutationen und Aliase können fehlen. Die Write-Aussage bleibt unknown.";
       }
     }
     return row;
   });
-  return { id: uid("exp"), revision: packet.revision, claims };
+  return { id: uid("exp"), revision: packet.revision, evidence_id: packet.id, binding, status: binding === "stale" ? "stale" : "ok", claims };
 }
 
 export function previewChange(packet, proposal) {
-  fields(proposal, ["schema", "revision", "changes", "rules"], ["schema", "revision", "changes"]);
-  requireThat(proposal.schema === "codesearch.preview.v1", "Schema codesearch.preview.v1 erwartet");
+  const v2 = protocolVersion(proposal, "preview", ["schema", "revision", "changes"], ["rules"]);
+  const binding = packetBinding(packet, proposal, v2);
   string(proposal.revision, "revision", 10000, true);
   requireThat(object(proposal.changes) && Object.keys(proposal.changes).length > 0 && Object.keys(proposal.changes).length <= 100, "changes benötigt 1–100 bekannte Quellen");
   let size = 0;
@@ -256,11 +286,17 @@ export function previewChange(packet, proposal) {
     for (const [key, list] of Object.entries(rules.allowed_writers)) { string(key, "State-ID"); requireThat(Array.isArray(list), "Writer-Liste erwartet"); list.forEach((v) => string(v, "Symbol")); }
   }
   if (Object.hasOwn(rules, "preserve_symbols")) { requireThat(Array.isArray(rules.preserve_symbols), "preserve_symbols muss Array sein"); rules.preserve_symbols.forEach((v) => string(v, "Symbol")); }
-  const out = { id: uid("prev"), status: "limited", items: [], violations: [], sourceUnchanged: true, runtimeVerified: false, coverage: "Pocket prüft ausschließlich am unveränderten Quelltext angehängte einfache Methoden mit self.<Attribut> =/<+= Zahl. Beliebige Python-Änderungen und vollständige Regelprüfung brauchen >vorschau in TD." };
-  if (proposal.revision !== packet.revision) { out.status = "stale"; out.items.push({ name: "REVISION", text: "Andere Quellenrevision; keine aktuelle Vorschau", status: "stale" }); return out; }
+  const out = { id: uid("prev"), evidence_id: packet.id, revision: packet.revision, binding, diffs: [], status: "limited", items: [], violations: [], sourceUnchanged: true, runtimeVerified: false, coverage: "Pocket prüft ausschließlich am unveränderten Quelltext angehängte einfache Methoden mit self.<Attribut> =/<+= Zahl. Beliebige Python-Änderungen und vollständige Regelprüfung brauchen >vorschau in TD." };
+  if (binding === "stale") { out.status = "stale"; out.items.push({ name: "REVISION", text: "Andere Quellenrevision; keine aktuelle Vorschau", status: "stale" }); return out; }
   for (const [source, code] of Object.entries(proposal.changes)) {
     const original = packet.sources[source];
     if (code === original) { out.items.push({ name: source, text: "Quelltext identisch; keine Änderung", status: "unchanged" }); continue; }
+    const oldLines = original.split("\n"), newLines = code.split("\n");
+    let start = 0, oldEnd = oldLines.length, newEnd = newLines.length;
+    while (start < oldEnd && start < newEnd && oldLines[start] === newLines[start]) start += 1;
+    while (oldEnd > start && newEnd > start && oldLines[oldEnd - 1] === newLines[newEnd - 1]) { oldEnd -= 1; newEnd -= 1; }
+    const diff = [`--- ${source} (vorher)`, `+++ ${source} (Vorschlag)`, `@@ -${start + 1},${oldEnd - start} +${start + 1},${newEnd - start} @@`, ...oldLines.slice(start, oldEnd).map((line) => "-" + line), ...newLines.slice(start, newEnd).map((line) => "+" + line)].join("\n");
+    out.diffs.push({source, text: diff.slice(0, 40000), truncated: diff.length > 40000});
     const className = /^class\s+(\w+)/m.exec(original)?.[1];
     const tail = code.startsWith(original) ? code.slice(original.length) : "";
     const lines = tail.split("\n").filter((l) => l.trim());
@@ -283,18 +319,18 @@ export function previewChange(packet, proposal) {
 
 export function makeSample(packet, kind) {
   const counter = packet.states.find((s) => s.name === "StateLabExt._count");
-  if (kind === "anfrage") return { schema: "codesearch.request.v1", id: uid("req"), revision: packet.revision, questions: [{ kind: "overview" }, ...(counter ? [{ kind: "writers", state_id: counter.id }] : [])] };
+  if (kind === "anfrage") return { schema: "codesearch.request.v2", id: uid("req"), evidence_id: packet.id, revision: packet.revision, questions: [{ kind: "overview" }, ...(counter ? [{ kind: "writers", state_id: counter.id }] : [])] };
   if (kind === "antwort") {
     const site = counter?.writers.find((s) => s.method.endsWith(".Fire"));
     const source = Object.keys(packet.sources)[0];
     requireThat(site || source, "Ziel enthält keine Quelle für eine Beispielantwort");
-    return { schema: "codesearch.explanation.v1", revision: packet.revision, claims: [site ? { id: "c1", text: "Fire schreibt _count", kind: "writes", state_id: counter.id, symbol: site.method } : { id: "c1", kind: "source", source, line: 1, text: packet.sources[source].split("\n")[0] }, { id: "c2", text: "Ein nicht erfasster Call", kind: "called", symbol: "GhostCall" }] };
+    return { schema: "codesearch.explanation.v2", evidence_id: packet.id, revision: packet.revision, claims: [site ? { id: "c1", text: "Fire schreibt _count", kind: "writes", state_id: counter.id, symbol: site.method } : { id: "c1", kind: "source", source, line: 1, text: packet.sources[source].split("\n")[0] }, { id: "c2", text: "Ein nicht erfasster Call", kind: "called", symbol: "GhostCall" }] };
   }
   requireThat(kind === "vorschau", ">beispiel anfrage | antwort | vorschau");
   const garden = Object.keys(packet.sources).find((p) => p.endsWith('/SignalGarden/Scenes/SceneControllerExt'));
   const source = garden || Object.keys(packet.sources).find((p) => p.endsWith('/StateLabExt'));
   requireThat(source, 'Das Vorschaubeispiel benötigt StateLab oder SignalGarden/Scenes');
   const addition = garden ? '\n    def _candidateReset(self):\n        self._requests = 0\n' : '\n    def PreviewOnly(self):\n        self._count = 999\n';
-  return { schema: 'codesearch.preview.v1', revision: packet.revision,
+  return { schema: 'codesearch.preview.v2', evidence_id: packet.id, revision: packet.revision,
     changes: { [source]: packet.sources[source] + addition }, rules: { forbid_new_writers: true } };
 }

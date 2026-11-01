@@ -76,9 +76,11 @@
     {
       "id": "n_float_keys",
       "set": {
-        "expected": "Eine neue Kopieraktion aus der fokussierten Listen-Kopie hat Fire in die Zwischenablage geschrieben.",
+        "action": "Wähle Fire in der LIVE-Liste. Bewege die Auswahl mit Hoch/Runter wieder zu Fire. Drücke Strg+C und wähle Methodenaufruf im Kopiermenü. Danach Prüfen.",
+        "phone_steps": ["Fokussiere die LIVE-Liste und wähle die Methode Fire.", "Wähle Hoch und Runter in der Tastenleiste, bis wieder Fire markiert ist.", "Wähle Strg+C und dann Methodenaufruf im geöffneten Menü. Das Öffnen des Menüs allein kopiert nichts.", "Prüfe den neuen Text mit Fire() und drücke Prüfen."],
+        "expected": "Eine neue Kopieraktion aus der fokussierten LIVE-Liste hat einen Methodenaufruf mit Fire in die Zwischenablage geschrieben.",
         "rules": [
-          {"key":"clipboard","value":"Fire","op":"eq","hint":"In der Listen-Kopie exakt die Zeile Fire wählen und Strg+C drücken."},
+          {"key":"clipboard","value":"Fire","op":"contains","hint":"In der LIVE-Liste Fire wählen, Strg+C drücken und Methodenaufruf im Menü wählen."},
           {"key":"clipboard.copy_serial","value":null,"op":"delta","hint":"In dieser Station neu kopieren; Fire aus einer älteren Kopie reicht nicht."},
           {"key":"clipboard.origin","value":"float","op":"eq","hint":"Die Kopieraktion muss aus der fokussierten Listen-Kopie kommen."}
         ]

@@ -164,8 +164,12 @@ export function toast(text) {
   toastTimer = setTimeout(() => box.classList.remove("show"), 1800);
 }
 
-export function copyToDevice(text) {
+export async function copyToDevice(text) {
   try {
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(() => {});
-  } catch { /* nur interne Zwischenablage */ }
+    if (typeof navigator === 'undefined' || typeof navigator.clipboard?.writeText !== 'function') return {ok: false, reason: 'unavailable'};
+    await navigator.clipboard.writeText(String(text));
+    return {ok: true};
+  } catch (error) {
+    return {ok: false, reason: error?.name === 'NotAllowedError' ? 'denied' : 'failed'};
+  }
 }

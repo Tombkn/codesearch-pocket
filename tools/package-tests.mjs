@@ -4,14 +4,22 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { setTimeout as delay } from "node:timers/promises";
 import { JSDOM, VirtualConsole } from "jsdom";
+import { SOURCE_REF } from "../js/core/source-ref.js";
 
 const root = new URL("../", import.meta.url);
 const read = (path) => readFileSync(new URL(path, root));
 const json = (path) => JSON.parse(read(path).toString("utf8"));
 const normalized = (path) => /\.(png|webp)$/.test(path) ? read(path) : Buffer.from(read(path).toString("utf8").replace(/\r\n/g, "\n"));
 const manifest = json("offline.json");
+const course = json("data/course.json");
 let passed = 0;
 const check = (name, fn) => { fn(); passed += 1; console.log(`OK ${name}`); };
+
+check("Laptop-Quellenlinks und Kurs verwenden dieselbe Revision", () => {
+  const lock = json("upstream.json");
+  for (const key of ["repo", "commit", "version", "checked"]) assert.equal(SOURCE_REF[key], lock[key], key);
+  for (const key of ["repo", "commit", "version"]) assert.equal(SOURCE_REF[key], course.source[key], key);
+});
 
 check("Manifest enthält alle Dateien mit richtigen Größen", () => {
   assert.equal(new Set(manifest.files.map((file) => file.path)).size, manifest.files.length);
@@ -69,7 +77,7 @@ try {
     assert.equal(window.document.querySelectorAll("script[src],link[rel=stylesheet]").length, 0);
     assert.equal(requests, 0);
     assert.deepEqual(errors, []);
-    assert.match($("#tour-head").textContent, /584/);
+    assert.ok($("#tour-head").textContent.includes(String(course.lessons.length)));
     for (const name of ["course", "net", "code", "ui", "features"]) {
       assert.deepEqual(JSON.parse(JSON.stringify(window.__POCKET_DATA__[`${name}.json`])), json(`data/${name}.json`));
     }
@@ -81,8 +89,8 @@ try {
   await click("#tour-grip");
   await click("#btn-atlas");
   await click("[data-atlas=laptop]");
-  check("Alle 45 Laptop-Leitfäden stecken in der Einzeldatei", () => {
-    assert.equal(window.document.querySelectorAll("[data-learn-chapter]").length, 45);
+  check("Alle Laptop-Leitfäden stecken in der Einzeldatei", () => {
+    assert.equal(window.document.querySelectorAll("[data-learn-chapter]").length, course.chapters.length);
     assert.deepEqual(errors, []);
     assert.equal(requests, 0);
   });

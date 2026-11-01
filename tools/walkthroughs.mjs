@@ -2,6 +2,8 @@
 // GENERIC leitet einfache Faelle aus den Regeln ab; SCRIPTS beschreibt jeden Schritt, der mehr braucht.
 
 import { markerMatch } from "../js/core/tour.js";
+import { SPEC_SCRIPTS } from './spec-walkthroughs.mjs';
+import { WORKPLACE_SCRIPTS } from './workplace-walkthroughs.mjs';
 
 const ctxRow = (name, kinds = ["symbol", "method", "state", "parstate"]) => (h) => kinds.includes(h.kind) && h.ctx === name;
 
@@ -30,6 +32,25 @@ export function generic(g, lesson) {
 const sel = (text) => (g) => g.tapRow(text);
 const seenOnly = (g) => g.seen();
 
+// Analyse-Übungen bearbeiten kopierte JSON-Daten; kein Test schreibt inv-State direkt.
+function analysisBrief(g) {
+  g.enter('>analyse kopieren');
+  return JSON.parse(g.cs.clipboard);
+}
+function analysisTemplate(g, kind) {
+  g.enter('>analyse vorlage ' + kind);
+  return JSON.parse(g.cs.clipboard);
+}
+function importAnalysis(g, value) {
+  g.setClipboard(JSON.stringify(value));
+  g.enter('>analyse importieren');
+}
+function fireSymbol(g) {
+  const item = analysisBrief(g).context.symbols.find((entry) => entry.symbol.endsWith(':StateLabExt.Fire'));
+  if (!item) throw new Error('StateLabExt.Fire fehlt im exportierten Symbolkontext');
+  return item;
+}
+
 // Suche: Feld tippen (ohne Enter), optional Kategorie vorher
 const search = (query, filter = null, family = null) => (g) => {
   if (filter) g.filter(filter);
@@ -38,6 +59,52 @@ const search = (query, filter = null, family = null) => (g) => {
 };
 
 export const SCRIPTS = {
+  ...SPEC_SCRIPTS,
+  ...WORKPLACE_SCRIPTS,
+  analysis_01: (g) => { g.enter('>analyse verstehen Wie arbeitet StateLab.Fire?'); g.enter('>analyse aktualisieren'); },
+  analysis_02: (g) => { analysisBrief(g); g.seen(); },
+  analysis_03: (g) => { const request = analysisTemplate(g, 'anfrage'); request.questions.push({kind: 'states', offset: 0, limit: 20}, {kind: 'symbols', offset: 0, limit: 20}); importAnalysis(g, request); },
+  analysis_04: (g) => {
+    const symbol = fireSymbol(g), request = analysisTemplate(g, 'anfrage');
+    request.questions = [{kind: 'symbol', symbol: symbol.symbol},
+      {kind: 'source_range', source: symbol.source, start_line: symbol.line, end_line: symbol.line + 30}];
+    importAnalysis(g, request); g.seen();
+  },
+  analysis_05: (g) => {
+    const symbol = fireSymbol(g), request = analysisTemplate(g, 'anfrage');
+    request.questions = ['in', 'out'].map((direction) => ({kind: 'calls', symbol: symbol.symbol, direction, offset: 0, limit: 1}));
+    importAnalysis(g, request); g.seen();
+  },
+  analysis_06: (g) => {
+    const explanation = analysisTemplate(g, 'antwort');
+    const quote = explanation.claims.find((claim) => claim.kind === 'source');
+    if (!quote) throw new Error('Die Übung braucht ein Source-Zitat');
+    quote.commentary = 'Diese Methode wurde sicher schon ausgeführt.';
+    importAnalysis(g, explanation); g.enter('>analyse ergebnis kopieren'); g.seen();
+  },
+  analysis_07: (g) => {
+    const explanation = analysisTemplate(g, 'antwort');
+    explanation.claims = [{id: 'missing-call', kind: 'called', symbol: '/nicht-erfasst:Missing.Call', commentary: 'Diese Funktion hat den Fehler verursacht.'}];
+    importAnalysis(g, explanation); g.seen();
+  },
+  analysis_08: (g) => { g.slPulse('Fire'); g.enter('>fall zwischenstand'); analysisBrief(g); g.seen(); },
+  analysis_09: (g) => { g.slPar('Doublefire', true); g.slPulse('Fire'); g.enter('>analyse fehler Ein Fire-Pulse erhöht Count um 2 statt 1.'); g.enter('>analyse aktualisieren'); },
+  analysis_10: (g) => {
+    const request = analysisTemplate(g, 'anfrage'); request.evidence_id = 'absichtlich-fehlendes-paket'; importAnalysis(g, request);
+  },
+  analysis_11: (g) => importAnalysis(g, analysisTemplate(g, 'anfrage')),
+  analysis_12: (g) => { g.record('start'); g.slPulse('Fire'); g.record('stop'); g.seen(); },
+  analysis_13: (g) => {
+    g.enter('>analyse aktualisieren'); const request = analysisTemplate(g, 'anfrage');
+    request.questions = [{kind: 'events', offset: 0, limit: 20}, {kind: 'coverage', offset: 0, limit: 20}];
+    importAnalysis(g, request); g.seen();
+  },
+  analysis_14: (g) => { g.enter('>analyse aenderung Zusätzlichen Writer vor Übernahme prüfen.'); g.enter('>beispiel vorschau'); g.enter('>analyse importieren'); g.seen(); },
+  analysis_15: (g) => {
+    g.enter('>beispiel vorschau'); const proposal = JSON.parse(g.cs.clipboard);
+    proposal.revision = 'absichtlich-falsche-revision'; importAnalysis(g, proposal);
+  },
+  analysis_16: (g) => { g.enter('>analyse aenderung Wie verhindere ich doppeltes Zählen, ohne die öffentliche Fire-Methode zu ändern?'); g.enter('>analyse aktualisieren'); analysisBrief(g); g.seen(); },
   // ---------------------------------------------------------------- Kapitel 0 Ankommen
   start: (g) => g.workspace(),
   play: (g) => g.play(true),
@@ -331,7 +398,7 @@ export const SCRIPTS = {
   n_def_back: (g) => { g.tapRow(ctxRow("Fire", ["method"])); g.modifier("ctrl"); g.codeClick("_finish"); g.key("Alt+Left"); g.key("Alt+Right"); g.seen(); },
   n_def_copy: (g) => { g.tapRow(ctxRow("Fire", ["method"])); g.modifier("ctrl"); g.modifier("alt"); g.codeClick("_finish"); },
   n_float_list: (g) => g.floatList(),
-  n_float_keys: (g) => { if (!g.cs.state.floats.length) g.floatList(); g.focusFloat(g.cs.state.floats[g.cs.state.floats.length - 1].id); g.floatTapRow('"ctx":"Fire"'); g.key("Up"); g.key("Down"); g.key("Ctrl+C"); },
+  n_float_keys: (g) => { if (!g.cs.state.floats.length) g.floatList(); g.focusFloat(g.cs.state.floats[g.cs.state.floats.length - 1].id); g.floatTapRow('"ctx":"Fire"'); g.key("Up"); g.key("Down"); g.key("Ctrl+C"); g.menu('Methodenaufruf'); },
   n_float_zoom: (g) => { if (!g.cs.state.floats.length) g.floatList(); g.focusFloat(g.cs.state.floats[g.cs.state.floats.length - 1].id); g.key("Ctrl+Plus"); g.key("Ctrl+Plus"); g.key("Alt+0"); g.key("Ctrl+Plus"); },
   n_float_esc: (g) => { if (!g.cs.state.floats.length) g.floatList(); g.focusFloat(g.cs.state.floats[g.cs.state.floats.length - 1].id); g.floatEsc(); },
   n_keys_focus: (g) => { g.key("Down"); g.seen(); },
@@ -340,7 +407,7 @@ export const SCRIPTS = {
   // ---------------------------------------------------------------- Abschluss ohne Hilfen
   abschluss_wer_liest: (g) => { g.tab("refs"); g.tapRow((h) => h.kind === "expr" && h.path.endsWith("switch_route")); },
   abschluss_woher_groesse: (g) => { g.tab("trace"); g.tapRow((h) => h.kind === "bind"); },
-  abschluss_strecke: (g) => { g.tab("chain"); g.tapRow((h) => h.art === "OPPAR"); },
+  abschluss_strecke: (g) => { g.tab("chain"); g.tapRow((h) => h.art === "OPPAR" && h.path.endsWith('ColorEngine/out1')); },
   abschluss_codezeile: (g) => { g.filter("code"); g.type("farbe_chop"); g.tapRow((h) => h.kind === "code" && h.text.includes("op('farbe_chop')")); },
   abschluss_pro_frame: (g) => { g.tab("check"); g.tapRow((h) => h.kind === "hot" && h.text.includes("Tick")); },
   abschluss_state_impact: (g) => { g.tab("map"); g.tapRow(ctxRow("_index", ["state"])); g.key("Ctrl+I"); },

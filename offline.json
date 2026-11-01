@@ -1,14 +1,14 @@
 {
- "version": "8fd5186146",
- "total": 3391902,
+ "version": "2e18196b49",
+ "total": 3831568,
  "files": [
   {
    "path": "./",
-   "size": 3939
+   "size": 4252
   },
   {
    "path": "index.html",
-   "size": 3939
+   "size": 4252
   },
   {
    "path": "manifest.json",
@@ -36,35 +36,55 @@
   },
   {
    "path": "css/app.css",
-   "size": 45854
+   "size": 59008
   },
   {
    "path": "js/app.js",
-   "size": 34095
+   "size": 48641
+  },
+  {
+   "path": "js/core/analysis-workbench.js",
+   "size": 15268
   },
   {
    "path": "js/core/boot.js",
-   "size": 614
+   "size": 623
+  },
+  {
+   "path": "js/core/comp-operations.js",
+   "size": 11550
   },
   {
    "path": "js/core/cs.js",
-   "size": 65753
+   "size": 78547
+  },
+  {
+   "path": "js/core/float-copies.js",
+   "size": 4061
+  },
+  {
+   "path": "js/core/flow-session.js",
+   "size": 3118
   },
   {
    "path": "js/core/gestures.js",
-   "size": 22554
+   "size": 26385
   },
   {
    "path": "js/core/investigation.js",
-   "size": 21866
+   "size": 27492
   },
   {
    "path": "js/core/lab.js",
-   "size": 19469
+   "size": 21698
   },
   {
    "path": "js/core/learning.js",
-   "size": 52396
+   "size": 52590
+  },
+  {
+   "path": "js/core/multi-selection.js",
+   "size": 2772
   },
   {
    "path": "js/core/net.js",
@@ -72,19 +92,35 @@
   },
   {
    "path": "js/core/phone.js",
-   "size": 5845
+   "size": 6024
   },
   {
    "path": "js/core/progress.js",
    "size": 1387
   },
   {
+   "path": "js/core/regex-queue.js",
+   "size": 2909
+  },
+  {
+   "path": "js/core/search-sessions.js",
+   "size": 3599
+  },
+  {
    "path": "js/core/signalgarden.js",
    "size": 10651
   },
   {
+   "path": "js/core/source-ref.js",
+   "size": 226
+  },
+  {
+   "path": "js/core/spec-workbench.js",
+   "size": 19539
+  },
+  {
    "path": "js/core/tour.js",
-   "size": 19213
+   "size": 20809
   },
   {
    "path": "js/core/util.js",
@@ -92,35 +128,51 @@
   },
   {
    "path": "js/core/views/codeviews.js",
-   "size": 41039
+   "size": 41137
   },
   {
    "path": "js/core/views/common.js",
    "size": 2280
   },
   {
+   "path": "js/core/views/comp-context.js",
+   "size": 2175
+  },
+  {
    "path": "js/core/views/miscviews.js",
-   "size": 27231
+   "size": 28486
   },
   {
    "path": "js/core/views/netviews.js",
-   "size": 19830
+   "size": 20341
   },
   {
    "path": "js/core/views/search.js",
-   "size": 11302
+   "size": 16193
+  },
+  {
+   "path": "js/ui/analysis.js",
+   "size": 8601
+  },
+  {
+   "path": "js/ui/cs-host.js",
+   "size": 2623
   },
   {
    "path": "js/ui/cswin.js",
-   "size": 23328
+   "size": 29783
   },
   {
    "path": "js/ui/dom.js",
-   "size": 6486
+   "size": 6662
+  },
+  {
+   "path": "js/ui/float-focus.js",
+   "size": 3281
   },
   {
    "path": "js/ui/layers.js",
-   "size": 45662
+   "size": 50403
   },
   {
    "path": "js/ui/learningview.js",
@@ -128,15 +180,23 @@
   },
   {
    "path": "js/ui/looks.js",
-   "size": 2830
+   "size": 3038
   },
   {
    "path": "js/ui/offline.js",
    "size": 4187
   },
   {
+   "path": "js/ui/search-options.js",
+   "size": 1544
+  },
+  {
+   "path": "js/ui/spec.js",
+   "size": 12658
+  },
+  {
    "path": "js/ui/tabhelp.js",
-   "size": 1789
+   "size": 2005
   },
   {
    "path": "js/ui/tourcard.js",
@@ -147,24 +207,28 @@
    "size": 1815
   },
   {
+   "path": "js/ui/wheel.js",
+   "size": 1765
+  },
+  {
    "path": "data/course.json",
-   "size": 1043257
+   "size": 1262172
   },
   {
    "path": "data/net.json",
-   "size": 122907
+   "size": 122925
   },
   {
    "path": "data/code.json",
-   "size": 353849
+   "size": 363684
   },
   {
    "path": "data/ui.json",
-   "size": 115082
+   "size": 117116
   },
   {
    "path": "data/features.json",
-   "size": 183084
+   "size": 221928
   },
   {
    "path": "img/05_flow.webp",
@@ -212,11 +276,11 @@
   },
   {
    "path": "offline.json",
-   "size": 3222
+   "size": 4218
   }
  ],
  "single": {
   "path": "CodeSearch-Pocket-offline.html",
-  "size": 3729455
+  "size": 4170326
  }
 }

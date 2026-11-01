@@ -172,6 +172,7 @@ export function chainText(cs, dat, start, depth = 6, width = 4) {
 
 export function buildStructure(cs, target) {
   const net = cs.net;
+  if(net.code[target] && !net.datComp.has(target)) return buildModuleStructure(cs,target);
   const comp = codeTarget(cs, target);
   const ext = net.extClass(comp);
   const rows = [];
@@ -238,7 +239,7 @@ export function buildStructure(cs, target) {
   return { rows, dat, comp };
 }
 
-function buildModuleStructure(cs, dat) {
+export function buildModuleStructure(cs, dat) {
   const net = cs.net;
   const rows = [];
   const model = net.code[dat];

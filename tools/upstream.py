@@ -14,6 +14,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 LOCK = ROOT / "upstream.json"
 FILES = {
+    "upstream_docs/SPEC-KIT-HANDOFF.md": "docs/SPEC-KIT-HANDOFF.md",
+    "upstream_docs/workplace-workflows.md": "docs/workplace-workflows.md",
+    "cs_search_sessions.py": "src/cs_search_sessions.py",
+    "cs_comp_operations.py": "src/cs_comp_operations.py",
+    "upstream_docs/SPEC-WORKSPACE.md": "docs/SPEC-WORKSPACE.md",
+    "upstream_docs/FNS-TOOLBAR.md": "docs/FNS-TOOLBAR.md",
+    "upstream_docs/LLM-WORKSPACE.md": "docs/LLM-WORKSPACE.md",
     "signalgarden-scenarios.json": "src/signalgarden/scenarios.json",
     "upstream_docs/SIGNALGARDEN_WORKFLOWS.md": "docs/SIGNALGARDEN_WORKFLOWS.md",
     "CodeSearchExt.py": "src/CodeSearchExt.py",
@@ -25,7 +32,7 @@ FILES = {
     "marker_catalogue.json": "src/tutorial/marker_catalogue.json",
     "group_examples.json": "src/tutorial/group_examples.json",
 }
-for name in ("cs_core.py", "cs_state.py", "cs_workbench.py", "tutorial_adapter.py", "tutorial_fixture.py", "tutorial_network.json"):
+for name in ("cs_core.py", "cs_spec.py", "cs_state.py", "cs_workbench.py", "tutorial_adapter.py", "tutorial_fixture.py", "tutorial_network.json"):
     FILES[name] = f"src/stateatlas/{name}"
 for name in ("FEATURES_EINFACH.md", "FEATURE_01_STATE_ATLAS.md", "FEATURE_02_NACHFRAGE.md", "FEATURE_03_VERGLEICH.md", "FEATURE_04_AUSSAGEN.md", "FEATURE_05_VORSCHAU.md", "FEATURE_06_BILDFALL.md", "FEATURE_07_REPRO.md", "STATE_ATLAS.md", "PROTOCOL.md"):
     FILES[f"docs/{name}"] = f"docs/state-atlas/{name}"

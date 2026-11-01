@@ -1,8 +1,13 @@
+import {searchOptions} from './search-options.js';
+import {hostQuery} from './cs-host.js';
+import {selectableHit} from '../core/multi-selection.js';
+import { renderAnalysis } from "./analysis.js";
+import { renderSpec } from './spec.js';
 // Zeichnet das CodeSearch-Fenster aus dem Zustand von cs (js/core/cs.js). Keine Logik ausser Darstellung.
 
 import { $, esc, updateHtml } from "./dom.js";
 import { abs, rel, baseName, fmtNum } from "../core/util.js";
-import { DATA_LABELS } from "../core/cs.js";
+import { DATA_LABELS, CONTEXT_MODES } from "../core/cs.js";
 import { applyLook } from "./looks.js";
 
 const GROUP_TABS = { both: ["search", "trace", "refs", "impact", "errors"], net: ["chain", "table"], code: ["map", "entries", "tour", "record", "check"] };
@@ -15,7 +20,7 @@ export function artOf(ui, h) {
   return (ui.KIND_LABELS || {})[h.kind] || String(h.kind || "").toUpperCase();
 }
 
-function artClass(h) {
+export function artClass(h) {
   if (h.family && ["opfind", "chain", "wire"].includes(h.kind)) return `k-${h.family}`;
   if (h.kind === "code") return h.hitkind === "KOMMENTAR" ? "k-comment" : "k-code";
   if (h.kind === "lint") return "k-warn";
@@ -41,6 +46,7 @@ export function pathText(cs, h) {
 }
 
 export function renderTitle(ctx) {
+  const $ = selector => hostQuery(ctx, selector);
   const { cs } = ctx;
   const s = cs.state;
   const focus = cs.net.op(s.focus);
@@ -57,6 +63,7 @@ export function renderTitle(ctx) {
 }
 
 export function renderScopes(ctx) {
+  const $ = selector => hostQuery(ctx, selector);
   const { cs } = ctx;
   // Bereich gilt fuer SEARCH, USES, USED BY, IMPACT, ERRORS (Par Scope) - in den anderen Tabs spart die Zeile Platz
   const showScopes = ["search", "trace", "refs", "impact", "errors"].includes(cs.state.mode) && !cs.state.view;
@@ -73,11 +80,12 @@ export function renderScopes(ctx) {
 }
 
 export function renderTabs(ctx) {
+  const $ = selector => hostQuery(ctx, selector);
   const { cs, ui, g } = ctx;
   const s = cs.state;
   const groupOfMode = ui.GROUP_OF_MODE || {};
   const activeGroup = groupOfMode[s.mode];
-  const codeOk = Boolean(cs.net.extClass(cs.codeTargetPath()) || cs.net.code[s.focus]);
+  const codeOk = cs.contextActive() || Boolean(cs.net.extClass(cs.codeTargetPath()) || cs.net.code[s.focus]);
   const html = ["both", "net", "code"].map((grp) => {
     const tabs = GROUP_TABS[grp].map((mode) => {
       const off = (CODE_TABS.has(mode) && !codeOk) || (mode === "table" && !cs._isTable(s.focus) && !cs._isTable(s.table.path));
@@ -94,14 +102,19 @@ export function renderTabs(ctx) {
 }
 
 export function renderContext(ctx) {
+  const $ = selector => hostQuery(ctx, selector);
   const { cs } = ctx;
   const s = cs.state;
   const box = $("#cs-context");
   const parts = [];
-  if (CODE_TABS.has(s.mode) || s.mode === "chain" || s.mode === "entries") {
-    parts.push(`<div class="context-switch" role="group" aria-label="Analyse-Kontext wählen">
-      ${[['selection', 'AUSWAHL', 'Kontext: ausgewählter Operator'], ['comp', 'DIESE COMP', 'Kontext: das offene Netzwerk']].map(([key, label, title]) => `<button type="button" class="context-button" data-ctx="${key}" aria-pressed="${s.context === key}" title="${title}"><span class="context-check" aria-hidden="true">${s.context === key ? '✓' : ''}</span><span>${label}</span></button>`).join('')}
+  parts.push(`<button class="chip ${s.view === "analysis" ? "on" : ""}" data-act="analysis" title="Geführte Analyse mit deinen vorhandenen Chats">LLM ANALYSE ↗</button>`);
+  parts.push(`<button class="chip ${s.view === 'spec' ? 'on' : ''}" data-act="spec" title="Gewünschtes Verhalten und eigene Tests">SPEC ↗</button>`);
+  parts.push(`<button class="chip" data-act="float-menu" title="Bedienbare Zweitansicht: Fenster daneben oder groß öffnen">ZWEITANSICHT ↗ ▾</button>`);
+  if (CONTEXT_MODES.has(s.mode) && !['analysis','spec'].includes(s.view)) {
+    parts.unshift(`<div class="context-switch" role="group" aria-label="Analyse-Kontext wählen">
+      ${[['selection', 'AUSWAHL', 'Kontext: ausgewählter Operator'], ['comp', 'DIESE COMP', 'Kontext: das offene Netzwerk · Rechtsklick oder lange drücken für COMP-Aktionen']].map(([key, label, title]) => `<button type="button" class="context-button" data-ctx="${key}" aria-pressed="${s.context === key}" title="${title}"><span class="context-check" aria-hidden="true">${s.context === key ? '✓' : ''}</span><span>${label}</span></button>`).join('')}
     </div>`);
+    parts.push(`<span class="ctxinfo">${esc(cs.contextDescription())}</span>`);
     parts.push(`<button class="chip" data-act="flowlens">FLOWLENS ↗</button>`);
   }
   if (CODE_TABS.has(s.mode)) {
@@ -116,17 +129,18 @@ export function renderContext(ctx) {
 }
 
 export function renderField(ctx) {
+  const $ = selector => hostQuery(ctx, selector);
   const { cs, ui } = ctx;
   const s = cs.state;
   const input = $("#cs-input");
-  const target = CODE_TABS.has(s.mode) ? cs.codeTargetPath() : s.focus;
+  const target = s.mode==='chain' ? cs.flowTarget() : cs.contextActive() ? s.paneOwner : CODE_TABS.has(s.mode) ? cs.codeTargetPath() : s.focus;
   const comp = cs.net.datComp.get(target) ?? target;
   const owner = cs.net.op(comp);
   const extensions = cs.net.extensionSources(comp);
   updateHtml($("#cs-target"), extensions.length ? `
     <div class="target-owner"><span class="target-label">${CODE_TABS.has(s.mode) ? "ANALYSEZIEL" : "FOCUS"}</span>
       <strong>${esc(owner?.name || comp)}</strong><span class="target-type">${esc(owner?.type || "")}</span>
-      ${CODE_TABS.has(s.mode) && cs.cs.Analysistarget ? '<span class="target-pin">📌 gepinnt</span>' : ""}</div>
+      ${CODE_TABS.has(s.mode) && !cs.contextActive() && cs.cs.Analysistarget ? '<span class="target-pin">📌 gepinnt</span>' : ""}</div>
     <div class="extension-list">${extensions.map((ext) => `<button class="extension-source" data-act="extension-menu" data-comp="${esc(comp)}" data-slot="${ext.slot}" aria-haspopup="dialog" title="${esc(ext.available ? `Code öffnen: ${abs(ext.path)}` : ext.reason)}">
       <span class="ext-kind">EXTENSION</span> <strong>${esc(ext.name)}</strong><span>${ext.available ? "Code öffnen ▾" : "Quelle prüfen ▾"}</span></button>`).join("")}</div>
     <span class="target-path">${esc(abs(comp))}</span>` : "");
@@ -138,6 +152,7 @@ export function renderField(ctx) {
 }
 
 export function renderFilters(ctx) {
+  const $ = selector => hostQuery(ctx, selector);
   const { cs, ui } = ctx;
   const s = cs.state;
   const box = $("#cs-filters");
@@ -153,10 +168,11 @@ export function renderFilters(ctx) {
     html += `<span class="sep"></span><span class="chip head">ADRESSE ›</span>` + (ui.OP_ADDRESSES || []).map((k) => `<button class="chip ${s.opAddress === k ? "on" : ""}" data-address="${k}" title="${esc((ui.OP_ADDRESS_HELP || {})[k] || "")}">${esc((ui.OP_ADDRESS_LABELS || {})[k] || k)}</button>`).join("");
   }
   box.className = "cs-filters row-scroll";
-  updateHtml(box, html);
+  updateHtml(box, html + searchOptions({caseSensitive:cs.cs.Casesensitive,regex:cs.cs.Regex,includeTables:cs.cs.Includetables,includeSys:cs.cs.Includesys,maxResults:cs.cs.Maxresults},'data-search-option'));
 }
 
 export function renderData(ctx) {
+  const $ = selector => hostQuery(ctx, selector);
   const { cs } = ctx;
   const s = cs.state;
   const box = $("#cs-data");
@@ -174,7 +190,17 @@ function dataControls(cs) {
     <button class="chip" data-act="data-copy">KOPIEREN</button><span class="sep"></span>`;
 }
 
+export function renderFlowControls(ctx) {
+  const box=hostQuery(ctx,'#cs-flow');if(!box)return;
+  const {cs}=ctx,s=cs.state,f=s.flow;
+  if(s.mode!=='chain' || s.view){updateHtml(box,'');return;}
+  const select=(key,label,options)=>`<label>${label}<select data-flow-filter="${key}">${options.map(([value,text])=>`<option value="${value}" ${String(f.filters[key])===String(value)?'selected':''}>${text}</option>`).join('')}</select></label>`;
+  updateHtml(box,`<div class="flow-actions row-scroll"><button data-act="flow-pin" class="chip ${f.pinned?'on':''}" aria-pressed="${f.pinned}">${f.pinned?'📌 FLOW fixiert · lösen':'FLOW fixieren'}</button><button class="chip" data-act="flow-refresh">↻ Aktualisieren</button><button class="chip" data-act="flow-pane">Netz rechts daneben ↗</button><span>${esc(abs(cs.flowTarget()))}</span></div>
+    <details class="flow-options" data-persist="flow-options"><summary>Filter und Bereich${f.pinned?' · Stand bleibt bis Aktualisieren':''}</summary><div class="flow-filter-fields">${select('direction','Richtung',[['both','Beide'],['up','Quellen'],['down','Folgen']])}${select('family','Familie',['all','top','chop','sop','dat','comp','mat','pop'].map(v=>[v,v==='all'?'Alle':v.toUpperCase()]))}${select('links','Verbindungen',[['all','Alle'],['wire','Kabel / COMP'],['refs','Parameter-Referenzen']])}${select('depth','Tiefe',[1,2,4,8,16,64].map(n=>[n,String(n)]))}</div><p>${f.pinned?'Ziel und Suchbereich bleiben beim Navigieren erhalten. Filter ändern nur diese Darstellung. Projektänderungen erscheinen nach Aktualisieren.':'Ohne Fixierung folgt das Ziel der Auswahl bzw. DIESE COMP.'} Bereich für Parameter-Leser: ${esc(abs((f.pinned?f.scope?.root:cs.scopeRoot()) || ''))}${f.pinned&&f.scope?.flat?' · direkt':''}. Kabel und Quellen können darüber hinausführen.</p></details>`);
+}
+
 export function renderRecord(ctx) {
+  const $ = selector => hostQuery(ctx, selector);
   const { cs } = ctx;
   const s = cs.state;
   const box = $("#cs-record");
@@ -195,25 +221,30 @@ export function renderRecord(ctx) {
 }
 
 export function renderCrumb(ctx) {
+  const $ = selector => hostQuery(ctx, selector);
   const { cs, ui } = ctx;
   const s = cs.state;
   const group = (ui.GROUP_LABELS || {})[(ui.GROUP_OF_MODE || {})[s.mode]] || "";
   const label = s.view === "path" ? "READ ORDER" : ((ui.TAB_LABELS || {})[s.mode] || s.mode);
   const view = { landkarte: "LANDKARTE", why: "WARUM", route: "ROUTE", system: "SYSTEM", guide: "FUNKTIONEN", states: "STATE-ATLAS" }[s.view] || "";
-  const target = s.mode === "table" ? s.table.path : (CODE_TABS.has(s.mode) ? cs.codeTargetPath() : s.focus);
+  const target = s.mode === "chain" ? cs.flowTarget() : s.mode === "table" ? s.table.path : (CODE_TABS.has(s.mode) ? cs.codeTargetPath() : s.focus);
   $("#cs-crumb").innerHTML = `<b>FOCUS</b> ${esc(baseName(abs(s.focus)) || "CodeSearch_Tutorial")} › ${esc(group)} › <b>${esc(label)}</b>${view ? ` › <b>${view}</b>` : ""} › ${esc(baseName(abs(target)) || "")}
     &nbsp; sieht: ${esc((ui.MODE_SEES || {})[s.view === "path" ? "path" : s.mode] || "")} · braucht: ${esc((ui.MODE_NEEDS || {})[s.view === "path" ? "path" : s.mode] || "")}`;
 }
 
 export function renderGroups(ctx) {
+  const $ = selector => hostQuery(ctx, selector);
   const { cs } = ctx;
   const groups = cs.state.mode === "table" ? [] : cs.groups();
   const box = $("#cs-groups");
   box.className = "cs-groups row-scroll";
-  updateHtml(box, dataControls(cs) + groups.map((gp) => `<button class="g" data-jump="${gp.index}">${esc(gp.num)} · ${esc(gp.title)}${gp.count !== null && gp.count !== undefined ? `<span class="n">${gp.count}</span>` : ""}</button>`).join(""));
+  const s=cs.state,count=s.multi.size,choose=s.mode!=='table' && s.hits.some(selectableHit)
+    ? `<button class="chip ${s.multiSelect?'on':''}" data-act="selection-mode" aria-pressed="${Boolean(s.multiSelect)}">${s.multiSelect?'✓ Mehrfachauswahl':'Mehrere auswählen'}</button>${count>1 || s.multiSelect?`<button class="chip" data-act="selection-menu">${count} ausgewählt · Aktionen ▾</button><button class="chip" data-act="selection-clear">Aufheben</button>`:''}`:'';
+  updateHtml(box, choose+dataControls(cs) + groups.map((gp) => `<button class="g" data-jump="${gp.index}">${esc(gp.num)} · ${esc(gp.title)}${gp.count !== null && gp.count !== undefined ? `<span class="n">${gp.count}</span>` : ""}</button>`).join(""));
 }
 
 export function renderList(ctx) {
+  const $ = selector => hostQuery(ctx, selector);
   const { cs, ui } = ctx;
   const s = cs.state;
   const box = $("#cs-list");
@@ -236,7 +267,7 @@ export function renderList(ctx) {
     const txt = h.kind === "chain" && h.station
       ? `${h.dist ? (h.dist < 0 ? `(←${-h.dist}) ` : `(→${h.dist}) `) : ""}${h.station}`
       : h.text;
-    return `<button class="${cls.join(" ")}" data-row="${i}" data-key="r${i}"><span class="art ${artClass(h)}" data-art="${i}">${esc(artOf(ui, h))}</span><span class="main"><div class="wo">${det ? `<span class="det">${esc(det)}</span>` : ""}${esc(wo)}</div><div class="txt">${esc(txt)}</div>${st}</span></button>`;
+    return `<button class="${cls.join(" ")}" data-row="${i}" data-key="r${i}" ${selectableHit(h)?`aria-pressed="${s.multi.has(i)}"`:''}>${s.multiSelect&&selectableHit(h)?`<span class="selection-check" aria-hidden="true">${s.multi.has(i)?'✓':'○'}</span>`:''}<span class="art ${artClass(h)}" data-art="${i}">${esc(artOf(ui, h))}</span><span class="main"><div class="wo">${det ? `<span class="det">${esc(det)}</span>` : ""}${esc(wo)}</div><div class="txt">${esc(txt)}</div>${st}</span></button>`;
   }).join("");
   updateHtml(box, head + rows);
 }
@@ -256,13 +287,14 @@ function tableHtml(cs) {
     return `<td data-cell="${r.index},${ci}" data-key="c${r.index}-${ci}" class="${isSel ? "sel" : ""} ${dup ? "dup" : ""}">${esc(c)}</td>`;
   }).join("")}</tr>`).join("");
   return `<div class="colhead"><span>TABLE</span><span>${esc(abs(view.path))} · ${view.rows.length} sichtbar · Kopf = sortieren · Doppeltippen = ändern · lange drücken = Menü</span></div>
+    <div class="table-actions"><button data-act="td-undo" title="Strg+Z">↶ Rückgängig</button><button data-act="td-redo" title="Strg+Y oder Strg+Shift+Z">↷ Wiederherstellen</button></div>
     <div class="table-wrap"><table class="grid">${head}${body}</table></div>`;
 }
 
 const PY_KW = new Set(["def", "class", "return", "if", "elif", "else", "for", "while", "in", "not", "and", "or", "is", "None", "True", "False", "import", "from", "as", "try", "except", "with", "pass", "lambda", "self", "yield", "raise", "global"]);
 
-function codeLineHtml(cs, dat, line) {
-  const members = new Set(cs.net.members(dat).map((m) => m.name));
+function codeLineHtml(cs, dat, line, savedMembers = null) {
+  const members = new Set(savedMembers ?? cs.net.members(dat).map((m) => m.name));
   const parts = [];
   let rest = line;
   const comment = rest.indexOf("#");
@@ -278,7 +310,7 @@ function codeLineHtml(cs, dat, line) {
     else if (m[2]) {
       const w = m[2];
       if (PY_KW.has(w)) parts.push(`<span class="kw">${w}</span>`);
-      else parts.push(`<span class="id ${members.has(w) ? "def" : ""}" data-id="${esc(w)}">${esc(w)}</span>`);
+      else parts.push(`<span class="id ${members.has(w) ? "def" : ""}" ${savedMembers ? '' : `data-id="${esc(w)}"`}>${esc(w)}</span>`);
     } else parts.push(esc(m[3]));
   }
   if (tail) parts.push(`<span class="cm">${esc(tail)}</span>`);
@@ -299,7 +331,12 @@ export function codeHtml(cs, dat, focusLine, { from = null, to = null } = {}) {
   return `<div class="code" data-dat="${esc(dat)}">${out.join("")}</div>`;
 }
 
+export function snapshotCodeHtml(code) {
+  return `<div class="code">${code.lines.map((line, i) => `<div class="ln ${code.start + i === code.line ? 'focus' : ''}"><span class="no">${code.start + i}</span><span>${codeLineHtml(null, code.dat, line, code.members)}</span></div>`).join('')}</div>`;
+}
+
 export function renderDetail(ctx) {
+  const $ = selector => hostQuery(ctx, selector);
   const { cs } = ctx;
   const s = cs.state;
   const box = $("#cs-detail");
@@ -313,7 +350,7 @@ export function renderDetail(ctx) {
   const bar = [];
   if (h.line && cs.net.code[rel(h.path)]) bar.push(`<button data-act="editor">IM EDITOR ÖFFNEN</button>`);
   if (h.kind === "code" && h.line && cs.net.op(rel(h.path)) && typeof cs.net.op(rel(h.path)).text === "string") bar.push(`<button data-act="edit">BEARBEITEN</button>`);
-  bar.push(`<button data-act="float-list">LISTE ↗ FENSTER</button>`);
+  bar.push(`<button data-act="float-list">LISTE ↗ DANEBEN</button><button data-act="float-menu">WEITERE ANSICHTEN ▾</button>`);
   if (s.learning) bar.push(`<button data-act="reveal">AUFDECKEN</button>`);
   let blocks = s.mode === "table" ? tableDetail(cs, h) : cs.detailFor(h);
   const hidden = !cs.cs.Showcallgraph && !s.revealed;
@@ -330,10 +367,14 @@ export function renderDetail(ctx) {
   if (cvOp && typeof cvOp.text === "string") {
     const dat = rel(cv.path);
     code = `<div class="code-head"><span class="sp">${esc(cv.path)}:${esc(cv.line ?? "")}${cv.definition ? " · DEFINITION" : ""}</span>
-      <button data-act="def-back" title="Alt+←">◀</button><button data-act="def-fwd" title="Alt+→">▶</button></div>${codeHtml(cs, dat, cv.line)}`;
+      <button data-act="def-back" title="Alt+←">◀</button><button data-act="def-fwd" title="Alt+→">▶</button><button data-act="code-full" aria-pressed="${Boolean(s.codeFull)}">${s.codeFull?'Ausschnitt':'Vollcode'}</button><button data-act="float-code">CODE ↗ FENSTER</button></div>
+      <div class="code-controls"><label>Code-Schrift <input type="range" min="25" max="250" step="5" value="100" data-code-zoom aria-label="Code-Schriftgröße"><output>100 %</output></label><button data-act="code-zoom-reset">100 %</button></div>
+      <div class="code-resize" data-code-resize tabindex="0" role="separator" aria-label="Höhe des Codebereichs einstellen" aria-orientation="horizontal" aria-valuemin="100" aria-valuemax="900" aria-valuenow="${ctx.codeHeight || 300}">↕ Codebereich ziehen</div>
+      <div class="code-viewport" data-scroll-key="code-${esc(dat)}-${s.codeFull?'full':'excerpt'}" tabindex="0" aria-label="${s.codeFull?'Vollständiger Code':'Codeausschnitt'}">${codeHtml(cs, dat, cv.line, s.codeFull?{from:1,to:dat==='BranchLab/experiment_script'?cs.lab.script.split('\n').length:cs.net.lines(dat).length}:{})}</div>`;
   }
   const detailKey = `${s.mode}|${h.path}|${h.ctx}|${h.line}|${h.row}|${h.col}|${cv.path}|${cv.line}`;
   updateHtml(box, `<div class="det-bar">${bar.join("")}</div>${blocksHtml}${code}`, ctx.detailKey !== detailKey);
+  const slider=box.querySelector('[data-code-zoom]');if(slider){slider.value=String(Math.round((s.codeZoom || 1)*100));slider.nextElementSibling.textContent=slider.value+' %';}
   ctx.detailKey = detailKey;
 }
 
@@ -355,19 +396,23 @@ function tableDetail(cs, h) {
 }
 
 export function renderStatus(ctx) {
+  const $ = selector => hostQuery(ctx, selector);
   const { cs, ui } = ctx;
   const s = cs.state;
   $("#cs-status").innerHTML = `<span class="l">${esc(cs.statusLine())}</span><span class="r">${esc((ui.MODE_KEYS || {})[s.mode] || "")}</span>`;
   const win = $("#cs");
-  win.classList.toggle("closed", !s.mainopen);
-  if (!s.mainopen) $("#cs-closed-why").textContent = s.status || "CodeSearch ist zu (Esc oder ✕). Shift+K oder der Knopf öffnet es wieder – Arbeitsplatz auf der Karte richtet die Station neu ein.";
-  win.classList.toggle("min", s.window === "min");
-  win.classList.toggle("max", s.window === "max");
+  win.classList.toggle("closed", !ctx.host && !s.mainopen);
+  if (!ctx.host && !s.mainopen) $("#cs-closed-why").textContent = s.status || "CodeSearch ist zu (Esc oder ✕). Shift+K oder der Knopf öffnet es wieder – Arbeitsplatz auf der Karte richtet die Station neu ein.";
+  win.classList.toggle("min", !ctx.host && s.window === "min");
+  win.classList.toggle("max", !ctx.host && s.window === "max");
   if (ctx.appliedLook !== cs.cs.Look) { applyLook(document.body, ui, cs.cs.Look); ctx.appliedLook = cs.cs.Look; }
   win.style.zoom = String(s.zoom);
+  win.style.setProperty('--code-zoom',String(s.codeZoom || 1));
+  win.style.setProperty('--code-height',`${ctx.codeHeight || 300}px`);
 }
 
 export function renderCS(ctx) {
+  const $ = selector => hostQuery(ctx, selector);
   renderTitle(ctx);
   renderScopes(ctx);
   renderTabs(ctx);
@@ -376,9 +421,12 @@ export function renderCS(ctx) {
   renderFilters(ctx);
   renderData(ctx);
   renderRecord(ctx);
+  renderFlowControls(ctx);
   renderCrumb(ctx);
   renderGroups(ctx);
   renderList(ctx);
   renderDetail(ctx);
   renderStatus(ctx);
+  renderAnalysis(ctx);
+  renderSpec(ctx);
 }

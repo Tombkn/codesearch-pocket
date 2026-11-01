@@ -4,6 +4,7 @@
 import { abs, rel, pyStr, casefold } from "./util.js";
 import { stateAtlas } from "./views/miscviews.js";
 import { resolveProgressStep } from "./progress.js";
+import { newFlowState } from "./flow-session.js";
 
 const CODE_MODES = new Set(["map", "entries", "tour", "impact", "record", "check"]);
 const SKIP_KINDS = new Set(["info", "empty", "header", "section", "button", "notice"]);
@@ -112,10 +113,12 @@ export class Tour {
     cs.state.viewer = null;
     if (cs.state.record.recording && !lesson.keep) cs.recordStop();
     if (cs.state.inv.watching && !lesson.keep) cs.stopStateWatch();
-    if (prep.close_quick) cs.state.quick.open = false;
+    if (prep.close_quick) cs.closeAllSearchWindows();
     if ("quick_filter" in prep) cs.state.quick.filter = prep.quick_filter;
     if (!lesson.keep) {
       Object.assign(cs.cs, { Regex: false, Casesensitive: false, Searchfilter: "all", Opfamily: "all", Maxresults: 500, Includetables: true });
+      // Eine neue Station verspricht ihr eigenes Ziel; alte Pins und Filter dürfen es nicht überlagern.
+      cs.state.flow = newFlowState();
     }
     if (prep.reset_lab) {
       this.lab.setPalette("valid");
@@ -277,6 +280,11 @@ export class Tour {
       "investigation.lab.ready": true,
     });
     for (const [key, value] of Object.entries(lab.stateLab.Observe())) state[`investigation.lab.${key}`] = value;
+    if (typeof cs.investigationSnapshot === 'function') {
+      Object.assign(state, cs.investigationSnapshot());
+      const packetKey = 'investigation.analysis_packet_id';
+      state['investigation.analysis_packet_unchanged'] = Boolean(this.baseline[packetKey]) && state[packetKey] === this.baseline[packetKey];
+    }
     for (const [key, value] of Object.entries(lab.garden.Observe())) state[`garden.${key}`] = value;
     state['workflow.investigation_view'] = s.view === 'untersuchung' ? 'investigation' : s.view;
     for (const [owner, pars] of Object.entries(lab.garden.pars)) for (const [name, value] of Object.entries(pars)) state[`garden.par.${owner}.${name}`] = value;
@@ -289,6 +297,18 @@ export class Tour {
       "cs.float_count": s.floats.length,
       "cs.float_zoomed": s.floats.some((f) => f.zoom !== f.zoomStart),
       "cs.ui_scale": s.zoom,
+      'workspace.search_count': 1+s.searchWindows.filter(q=>q.open).length,
+      'workspace.search_queries': s.searchWindows.filter(q=>q.open).map(q=>q.query).join('\n'),
+      'workspace.code_full': Boolean(s.codeFull),
+      'workspace.code_zoom': s.codeZoom || 1,
+      'workspace.flow_pinned': s.flow.pinned,
+      'workspace.flow_target': s.flow.anchor || '',
+      'workspace.flow_direction': s.flow.filters.direction,
+      'workspace.flow_refresh': s.flow.generation,
+      'workspace.secondary_pane': s.secondaryPane.open,
+      'workspace.parent_value_exists': Object.hasOwn(lab.garden.pars.root,'Value'),
+      'workspace.promotion_cancel_serial': cs.promotionCancelSerial || 0,
+      'workspace.sensor_value_connected': cs.promotedBindings?.get('SignalGarden/Sensor:Value')?.parent==='SignalGarden' && Boolean(Object.getOwnPropertyDescriptor(lab.garden.pars.sensor,'Value')?.get),
       "flowlens.target": s.flowlens.target,
       "flowlens.colors": s.flowlens.colors,
       "flowlens.selected": s.flowlens.selected,
@@ -324,7 +344,7 @@ export class Tour {
   toggleHint() { this.hint = !this.hint; }
 
   next() {
-    if (!(this.lesson().id in this.done) || (this.lesson().workflow_id && !this.currentPassed)) {
+    if (!(this.lesson().id in this.done) || ((this.lesson().workflow_id || this.lesson().sequence_id) && !this.currentPassed)) {
       this.feedback = "Dieser Schritt ist noch offen. Erst Prüfen oder bewusst Überspringen.";
       return false;
     }
@@ -347,7 +367,7 @@ export class Tour {
   chapterStart(chapter) {
     const items = this.lessons.map((l, i) => [i, l]).filter(([, l]) => l.chapter === chapter);
     if (!items.length) return;
-    const open = items[0][1].workflow_id ? items[0] : items.find(([, l]) => !(l.id in this.done));
+    const open = (items[0][1].workflow_id || items[0][1].sequence_id) ? items[0] : items.find(([, l]) => !(l.id in this.done));
     this.goTo((open || items[0])[0]);
   }
 
@@ -380,6 +400,7 @@ export class Tour {
         this.skipped = new Set((data.skipped || []).filter((id) => known.has(id)));
         this.step = resolveProgressStep(data, this.lessons);
         if (this.lesson().workflow_id) this.step = this.lessons.findIndex((l) => l.workflow_id === this.lesson().workflow_id);
+        if (this.lesson().sequence_id) this.step = this.lessons.findIndex((l) => l.sequence_id === this.lesson().sequence_id);
         return;
       }
       const old = this.storage.getItem("codesearch-pocket-v1");

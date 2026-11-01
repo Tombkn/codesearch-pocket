@@ -75,13 +75,13 @@ test('FlowLens öffnet das gewählte COMP und respektiert DIESE COMP sowie laufe
   cs.state.flowlens.open = false; cs.state.record.recording = true; g.openFlowLens();
   assert.equal(cs.state.flowlens.open, false); assert.match(cs.state.status, /STOP/);
 });
-test('Alle 16 nativen Looks werden angeboten: zehn neue neben sechs bestehenden', () => {
+test('Alle 24 nativen Looks werden angeboten: acht Graphite-Varianten neben den bisherigen sechzehn', () => {
   const palettes = ui.CODESEARCH_LOOKS;
   assert.ok(palettes, 'Native Konstanten importieren oder POCKET_UI_FIXTURE setzen');
-  assert.equal(Object.keys(palettes).length, 16);
-  for (const key of ['classic', 'graphite', 'midnight', 'paper', 'sand', 'contrast', 'aurora', 'ember', 'lagoon', 'plum', 'slate', 'copper', 'porcelain', 'mist', 'ink', 'beacon']) assert.ok(palettes[key]);
+  assert.equal(Object.keys(palettes).length, 24);
+  for (const key of ['classic', 'graphite', 'midnight', 'paper', 'sand', 'contrast', 'aurora', 'ember', 'lagoon', 'plum', 'slate', 'copper', 'porcelain', 'mist', 'ink', 'beacon', 'graphite_soft', 'graphite_blue', 'carbon', 'titanium', 'smoked_glass', 'frosted_glass', 'iridium', 'graphite_mint']) assert.ok(palettes[key]);
   const { cs, gestures: g } = app(); g.lookMenu();
-  assert.equal(cs.state.menu.items.length, 16);
+  assert.equal(cs.state.menu.items.length, 24);
   assert.deepEqual([...new Set(cs.state.menu.items.map((item) => item.group))], ['Dunkel', 'Hell', 'Hoher Kontrast']);
   cs.state.menu.items.find((item) => item.label.includes('Mist')).run(); assert.equal(cs.cs.Look, 'mist');
   const page = new JSDOM('<body></body>'); applyLook(page.window.document.body, ui, 'mist');
@@ -90,7 +90,7 @@ test('Alle 16 nativen Looks werden angeboten: zehn neue neben sechs bestehenden'
 });
 test('Text und semantische Farben sind auf vier Hauptflächen rechnerisch lesbar', () => {
   assert.ok(ui.CODESEARCH_LOOKS && typeof ui.CODESEARCH_LOOKS === 'object', 'CODESEARCH_LOOKS fehlt: kein Kontrastnachweis ohne native Paletten');
-  assert.equal(Object.keys(ui.CODESEARCH_LOOKS).length, 16, 'Kontrastprüfung braucht alle 16 nativen Looks');
+  assert.equal(Object.keys(ui.CODESEARCH_LOOKS).length, 24, 'Kontrastprüfung braucht alle 24 nativen Looks');
   const decode = (css) => css.match(/[\d.]+/g).map((value) => Number(value) / 255);
   for (const [key, palette] of Object.entries(ui.CODESEARCH_LOOKS)) {
     const tokens = lookVariables(palette);
@@ -111,8 +111,8 @@ test('?-Übersicht zeigt jede importierte Shortcut-Gruppe unverändert samt Kont
   assert.ok(rows.some((row) => row.text.includes('Alt+D')));
   assert.ok(rows.some((row) => row.text.includes('Shift+K')));
 });
-test('Kontext-Buttons haben in allen 16 Looks lesbare aktive und inaktive Farben', () => {
-  assert.equal(Object.keys(ui.CODESEARCH_LOOKS || {}).length, 16, 'Alle nativen Looks sind für die Prüfung nötig');
+test('Kontext-Buttons haben in allen 24 Looks lesbare aktive und inaktive Farben', () => {
+  assert.equal(Object.keys(ui.CODESEARCH_LOOKS || {}).length, 24, 'Alle nativen Looks sind für die Prüfung nötig');
   const decode = (css) => css.match(/[\d.]+/g).map((value) => Number(value) / 255);
   for (const [key, palette] of Object.entries(ui.CODESEARCH_LOOKS)) {
     const colors = lookVariables(palette);

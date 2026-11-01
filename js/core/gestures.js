@@ -3,6 +3,7 @@
 
 import { rel, abs } from "./util.js";
 import { entryChain } from "./views/codeviews.js";
+import {compOperations,promotedPulse,showPromotion} from './comp-operations.js';
 
 export class Gestures {
   constructor(tour) {
@@ -16,6 +17,8 @@ export class Gestures {
   workspace() { this.tour.showWorkplace(); }
   seen() { this.tour.seen(); this.cs.emit(); }
   setClipboard(text) { this.cs.copy(text); this.cs.emit(); }
+  specStates() { return this.cs.SpecStates(); }
+  specObservation(procedure, observation) { return this.cs.RecordSpecObservation(procedure, observation); }
   check() { const r = this.tour.check(); this.cs.emit(); return r; }
   next() { const ok = this.tour.next(); this.cs.emit(); return ok; }
   back() { this.tour.back(); this.cs.emit(); }
@@ -48,8 +51,12 @@ export class Gestures {
   // ------------------------------------------------------------------ TD-Seite (Netz, Parameter, Timeline)
   play(on = true) { this.tour.playing = on; this.cs.emit(); }
   netSelect(path) { this.cs.networkSelect(path); }
-  netEnter(comp) { this.cs.state.paneOwner = comp; this.cs.state.networkSelected = []; this.cs.emit(); }
-  netUp() { const p = this.cs.state.paneOwner; this.cs.state.paneOwner = p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : ""; this.cs.emit(); }
+  netEnter(comp) {
+    this.cs.state.paneOwner = comp; this.cs.state.networkSelected = [];
+    if ((this.cs.contextActive() || ['currentflat','currentpane'].includes(this.cs.cs.Scope)) && !['analysis','spec','investigation'].includes(this.cs.state.view)) this.cs.rebuild();
+    else this.cs.emit();
+  }
+  netUp() { const p = this.cs.state.paneOwner; this.netEnter(p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : ''); }
 
   // BranchLab-Parameter (Lab-Parameter)
   blPar(name, value) {
@@ -75,9 +82,15 @@ export class Gestures {
   slPar(name, value) { this.lab.stateLab.pars[name] = value; this.cs.rebuild(); }
   gardenPar(owner, name, value) {
     if (!(name in this.lab.garden.pars[owner])) throw new Error(`Unbekannter Parameter ${owner}.${name}`);
-    this.lab.garden.pars[owner][name] = value; this.cs.rebuild();
+    const pars=this.lab.garden.pars[owner],before=pars[name];
+    if(before!==value){
+      pars[name]=value;
+      const set=(expected,next)=>{if(pars[name]!==expected)throw new Error('Parameter wurde inzwischen verändert; Undo-Schritt nicht angewendet.');pars[name]=next;};
+      this.lab.recordEdit(()=>set(value,before),()=>set(before,value));
+    }
+    this.cs.rebuild();
   }
-  gardenPulse(owner, name) { this.lab.garden.pulse(owner, name); this.cs.rebuild(); }
+  gardenPulse(owner, name) { if(!promotedPulse(this.cs,owner,name))this.lab.garden.pulse(owner, name); this.cs.rebuild(); }
   gardenReinit(owner) { this.lab.garden.reinit(owner); this.cs.rebuild(); }
   // Farbmischer-Parameter
   fmPulse(name) {
@@ -104,7 +117,7 @@ export class Gestures {
   enter(text = null) {
     const s = this.cs.state;
     if (text !== null) return this.cs.fieldEnter(text);
-    if (s.dialog) { const d = s.dialog; s.dialog = null; if (d.confirm) d.confirm(); return this.cs.rebuild(); }
+    if (s.dialog) { const d = s.dialog; d.confirm?.(); if (s.dialog === d) s.dialog = null; return this.cs.rebuild(); }
     if (s.selected >= 0) return this.cs.activate();
     return this.cs.fieldEnter(s.mode === "search" ? s.query : s.fieldDraft);
   }
@@ -174,7 +187,8 @@ export class Gestures {
     cs.emit();
   }
   overview(kind) { this.cs.state.overview = this.cs.state.overview === kind ? "" : kind; this.cs.state.selected = -1; this.cs.rebuild(); }
-  context(kind) { this.cs.state.context = kind; this.cs.state.selected = -1; this.cs.rebuild(); }
+  context(kind) { this.cs.state.context = kind; this.cs.state.selected = -1; if (this.cs.state.view === 'symbolrefs') this.cs.state.view = ''; this.cs.rebuild(); }
+  compMenu() {return compOperations(this.cs);}
   window(action) { this.cs.state.window = action; this.cs.emit(); }
 
   // Text im Suchfeld markieren und kopieren (normales Text-Kopieren im Feld)
@@ -191,10 +205,10 @@ export class Gestures {
     if (typeof match === "function") return hits.findIndex(match);
     return hits.findIndex((h) => h.kind !== "section" && h.kind !== "notice" && JSON.stringify(h).includes(match));
   }
-  tapRow(match) {
+  tapRow(match, options={}) {
     const i = this._find(match);
     if (i < 0) throw new Error(`Zeile nicht gefunden: ${match}`);
-    this.cs.select(i, { ctrl: this.mods.ctrl });
+    this.cs.select(i, { ctrl: Boolean(this.mods.ctrl || options.ctrl || this.cs.state.multiSelect) });
     if (this.mods.alt && this.cs.state.mode === "errors") this.altClickError();
     this.mods = { ctrl: false, alt: false, shift: false };
     return i;
@@ -206,15 +220,31 @@ export class Gestures {
   rowMenu(match) {
     const i = this._find(match);
     if (i < 0) throw new Error(`Zeile nicht gefunden: ${match}`);
-    this.cs.select(i);
+    if(!this.cs.state.multi.has(i))this.cs.select(i);
+    if(this.cs.state.multi.size>1)return this.cs.selectionMenu();
     this.cs.state.menu = { title: "ZEILE", items: this.rowMenuItems(this.cs.state.hits[i]) };
     this.cs.emit();
   }
   rowMenuItems(h) {
     const cs = this.cs;
     const items = [];
-    if (cs.state.mode === "chain" && h.path) items.push({ label: `FOCUS HIERHER · ${h.ctx || ""}`, run: () => { cs.state.focus = rel(h.path); cs.state.targets = [h.path]; cs.rebuild(); const idx = cs.state.hits.findIndex((x) => x.anchor); cs.state.selected = idx; cs.emit(); } });
+    if (cs.state.mode === 'chain' && h.path) {
+      items.push({label:'RECHTS IM ZWEITEN NETZWERK ÖFFNEN',run:()=>cs.openNetworkPane(h.path)});
+      items.push({label:`FOCUS HIERHER · ${h.ctx || ''}`,run:()=>cs.flowSetTarget(h.path)});
+    }
     if (h.path) items.push({ label: "VIEWER ÖFFNEN", run: () => { cs.state.viewer = { path: rel(h.path), line: h.line || null }; } });
+    if (h.path && cs.net.isComp(rel(h.path))) {
+      // COMP-Zeile: Inhalt je Familie (wie nativ DARIN) - Zeilenfarbe = Familie in der Trefferliste.
+      const counts = {};
+      for (const kid of cs.net.kids(rel(h.path))) counts[kid.family] = (counts[kid.family] || 0) + 1;
+      const total = Object.values(counts).reduce((a, b) => a + b, 0);
+      if (total) items.push({ label: `DARIN · ALLE OPERATOREN (${total})`, run: () => cs.showCompContents(h.path, 'all') });
+      for (const family of ['COMP', 'DAT', 'CHOP', 'TOP', 'SOP', 'MAT', 'POP']) {
+        if (counts[family]) items.push({ label: `DARIN · ${family === 'COMP' ? 'NUR COMPs' : 'ALLE ' + family + 's'} (${counts[family]})`, run: () => cs.showCompContents(h.path, family) });
+      }
+      items.push({ label: 'PARAMETER NACH OBEN …', run: () => showPromotion(cs, rel(h.path)) });
+      items.push({ label: 'IN ZWEITER NETZWERKANSICHT ÖFFNEN', run: () => cs.openNetworkPane(h.path) });
+    }
     if (h.kind === "state" || h.cat === "state") items.push({ label: "URSACHE", run: () => cs.cause() });
     if (h.ctx && cs.net.member(rel(h.path), h.ctx)) {
       items.push({ label: "IMPACT (Strg+I)", run: () => cs.impact() });
@@ -249,6 +279,32 @@ export class Gestures {
     const s = cs.state;
     this.mods = { ctrl: false, alt: false, shift: false };
     if (s.help?.source === 'tab-hover') s.help = null;
+    if(s.quick.open && s.focusWin==='quick' && !s.menu && !s.dialog && !s.viewer && !s.editor) {
+      const q=s.quick;
+      if(name==='Esc')return this.quickEsc();
+      if(name==='Up'||name==='Down'){
+        const delta=name==='Up'?-1:1;let i=q.selected;
+        do{i+=delta;}while(q.hits[i] && ['section','notice'].includes(q.hits[i].kind));
+        if(q.hits[i])cs.quickSelect(i);return;
+      }
+      if(name==='Enter')return cs.quickJump(q.selected);
+      if(name==='Ctrl+C'){const h=q.hits[q.selected];if(h)cs.copy([h.path,h.line,h.text].filter(Boolean).join(' · '));return;}
+      if(name==='Ctrl+P')return cs.quickOpen();
+      return;
+    }
+    if (this._floatFocused() && !s.menu && !s.dialog && !s.viewer && !s.editor) {
+      switch (name) {
+        case 'Esc': return this.floatEsc();
+        case 'Ctrl+C': return this._floatCopy();
+        case 'Up': return this._floatMove(-1);
+        case 'Down': return this._floatMove(1);
+        case 'Ctrl+Plus': return this._floatZoom(0.1);
+        case 'Ctrl+Minus': return this._floatZoom(-0.1);
+        case 'Alt+0': return this._floatZoom(0);
+        default: if (!this._floatFocused().live) return undefined; // Historische Quellen bleiben ohne Schreibaktionen.
+          break;
+      }
+    }
     switch (name) {
       case "Esc": return cs.escape();
       case "Enter": return this.enter();
@@ -273,13 +329,17 @@ export class Gestures {
       case "Ctrl+Alt+Left": return cs.historyBack();
       case "Ctrl+Alt+Right": return cs.historyForward();
       case "Ctrl+Plus": return this._floatFocused() ? this._floatZoom(0.1) : cs.zoom(0.1);
+      case "Ctrl+Minus": return this._floatFocused() ? this._floatZoom(-0.1) : cs.zoom(-0.1);
       case "Alt+0": return this._floatFocused() ? this._floatZoom(0) : cs.zoom(0);
       case "Alt+Shift+A": return this.recordAnywhere();
       case "Ctrl+P": return cs.quickOpen();
+      case "Ctrl+F": return cs.quickOpen(true);   // jedes Ctrl+F ein weiteres unabhängiges Suchfenster
       case "Alt+Shift+K": return cs.OpenAt("trace", { target: s.networkSelected[0] ?? s.focus });
       case "Ctrl+Shift+K": return cs.OpenAt("refs", { target: s.networkSelected[0] ?? s.focus });
       case "Shift+K": return cs.OpenAt("search", { target: s.paneOwner, query: s.query });
       case "Ctrl+Z": return this.tdUndo();
+      case "Ctrl+Y":
+      case "Ctrl+Shift+Z": return cs.redoTD();
       default: throw new Error(`unbekannte Taste ${name}`);
     }
   }
@@ -406,7 +466,7 @@ export class Gestures {
   }
   quickDoubleTap(match) { const i = this.quickTap(match); this.cs.quickJump(i); }
   quickMenuMain(match) { const i = this.quickTap(match); this.cs.quickToMain(i); }
-  quickEsc() { this.cs.state.quick.open = false; this.cs.emit(); }
+  quickEsc() {this.cs.quickClose();}
 
   // ------------------------------------------------------------------ Lesekopien
   floatList() { this.cs.floatList(); this.focusFloat(this.cs.state.floats[this.cs.state.floats.length - 1].id); }
@@ -414,6 +474,7 @@ export class Gestures {
   _floatFocused() { return this.cs.state.floats.find((f) => f.id === this.cs.state.floatFocus) || null; }
   _floatMove(delta) {
     const f = this._floatFocused();
+    if (f?.live) return this._move(delta);
     if (!f || !f.rows) return;
     let i = f.selected;
     do { i += delta; } while (f.rows[i] && f.rows[i].kind === "section");
@@ -422,20 +483,23 @@ export class Gestures {
   }
   floatTapRow(match) {
     const f = this._floatFocused();
-    const i = f.rows.findIndex((h) => h.kind !== "section" && JSON.stringify(h).includes(match));
-    if (i >= 0) f.selected = i;
+    const rows = f.live ? this.cs.state.hits : f.rows;
+    const i = rows.findIndex((h) => h.kind !== "section" && JSON.stringify(h).includes(match));
+    if (i >= 0) { if (f.live) this.cs.select(i); else f.selected = i; }
     this.cs.emit();
   }
   _floatCopy() {
     const f = this._floatFocused();
+    if (f?.live && !["code", "details"].includes(f.kind) && this.cs.selectedHit) return this.cs.ctrlC('float');
     const h = f && f.rows ? f.rows[f.selected] : null;
-    if (h) { this.cs.copy(h.ctx ? `${h.ctx}` : h.text); this.cs.clipboardOrigin = "float"; }
+    if (f) this.cs.copy(h ? (h.ctx ? `${h.ctx}` : h.text) : f.text, 'float', 'float');
     this.cs.emit();
   }
   _floatZoom(delta) {
     const f = this._floatFocused();
     if (!f) return;
-    f.zoom = delta === 0 ? 1 : Math.round((f.zoom + delta) * 10) / 10;
+    // 25–250 % wie der CODE-Regler und das Laptop-Fenster; 10-%-Raster ohne Rundungsdrift.
+    f.zoom = delta === 0 ? 1 : Math.max(0.25,Math.min(2.5,Math.round((f.zoom + delta) * 10) / 10));
     this.cs.emit();
   }
   floatEsc() {

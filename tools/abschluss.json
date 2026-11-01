@@ -46,7 +46,8 @@
       "hint": "FLOW auf merge_image, unter QUELLEN die Zeile mit ART OPPAR (ColorEngine/out1) antippen.",
       "rules": [
         {"key": "mode", "value": "chain", "op": "eq", "hint": "Noch nicht der Tab mit der ganzen Strecke."},
-        {"key": "selected", "value": "'art': 'OPPAR'", "op": "contains", "hint": "Noch nicht die Station mit der Parameter-Referenz markiert."}
+        {"key": "selected", "value": "'art': 'OPPAR'", "op": "contains", "hint": "Noch nicht die Station mit der Parameter-Referenz markiert."},
+        {"key": "selected", "value": "ColorEngine/out1", "op": "contains", "hint": "Die Station muss ColorEngine/out1 sein; eine beliebige OPPAR-Zeile genügt nicht."}
       ],
       "mode": "search", "start": "search", "target": "BranchLab/merge_image", "scope": "BranchLab", "query": "", "prep": {}, "observed": false, "keep": false, "nohelp": true
     },

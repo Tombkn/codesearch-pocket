@@ -502,6 +502,11 @@ def load_course() -> dict:
 
 
 DOCS = [
+    ("workplace", "Arbeitsplatz: Auswahl, Vollcode, Suche, FLOW und COMP-Aktionen", "upstream_docs/workplace-workflows.md", 47),
+    ("speckit", "CodeSearch → td-system-kit: Spec, Plan, Tasks und Belege", "upstream_docs/SPEC-KIT-HANDOFF.md", 46),
+    ("spec", "Spec-Workflow: gewünschtes Verhalten und überprüfbare Versuche", "upstream_docs/SPEC-WORKSPACE.md", 46),
+    ("toolbar", "Laptop: CodeSearch aus der FNSTools-Toolbar öffnen", "upstream_docs/FNS-TOOLBAR.md", None),
+    ("analysis", "LLM-Analyse: Frage, Belege und geprüfte Antwort", "upstream_docs/LLM-WORKSPACE.md", 44),
     ("interface", "Neu: Extension-Menü, Looks und Shortcuts", "upstream_docs/INTERFACE-1.9.1.md", None),
     ("workflows", "SignalGarden: acht komplette Analyse-Workflows", "upstream_docs/SIGNALGARDEN_WORKFLOWS.md", 36),
     ("map", "Die sieben Werkzeuge", "docs/FEATURES_EINFACH.md", 26),
@@ -543,6 +548,12 @@ def write(name: str, data) -> int:
 
 def main() -> None:
     DATA.mkdir(parents=True, exist_ok=True)
+    source_ref = {key: LOCK[key] for key in ('repo', 'commit', 'version', 'checked')}
+    (ROOT / 'js/core/source-ref.js').write_text(
+        '// Erzeugt aus upstream.json durch tools/build_data.py.\n'
+        + 'export const SOURCE_REF = ' + json.dumps(source_ref, ensure_ascii=False, indent=2) + ';\n',
+        encoding='utf-8',
+    )
     course = load_course()
     net = load_net()
     code = load_code(net)

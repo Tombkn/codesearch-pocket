@@ -1,10 +1,38 @@
 {
   "repo": "Tombkn/td-codesearch",
-  "commit": "b5ebfe3b54f588eb990586a5bb8a446bed52c691",
-  "version": "1.9.1",
-  "checked": "2026-10-31",
-  "lesson_count": 558,
+  "commit": "2624930732c828ae93234887e1abe2a395ae549e",
+  "version": "1.10.0",
+  "checked": "2026-11-01",
+  "lesson_count": 610,
   "files": {
+    "upstream_docs/SPEC-KIT-HANDOFF.md": {
+      "path": "docs/SPEC-KIT-HANDOFF.md",
+      "sha256": "a19e4f58c4f17e747f6b9203c04bd985fb55e16236a37f6fbc9717a591cd9c21"
+    },
+    "upstream_docs/workplace-workflows.md": {
+      "path": "docs/workplace-workflows.md",
+      "sha256": "687682345e3e6d2f02f6fed3384b386c829c20dc92648ae8c1f2977e79926ecc"
+    },
+    "cs_search_sessions.py": {
+      "path": "src/cs_search_sessions.py",
+      "sha256": "b876d270e31954e0e8d4d350bf2a5ddbdc53f7b33a66da561ef58096d3aecb94"
+    },
+    "cs_comp_operations.py": {
+      "path": "src/cs_comp_operations.py",
+      "sha256": "c2f2be578547f805aa1a1a8b9f047211ccbdba0eccb382ef68ac403877323a6d"
+    },
+    "upstream_docs/SPEC-WORKSPACE.md": {
+      "path": "docs/SPEC-WORKSPACE.md",
+      "sha256": "48d63da4dbc03a9c14d14805b1360219dbbbffcb4ae69f1bdd888eaba8614102"
+    },
+    "upstream_docs/FNS-TOOLBAR.md": {
+      "path": "docs/FNS-TOOLBAR.md",
+      "sha256": "46186d644201ecf8d98a235636866b2a4cfebdc41bf7f854622807c85b3212f5"
+    },
+    "upstream_docs/LLM-WORKSPACE.md": {
+      "path": "docs/LLM-WORKSPACE.md",
+      "sha256": "7ec198eccd169c51ac9c8ad8f4e348b6c51eb56e1a16d07647ad7be634c7001a"
+    },
     "signalgarden-scenarios.json": {
       "path": "src/signalgarden/scenarios.json",
       "sha256": "6a187ed558e058990175ac415df05c7f9f6d7535470a397de58fcd8697984d22"
@@ -15,27 +43,27 @@
     },
     "CodeSearchExt.py": {
       "path": "src/CodeSearchExt.py",
-      "sha256": "4490301a02af7c6eaf2151298f7f64ffddfaf06128c31ce3f03374a5a2bda97d"
+      "sha256": "5e850244ff1119baf46ce9f207f5ddff657ae16e57dbeda29f5c7d89368a0cfe"
     },
     "CodeModelExt.py": {
       "path": "src/CodeModelExt.py",
-      "sha256": "bf74559c1d6f560cbba306b634bc394d2c15df471e25ffc759408f845e19bb11"
+      "sha256": "0a13cb55db980fe5ab893377e3b8d7d17a0a0197f986d6545e87ad87557831ff"
     },
     "CodeSearch.tdn": {
       "path": "src/tdn/CodeSearch.tdn",
-      "sha256": "15f4514774978ffe7c198bd7d84c8a5a8eddde8683013becaac97120fdf5be2d"
+      "sha256": "bd96391e0301be0538e120b5ea9ef871adefa6d9e72f104be1fb61bcbbaa87f4"
     },
     "CodeSearch_Tutorial.tdn": {
       "path": "src/tdn/CodeSearch_Tutorial.tdn",
-      "sha256": "b7d62c8bae6af5e797b579054908d21e27ca527f5b1e43957af46249f423cbb8"
+      "sha256": "7670b15f630213d07ee837bc3c8c136f526ee07e9aed5b63a323f1badf221946"
     },
     "TourExt.py": {
       "path": "src/tutorial/TourExt.py",
-      "sha256": "46c7508df5cb778bafb88dd6063e3019df879465c808f0ddede0308deb56fa23"
+      "sha256": "f5d017aa96f32f87be55f2d4c8f49c744dc32e2d7e457f1469d0544e46430444"
     },
     "lessons.json": {
       "path": "src/tutorial/lessons.json",
-      "sha256": "27b5f7f086bf30f5b2943c01c091a48d365008b8318d2177bbfb68ad1c61376c"
+      "sha256": "495df4bea565eda70845e24c988a90d47f6eaeafe850648d1f307ac2690a40a6"
     },
     "marker_catalogue.json": {
       "path": "src/tutorial/marker_catalogue.json",
@@ -47,7 +75,11 @@
     },
     "cs_core.py": {
       "path": "src/stateatlas/cs_core.py",
-      "sha256": "8c6a587ca1347d4a9c9bb57974d77d9dedc14e056a1da26f1fa7fb136d375343"
+      "sha256": "34be00774bb7ea72b1a267e1b386ca7df0b9f6ad0cb0bedc47d7bc5ab8019cde"
+    },
+    "cs_spec.py": {
+      "path": "src/stateatlas/cs_spec.py",
+      "sha256": "483f0bac8ed6c3194744b6cdfb0235ef9046ac3650b7fae7bde8cf3ca9a44975"
     },
     "cs_state.py": {
       "path": "src/stateatlas/cs_state.py",
@@ -55,11 +87,11 @@
     },
     "cs_workbench.py": {
       "path": "src/stateatlas/cs_workbench.py",
-      "sha256": "3b947943e6eee694a6b565830a89d7b8a9eba3a3aad45ad40a8fcac7784e69ca"
+      "sha256": "915e281256b28ed6ccc0778deb32b80b35e16ebf0ade9fd193f78a8958a1c5c7"
     },
     "tutorial_adapter.py": {
       "path": "src/stateatlas/tutorial_adapter.py",
-      "sha256": "886da3733d31d93477fb5c50531d58382ce2c4ec432c5a2508be6c2d9d218ffa"
+      "sha256": "4235bed9be2bfd60dfa8be1bd8190b9b3ff75dfd53ffac5184abc5de33ff0c59"
     },
     "tutorial_fixture.py": {
       "path": "src/stateatlas/tutorial_fixture.py",
@@ -107,7 +139,7 @@
     },
     "docs/PROTOCOL.md": {
       "path": "docs/state-atlas/PROTOCOL.md",
-      "sha256": "3c2c0a97d15f8d2e6caea1eff1e7f4b68ad189276d508d0247eb69afeba77d38"
+      "sha256": "08a6add26848a39e8469ceb90c7327f69b9d0ff9be798cf3a77ed924f988a999"
     },
     "upstream_docs/INTERFACE-1.9.1.md": {
       "path": "docs/INTERFACE-1.9.1.md",
@@ -119,7 +151,7 @@
     },
     "upstream_docs/comp-context.md": {
       "path": "docs/comp-context.md",
-      "sha256": "ab008eed3b1c0eb5e716576291ff099a4b538a38da7d965d3f6330909d6ec26a"
+      "sha256": "99d266e69f6e2d8bb95c568bfa2eb0150e6b127d4b0d06b523477cacea95afb4"
     },
     "upstream_docs/data-shortcuts.md": {
       "path": "docs/data-shortcuts.md",
@@ -131,7 +163,7 @@
     },
     "upstream_docs/floating-copies.md": {
       "path": "docs/floating-copies.md",
-      "sha256": "4c16bb2957051077b9f4e641a68b0cf025fcaa1b1fa5184ae860307e5ed0a5df"
+      "sha256": "b8a6a5fd16585c3365b58b14bb23676b48576508cca894fa05cd88179342cab3"
     },
     "upstream_docs/flowlens-integration.md": {
       "path": "docs/flowlens-integration.md",
