@@ -678,18 +678,80 @@ button:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus
 .search-window .ql { max-height: min(42dvh,420px); overflow: auto; overscroll-behavior: contain; }
 .qscope { display: grid; gap: 4px; padding: 6px 8px; font-size: 12px; color: var(--muted); }
 
-/* Acht Graphite-Varianten: ruhige Flächen; Glas nur an wenigen Kopfzeilen. */
-body[data-look="smoked_glass"], body[data-look="frosted_glass"] { --glass-shine: rgba(255,255,255,.14); }
-body[data-look="smoked_glass"] .cs-title, body[data-look="frosted_glass"] .cs-title,
-body[data-look="smoked_glass"] .float > .fh, body[data-look="frosted_glass"] .float > .fh,
-body[data-look="smoked_glass"] .search-window > .qh, body[data-look="frosted_glass"] .search-window > .qh {
-  background: linear-gradient(155deg,var(--glass-shine),transparent 58%),var(--panel2);
-  border-top: 1px solid color-mix(in srgb,var(--text) 25%,transparent);
-  box-shadow: inset 0 -1px color-mix(in srgb,var(--text) 9%,transparent);
+/* Glas-Looks (1.10.2): echtes Material wie bei iOS - durchscheinende Scheiben mit Blur, Lichtkante oben, Spiegelung
+   (Glanzstreifen oben links), weichem Schatten und einem Lichtschein dahinter, damit der Blur etwas zu verwischen hat.
+   js/ui/looks.js setzt body[data-glass]: smoke (Smoked Glass, grau) · black (Glass Black, fast schwarz) · navy (Glass Navy,
+   sehr dunkles Blau) · frost (Frosted Glass, hell). Listen und Code bleiben opak und klar lesbar - Glas nur an Leisten,
+   Zweitfenstern, Suchfenstern und Menues. */
+body[data-glass] {
+  --glass-fill: rgba(255,255,255,.07);
+  --glass-fill-strong: rgba(255,255,255,.11);
+  --glass-edge: rgba(255,255,255,.26);
+  --glass-rim: rgba(255,255,255,.09);
+  --glass-shadow: 0 18px 50px rgba(0,0,0,.6), 0 2px 8px rgba(0,0,0,.4);
+  --glass-blur: blur(22px) saturate(1.5);
+  --glass-sheen: linear-gradient(112deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,.08) 22%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 72%, rgba(255,255,255,.06) 100%);
+  --glass-bg: #15181f;
+  --glass-glow-a: rgba(120,160,255,.26); --glass-glow-b: rgba(230,120,200,.14); --glass-glow-c: rgba(255,255,255,.06);
+  background:
+    radial-gradient(60% 45% at 18% 8%, var(--glass-glow-a), transparent 70%),
+    radial-gradient(50% 40% at 85% 92%, var(--glass-glow-b), transparent 70%),
+    radial-gradient(70% 50% at 70% 25%, var(--glass-glow-c), transparent 70%),
+    var(--glass-bg);
+  background-attachment: fixed;
 }
-body[data-look="smoked_glass"] .float, body[data-look="frosted_glass"] .float,
-body[data-look="smoked_glass"] .search-window, body[data-look="frosted_glass"] .search-window {
-  border-radius: 12px; overflow: hidden; box-shadow: 0 14px 42px #0005, inset 0 1px #ffffff16;
+body[data-glass="smoke"] { --glass-bg: #1a1d24; --glass-fill: rgba(200,210,230,.09); --glass-fill-strong: rgba(200,210,230,.14); }
+body[data-glass="black"] { --glass-bg: #030405; --glass-glow-a: rgba(255,255,255,.07); --glass-glow-b: rgba(255,255,255,.04); --glass-glow-c: transparent;
+  --glass-fill: rgba(255,255,255,.055); --glass-fill-strong: rgba(255,255,255,.09); --glass-edge: rgba(255,255,255,.22); }
+body[data-glass="navy"] { --glass-bg: #02040d; --glass-glow-a: rgba(50,100,220,.20); --glass-glow-b: rgba(25,60,170,.14); --glass-glow-c: rgba(120,170,255,.05);
+  --glass-fill: rgba(100,140,240,.06); --glass-fill-strong: rgba(100,140,240,.10); --glass-edge: rgba(190,210,255,.26);
+  --glass-shadow: 0 18px 50px rgba(0,10,40,.65), 0 2px 8px rgba(0,0,0,.4); }
+body[data-glass="frost"] { --glass-bg: #dfe6f0; --glass-glow-a: rgba(120,160,255,.22); --glass-glow-b: rgba(170,140,230,.18); --glass-glow-c: rgba(255,255,255,.5);
+  --glass-fill: rgba(255,255,255,.55); --glass-fill-strong: rgba(255,255,255,.72); --glass-edge: rgba(255,255,255,.95); --glass-rim: rgba(255,255,255,.55);
+  --glass-shadow: 0 18px 50px rgba(40,60,90,.22), 0 2px 8px rgba(40,60,90,.12); --glass-blur: blur(26px) saturate(1.4);
+  --glass-sheen: linear-gradient(112deg, rgba(255,255,255,.85) 0%, rgba(255,255,255,.35) 22%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 72%, rgba(255,255,255,.25) 100%); }
+body[data-glass] .app { background: transparent; }
+body[data-glass] .cs { background: color-mix(in srgb, var(--win) 80%, transparent); }
+/* Spiegelung: Glanzstreifen oben links ueber dem Fensterkopf; laeuft nach 110 px aus, die Listen darunter bleiben klar. */
+body[data-glass] .cs::before, body[data-glass] .float::before, body[data-glass] .search-window::before, body[data-glass] .popup .box::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 110px; pointer-events: none; z-index: 3; background: var(--glass-sheen);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 100%); mask-image: linear-gradient(180deg, #000 0%, transparent 100%);
+}
+body[data-glass] .float::before, body[data-glass] .search-window::before { height: 64px; }
+body[data-glass] .float:not(.full), body[data-glass] .search-window, body[data-glass] .popup .box { position: relative; }
+/* Leisten: Scheiben mit Lichtkante oben. */
+body[data-glass] .topbar, body[data-glass] .cs-title, body[data-glass] .cs-tabs, body[data-glass] .cs-scopes, body[data-glass] .cs-context,
+body[data-glass] .cs-filters, body[data-glass] .cs-status, body[data-glass] .float > .fh, body[data-glass] .search-window > .qh, body[data-glass] .popup .bh {
+  background: var(--glass-fill-strong);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border-top: 1px solid var(--glass-edge);
+  box-shadow: inset 0 -1px 0 var(--glass-rim);
+}
+body[data-glass] .cs.max .cs-title { background: var(--glass-fill-strong); }
+/* Schwebende Scheiben: Zweitfenster, Suchfenster, Menues - runde Ecken, Rand aus Licht, tiefer Schatten. */
+body[data-glass] .float, body[data-glass] .search-window, body[data-glass] .popup .box {
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-rim); border-top-color: var(--glass-edge);
+  border-radius: 16px; overflow: hidden;
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-edge);
+}
+body[data-glass] .popup .box { border-radius: 18px 18px 0 0; border-top: 1px solid var(--glass-edge); }
+body[data-glass] .popup { background: rgba(0,0,0,.28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+body[data-glass="frost"] .popup { background: rgba(60,80,110,.18); }
+body[data-glass] .float.focus, body[data-glass] .search-window.active {
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-edge), 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+body[data-glass] .float .fb, body[data-glass] .float-text { background: color-mix(in srgb, var(--code) 80%, transparent); }
+/* Tasten und Chips als kleine Glasplaettchen. */
+body[data-glass] .key, body[data-glass] .cs-context .context-button, body[data-glass] .tb {
+  background: var(--glass-fill); border-color: var(--glass-rim); border-radius: 9px; box-shadow: inset 0 1px 0 var(--glass-edge);
+}
+/* Wer Transparenz abschaltet (Bedienungshilfen), bekommt deckende Flaechen ohne Blur und ohne Spiegelung. */
+@media (prefers-reduced-transparency: reduce) {
+  body[data-glass] { --glass-fill: var(--panel); --glass-fill-strong: var(--panel2); --glass-blur: none; --glass-sheen: none; background: var(--bg); }
+  body[data-glass] .popup { -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 body[data-look="iridium"] .cs-title { background: linear-gradient(115deg,var(--panel),var(--panel2)); }
 body[data-look="titanium"] .cs-title { border-bottom: 1px solid var(--muted); }

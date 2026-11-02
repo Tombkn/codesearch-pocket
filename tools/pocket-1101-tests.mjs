@@ -65,6 +65,13 @@ test('LETZTE FOCUS erscheint bei leerer Suche, neueste zuerst', () => {
   assert.ok(focus.some((path) => /SignalGarden\/Sensor$/.test(path)));
 });
 
+test('Maus-Daumentasten: 3 = zurueck, 4 = vor, alle anderen Tasten 0 (1.10.2)', async () => {
+  const {sideButtonStep} = await import('../js/ui/wheel.js');
+  assert.equal(sideButtonStep({button: 3}), -1);
+  assert.equal(sideButtonStep({button: 4}), 1);
+  for (const button of [0, 1, 2, undefined]) assert.equal(sideButtonStep({button}), 0);
+});
+
 test('Modul-DAT werkzeug zeigt AUSSEN und den Aufrufer aus text1', () => {
   const {cs} = setup();
   const view = buildStructure(cs, 'Farbmischer/werkzeug');
@@ -72,4 +79,35 @@ test('Modul-DAT werkzeug zeigt AUSSEN und den Aufrufer aus text1', () => {
   assert.ok(fn, 'FarbeErzwingen fehlt');
   assert.match(fn.text, /◄ AUSSEN [1-9]/);
   assert.ok(view.rows.some((h) => h.art === 'AUFRUFER' && /text1/.test(h.path)), 'Aufrufer text1 fehlt');
+});
+
+test('1.10.2: Glas-Looks sind echtes Glas im CSS - Blur, Spiegelung, Lichtkante, runde Ecken, Rueckfall ohne Transparenz', async () => {
+  const css = readFileSync(new URL('../css/app.css', import.meta.url), 'utf8');
+  for (const needle of ['body[data-glass] .float', 'backdrop-filter: var(--glass-blur)', '--glass-edge', '--glass-sheen', 'border-radius: 16px',
+    '@media (prefers-reduced-transparency: reduce)', 'body[data-glass="smoke"]', 'body[data-glass="black"]', 'body[data-glass="navy"]', 'body[data-glass="frost"]']) {
+    assert.ok(css.includes(needle), `${needle} fehlt im Glas-CSS`);
+  }
+  assert.ok(!/Acht Graphite-Varianten: ruhige Fl/.test(css), 'alter Glas-Block (nur Kopfzeilen-Schimmer) ist ersetzt');
+  const {applyLook, GLASS_LOOKS} = await import('../js/ui/looks.js');
+  assert.deepEqual(GLASS_LOOKS, {smoked_glass: 'smoke', glass_black: 'black', glass_navy: 'navy', frosted_glass: 'frost'});
+  const body = {dataset: {}, style: {setProperty() {}}};
+  applyLook(body, {CODESEARCH_LOOKS: {}}, 'glass_navy');
+  assert.equal(body.dataset.glass, 'navy');
+  applyLook(body, {CODESEARCH_LOOKS: {}}, 'carbon');
+  assert.equal(body.dataset.glass, undefined, 'ohne Glas-Look kein data-glass');
+});
+
+test('1.10.2: Carbon LED / Glow faerben die vorhandenen Rollen kraeftiger - DAT orange statt pink, lesbar auf Carbon', async () => {
+  const {lookVariables, contrast} = await import('../js/ui/looks.js');
+  const carbon = ['Carbon LED', [0.012, 0.014, 0.018], [0.034, 0.038, 0.046], [0.070, 0.078, 0.092], [0.24, 0.27, 0.32], [0.96, 0.97, 0.99], [0.70, 0.74, 0.80], [0.86, 0.90, 0.97], false];
+  const plain = lookVariables(carbon);
+  const led = lookVariables(carbon, 'carbon_led');
+  assert.notEqual(led['--magenta'], plain['--magenta'], 'DAT-Rolle wechselt die Farbe');
+  const [r, g, b] = led['--dat-fg'].match(/\d+/g).map(Number);
+  assert.ok(r > b + 100, `DAT ist orange, nicht pink: ${led['--dat-fg']}`);
+  for (const role of ['--purple', '--green', '--blue', '--cyan', '--magenta', '--yellow']) {
+    const rgb = led[role].match(/\d+/g).map((v) => Number(v) / 255);
+    assert.ok(contrast(rgb, carbon[2]) >= 7, `${role} lesbar auf Carbon: ${led[role]}`);
+  }
+  assert.deepEqual(lookVariables(carbon, 'classic'), plain, 'andere Looks unveraendert');
 });

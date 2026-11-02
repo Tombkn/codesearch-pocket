@@ -1,6 +1,6 @@
 {
- "version": "5a34fd9ff4",
- "total": 3877503,
+ "version": "9d9bf0be92",
+ "total": 3886735,
  "files": [
   {
    "path": "./",
@@ -36,11 +36,11 @@
   },
   {
    "path": "css/app.css",
-   "size": 60061
+   "size": 65297
   },
   {
    "path": "js/app.js",
-   "size": 48826
+   "size": 49452
   },
   {
    "path": "js/core/analysis-workbench.js",
@@ -180,7 +180,7 @@
   },
   {
    "path": "js/ui/looks.js",
-   "size": 3038
+   "size": 4034
   },
   {
    "path": "js/ui/offline.js",
@@ -208,15 +208,15 @@
   },
   {
    "path": "js/ui/wheel.js",
-   "size": 1765
+   "size": 2003
   },
   {
    "path": "data/course.json",
-   "size": 1293390
+   "size": 1294032
   },
   {
    "path": "data/net.json",
-   "size": 122946
+   "size": 122925
   },
   {
    "path": "data/code.json",
@@ -224,11 +224,11 @@
   },
   {
    "path": "data/ui.json",
-   "size": 117116
+   "size": 117511
   },
   {
    "path": "data/features.json",
-   "size": 223754
+   "size": 224874
   },
   {
    "path": "img/05_flow.webp",
@@ -281,6 +281,6 @@
  ],
  "single": {
   "path": "CodeSearch-Pocket-offline.html",
-  "size": 4216049
+  "size": 4225296
  }
 }

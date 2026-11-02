@@ -15,7 +15,12 @@ function readable(color, backgrounds, text) {
   }
   return text;
 }
-export function lookVariables(palette) {
+// Carbon LED / Carbon Glow (1.10.2): dieselben Rollen wie nativ LOOK_FAMILY_COLORS / LOOK_MEANING_COLORS - satter, DAT orange statt pink.
+const VIVID_ROLES = {
+  carbon_led: { purple: [0.78, 0.52, 1.0], green: [0.36, 0.98, 0.46], blue: [0.36, 0.66, 1.0], yellow: [1.0, 0.92, 0.26], cyan: [0.30, 0.95, 1.0], magenta: [1.0, 0.58, 0.20], red: [1.0, 0.40, 0.42] },
+  carbon_glow: { purple: [0.82, 0.58, 1.0], green: [0.42, 1.0, 0.52], blue: [0.42, 0.72, 1.0], yellow: [1.0, 0.94, 0.32], cyan: [0.36, 0.98, 1.0], magenta: [1.0, 0.62, 0.24], red: [1.0, 0.40, 0.42], amber: [0.52, 0.78, 1.0] },
+};
+export function lookVariables(palette, key = "") {
   if (!palette || palette.length !== 9) return {};
   const [, base, surface, raised, line, text, muted, accent, light] = palette;
   const selected = mix(surface, accent, 0.3);
@@ -29,6 +34,7 @@ export function lookVariables(palette) {
     yellow: [0.65, 0.71, 1.0], magenta: [0.95, 0.56, 0.82], purple: [0.72, 0.56, 0.95], blue: [0.45, 0.66, 0.98],
     string: [0.76, 0.91, 0.55],
   };
+  Object.assign(roles, VIVID_ROLES[key] || {});
   const colors = Object.fromEntries(Object.entries(roles).map(([key, value]) => [key, readable(value, backgrounds, text)]));
   const safeMuted = readable(muted, backgrounds, text);
   const uiAccent = readable(accent, backgrounds, text);
@@ -44,10 +50,13 @@ export function lookVariables(palette) {
   };
   return Object.fromEntries(Object.entries(tokens).map(([key, value]) => [`--${key}`, rgb(value)]));
 }
+// Glas-Looks: body[data-glass] schaltet in css/app.css Blur, Spiegelung und Lichtkanten frei (smoke | black | navy | frost).
+export const GLASS_LOOKS = { smoked_glass: 'smoke', glass_black: 'black', glass_navy: 'navy', frosted_glass: 'frost' };
 export function applyLook(body, ui, key) {
   const palette = ui.CODESEARCH_LOOKS?.[key];
   body.dataset.look = key;
+  if (GLASS_LOOKS[key]) body.dataset.glass = GLASS_LOOKS[key]; else delete body.dataset.glass;
   if (!palette) return;
   body.style.colorScheme = palette[8] ? "light" : "dark";
-  for (const [name, value] of Object.entries(lookVariables(palette))) body.style.setProperty(name, value);
+  for (const [name, value] of Object.entries(lookVariables(palette, key))) body.style.setProperty(name, value);
 }

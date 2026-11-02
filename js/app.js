@@ -12,7 +12,7 @@ import { bindViewport } from "./ui/viewport.js";
 import { bindTabHelp } from "./ui/tabhelp.js";
 import { bindSpec } from './ui/spec.js';
 import {syncFloatFocus, trapFloatTab} from './ui/float-focus.js';
-import { bindShiftWheel } from './ui/wheel.js';
+import { bindShiftWheel, sideButtonStep } from './ui/wheel.js';
 import {hostQuery} from './ui/cs-host.js';
 
 const KEYS_ALL = ["Enter", "Esc", "Ctrl+C", "Ctrl+Enter", "Ctrl+I", "Ctrl+Shift+I", "Ctrl+P", "Ctrl+F", "Alt+P", "Alt+F", "Ctrl+R", "F6", "Alt+D",
@@ -726,6 +726,16 @@ function bindCSHost(ctx) {
   $("#cs-enter").addEventListener("click", act(() => { g.enter(input.value); }));
   $("#cs-back")?.addEventListener("click", act(() => cs.historyBack()));        // nur im Hauptfenster vorhanden
   $("#cs-forward")?.addEventListener("click", act(() => cs.historyForward()));
+  // Maus-Daumentasten (Desktop-Browser) = ◀ ▶: nur im Arbeitsplatz, nicht im Lesetext oder in der TD-Ansicht.
+  // preventDefault haelt die Browser-Navigation auf, soweit der Browser es zulaesst (Chrome ignoriert es teils).
+  const sideButton = act((ev) => {
+    const step = sideButtonStep(ev);
+    if (!step || ctx.tourOpen || ctx.td.open) return undefined;
+    ev.preventDefault();
+    return step < 0 ? cs.historyBack() : cs.historyForward();
+  });
+  document.addEventListener("mouseup", sideButton);
+  document.addEventListener("mousedown", (ev) => { if (sideButtonStep(ev)) ev.preventDefault(); });
 
   // Splitter zwischen Liste und Detail
   const split = $("#cs-split");

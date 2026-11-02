@@ -75,13 +75,14 @@ test('FlowLens öffnet das gewählte COMP und respektiert DIESE COMP sowie laufe
   cs.state.flowlens.open = false; cs.state.record.recording = true; g.openFlowLens();
   assert.equal(cs.state.flowlens.open, false); assert.match(cs.state.status, /STOP/);
 });
-test('Alle 24 nativen Looks werden angeboten: acht Graphite-Varianten neben den bisherigen sechzehn', () => {
+test('Alle 26 nativen Looks werden angeboten: Graphite-Varianten, Carbon LED/Glow und vier Glas-Looks', () => {
   const palettes = ui.CODESEARCH_LOOKS;
   assert.ok(palettes, 'Native Konstanten importieren oder POCKET_UI_FIXTURE setzen');
-  assert.equal(Object.keys(palettes).length, 24);
-  for (const key of ['classic', 'graphite', 'midnight', 'paper', 'sand', 'contrast', 'aurora', 'ember', 'lagoon', 'plum', 'slate', 'copper', 'porcelain', 'mist', 'ink', 'beacon', 'graphite_soft', 'graphite_blue', 'carbon', 'titanium', 'smoked_glass', 'frosted_glass', 'iridium', 'graphite_mint']) assert.ok(palettes[key]);
+  assert.equal(Object.keys(palettes).length, 26);
+  for (const key of ['classic', 'midnight', 'paper', 'sand', 'contrast', 'aurora', 'lagoon', 'plum', 'slate', 'copper', 'porcelain', 'mist', 'ink', 'beacon', 'graphite_soft', 'graphite_blue', 'carbon', 'carbon_led', 'carbon_glow', 'titanium', 'smoked_glass', 'glass_black', 'glass_navy', 'frosted_glass', 'iridium', 'graphite_mint']) assert.ok(palettes[key]);
+  assert.ok(!palettes.graphite && !palettes.ember, '1.10.2: Graphite und Ember sind ersetzt');
   const { cs, gestures: g } = app(); g.lookMenu();
-  assert.equal(cs.state.menu.items.length, 24);
+  assert.equal(cs.state.menu.items.length, 26);
   assert.deepEqual([...new Set(cs.state.menu.items.map((item) => item.group))], ['Dunkel', 'Hell', 'Hoher Kontrast']);
   cs.state.menu.items.find((item) => item.label.includes('Mist')).run(); assert.equal(cs.cs.Look, 'mist');
   const page = new JSDOM('<body></body>'); applyLook(page.window.document.body, ui, 'mist');
@@ -90,7 +91,7 @@ test('Alle 24 nativen Looks werden angeboten: acht Graphite-Varianten neben den 
 });
 test('Text und semantische Farben sind auf vier Hauptflächen rechnerisch lesbar', () => {
   assert.ok(ui.CODESEARCH_LOOKS && typeof ui.CODESEARCH_LOOKS === 'object', 'CODESEARCH_LOOKS fehlt: kein Kontrastnachweis ohne native Paletten');
-  assert.equal(Object.keys(ui.CODESEARCH_LOOKS).length, 24, 'Kontrastprüfung braucht alle 24 nativen Looks');
+  assert.equal(Object.keys(ui.CODESEARCH_LOOKS).length, 26, 'Kontrastprüfung braucht alle 26 nativen Looks');
   const decode = (css) => css.match(/[\d.]+/g).map((value) => Number(value) / 255);
   for (const [key, palette] of Object.entries(ui.CODESEARCH_LOOKS)) {
     const tokens = lookVariables(palette);
@@ -111,8 +112,8 @@ test('?-Übersicht zeigt jede importierte Shortcut-Gruppe unverändert samt Kont
   assert.ok(rows.some((row) => row.text.includes('Alt+D')));
   assert.ok(rows.some((row) => row.text.includes('Shift+K')));
 });
-test('Kontext-Buttons haben in allen 24 Looks lesbare aktive und inaktive Farben', () => {
-  assert.equal(Object.keys(ui.CODESEARCH_LOOKS || {}).length, 24, 'Alle nativen Looks sind für die Prüfung nötig');
+test('Kontext-Buttons haben in allen 26 Looks lesbare aktive und inaktive Farben', () => {
+  assert.equal(Object.keys(ui.CODESEARCH_LOOKS || {}).length, 26, 'Alle nativen Looks sind für die Prüfung nötig');
   const decode = (css) => css.match(/[\d.]+/g).map((value) => Number(value) / 255);
   for (const [key, palette] of Object.entries(ui.CODESEARCH_LOOKS)) {
     const colors = lookVariables(palette);

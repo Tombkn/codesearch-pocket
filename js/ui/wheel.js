@@ -34,6 +34,13 @@ export function ctrlWheelZoom(ev, zoom) {
   return true;
 }
 
+// Maus-Daumentasten (Desktop-Browser): button 3 = zurück (-1), 4 = vor (+1) – wie ◀ ▶ im Eingabekopf; sonst 0.
+export function sideButtonStep(ev) {
+  if (ev.button === 3) return -1;
+  if (ev.button === 4) return 1;
+  return 0;
+}
+
 export function bindShiftWheel(target = document, zoom = null) {
   target.addEventListener("wheel", (ev) => { if (!ctrlWheelZoom(ev, zoom)) shiftWheelHorizontal(ev); }, { passive: false });
 }

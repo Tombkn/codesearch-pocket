@@ -1,8 +1,8 @@
 {
   "repo": "Tombkn/td-codesearch",
-  "commit": "b075e5d53cffa8d6c70ba2024a4fe5007b5bd242",
-  "version": "1.10.1",
-  "checked": "2026-11-01",
+  "commit": "517c5d22f6f6284f1abd0ff4e335385731acded1",
+  "version": "1.10.2",
+  "checked": "2026-11-02",
   "lesson_count": 619,
   "files": {
     "upstream_docs/SPEC-KIT-HANDOFF.md": {
@@ -11,7 +11,7 @@
     },
     "upstream_docs/workplace-workflows.md": {
       "path": "docs/workplace-workflows.md",
-      "sha256": "f7202340cb4be1d481169c198f5c5813f9ca06a5ccf3df370f47af7bd4de2883"
+      "sha256": "cb3632eae50c19e897b31eeaffaf853732aaa54843f3f5a702743240f490f119"
     },
     "cs_search_sessions.py": {
       "path": "src/cs_search_sessions.py",
@@ -43,7 +43,7 @@
     },
     "CodeSearchExt.py": {
       "path": "src/CodeSearchExt.py",
-      "sha256": "96698c91f2889c704d1a833b888e8e9a9e7cf9d7b68e0512789d826190de25c3"
+      "sha256": "7d38ea573f05d61f80338ceb22d4689a24c8205fa7fa99f0a3f00b27a3e50f50"
     },
     "CodeModelExt.py": {
       "path": "src/CodeModelExt.py",
@@ -51,11 +51,11 @@
     },
     "CodeSearch.tdn": {
       "path": "src/tdn/CodeSearch.tdn",
-      "sha256": "6ea0168905f4cceb9074d317ad69399fe780b18f8917c7544d286bb2860bf986"
+      "sha256": "d82cce159897832ba867b33e81b3a83741e8b25897b3b9b38b600701203f3dc4"
     },
     "CodeSearch_Tutorial.tdn": {
       "path": "src/tdn/CodeSearch_Tutorial.tdn",
-      "sha256": "a36fada48f835230412cf8658a8cd68ab59d2c95bddbb0785beb09c159958e4d"
+      "sha256": "99c751aab6bc7e87b6eaeb19abb97778770f4f410885545c99544fb69260a854"
     },
     "TourExt.py": {
       "path": "src/tutorial/TourExt.py",
@@ -63,7 +63,7 @@
     },
     "lessons.json": {
       "path": "src/tutorial/lessons.json",
-      "sha256": "a9cdfd1e90bc5221135bff1a93f6f0cc0894d2cfebdc59d2b1c23f7ac50e6d80"
+      "sha256": "20fc407813f9298dcb136cdb88a3d67e5dd642f0661633ce5c16d83f5e278a99"
     },
     "marker_catalogue.json": {
       "path": "src/tutorial/marker_catalogue.json",
@@ -163,7 +163,7 @@
     },
     "upstream_docs/floating-copies.md": {
       "path": "docs/floating-copies.md",
-      "sha256": "43a4a95d6d16521c8488ed0ae57282f26615061612c843594d477a21eb257343"
+      "sha256": "5be626c2d6eda8e6eb76464b5c9973df6d98f1636bc70ed6eb251e577323d1a4"
     },
     "upstream_docs/flowlens-integration.md": {
       "path": "docs/flowlens-integration.md",

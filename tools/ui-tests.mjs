@@ -308,9 +308,9 @@ try {
   });
   await click('[data-fla=close]');
   await click('[data-act=look]');
-  check('Look-Auswahl enthält alle 24 importierten Paletten mit Farbproben', () => {
-    assert.equal(document.querySelectorAll('#popup [data-menu]').length, 24);
-    assert.equal(document.querySelectorAll('#popup .look-swatches').length, 24);
+  check('Look-Auswahl enthält alle 26 importierten Paletten mit Farbproben', () => {
+    assert.equal(document.querySelectorAll('#popup [data-menu]').length, 26);
+    assert.equal(document.querySelectorAll('#popup .look-swatches').length, 26);
     assert.deepEqual([...document.querySelectorAll('#popup .menu-group')].map((item) => item.textContent), ['Dunkel', 'Hell', 'Hoher Kontrast']);
   });
   [...document.querySelectorAll('#popup [data-menu]')].find((button) => button.textContent.includes('Mist')).click(); await delay(15);
@@ -562,6 +562,9 @@ try {
   await click('[data-act="td-close"]');await historyKey('y');
   await openCompMenu();await menuSelect('Parameter ansehen');await click('[data-garden-owner="root"]');
   check('Redo stellt die verbundenen Parent-Controls wieder her',()=>assert.ok($('[data-garden-num="Value"][data-owner="root"]')));
+  const sideDown = (button) => { const ev = new window.MouseEvent('mousedown', { button, bubbles: true, cancelable: true }); document.dispatchEvent(ev); return ev.defaultPrevented; };
+  document.dispatchEvent(new window.MouseEvent('mouseup', { button: 3, bubbles: true, cancelable: true })); await delay(20);
+  check('Maus-Daumentasten werden abgefangen (Rücktaste), normale Tasten nicht', () => { assert.equal(sideDown(3), true); assert.equal(sideDown(4), true); assert.equal(sideDown(0), false); });
   assert.deepEqual(runtimeErrors, [], 'Keine unbehandelten App-Fehler');
   console.log(JSON.stringify({ passed, engine: "jsdom", layout: "nicht geprüft", nativeTouch: "nicht geprüft" }));
 } finally {

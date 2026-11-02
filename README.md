@@ -1,8 +1,10 @@
 # CodeSearch Pocket
 
-Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **645 Schritte in 53 Kapiteln**, ein bedienbares Übungsnetz und **Laptop-Anleitungen für alle Kapitel**. Quellenstand: **CodeSearch 1.10.1, Commit [b075e5d](https://github.com/Tombkn/td-codesearch/tree/b075e5d53cffa8d6c70ba2024a4fe5007b5bd242)**, abgeglichen am 01.11.2026.
+Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **645 Schritte in 53 Kapiteln**, ein bedienbares Übungsnetz und **Laptop-Anleitungen für alle Kapitel**. Quellenstand: **CodeSearch 1.10.2, Commit [517c5d2](https://github.com/Tombkn/td-codesearch/tree/517c5d22f6f6284f1abd0ff4e335385731acded1)**, abgeglichen am 02.11.2026.
 
 [Veröffentlichte Handyseite](https://tombkn.github.io/codesearch-pocket/)
+
+**Neu in 1.10.2:** Maus-Daumentasten blättern im Verlauf wie ◀ ▶ (Desktop-Browser, Tasten 3/4); die Laptop-Fassung zoomt mit Strg+Rad jetzt auch über Listen (Trefferliste, Detail-Liste, Kopien, Suchfenster) und je Zone getrennt (Liste, Details, Code). Stationen 29 und 30 nennen beides. Smoked Glass und Frosted Glass sind jetzt echtes Glas (durchscheinend, Blur, Spiegelung oben, Lichtkante, runde Ecken; ohne Transparenz-Wunsch des Systems deckend), dazu neu Glass Black (fast schwarz) und Glass Navy (sehr dunkles Blau); Graphite und Ember weichen Carbon LED und Carbon Glow – Carbon-Flächen mit kräftigeren Familienfarben, DAT orange statt pink; dazu Glass Black und Glass Navy (26 Looks).
 
 **Neu in 1.10.1:** Modul-DATs wie Extensions lesen (von → ruft · ◄ AUSSEN, Aufrufer aus anderen DATs), Zurück/Vor-Knöpfe ◀ ▶ im Eingabekopf, Zusatzsuchen mit dezenten Familienfarben und vollem Halte-Menü (Hinspringen, Viewer, DAT/Editor, Parameter, Pfad kopieren), LETZTE FOCUS in der leeren Suche. **Kapitel 50** übt das in Stationen 23–31.
 
@@ -96,7 +98,7 @@ Die Prüfung auf einem echten Android/Chrome und iPhone/Safari bleibt eine eigen
 
 ```sh
 python -m pip install -r requirements-build.txt
-python tools/upstream.py --repo ../td-codesearch --ref b075e5d53cffa8d6c70ba2024a4fe5007b5bd242 --version 1.10.1 --checked 2026-11-01 --freeze
+python tools/upstream.py --repo ../td-codesearch --ref 517c5d22f6f6284f1abd0ff4e335385731acded1 --version 1.10.2 --checked 2026-11-02 --freeze
 python tools/build_data.py
 python tools/build_offline.py
 npm test
