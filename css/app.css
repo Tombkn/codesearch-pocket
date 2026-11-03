@@ -26,9 +26,13 @@ button { appearance: none; border: 0; background: none; cursor: pointer; }
 /* ------------------------------------------------------------------ CodeSearch-Fenster */
 .cs { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; background: var(--win); position: relative; }
 .cs.max .cs-title { background: var(--panel2); }
-.cs.min .cs-scopes, .cs.min .cs-tabs, .cs.min .cs-context, .cs.min .cs-field, .cs.min .cs-filters, .cs.min .cs-data,
-.cs.min .cs-record, .cs.min .cs-crumb, .cs.min .cs-groups, .cs.min .cs-body, .cs.min .cs-status { display: none; }
-.cs-title { display: flex; align-items: center; gap: 6px; padding: 5px 8px; background: var(--panel); border-bottom: 1px solid var(--line); font-size: 12px; white-space: nowrap; overflow: hidden; }
+.cs.min .cs-scopes, .cs.min .cs-tabs, .cs.min .cs-context, .cs.min .cs-field, .cs.min .cs-filters, .cs.min .cs-notice,
+.cs.min .cs-record, .cs.min .cs-flow, .cs.min .cs-crumb, .cs.min .cs-groups, .cs.min .cs-body, .cs.min .cs-status { display: none; }
+/* Ein-Trenn-System (1.10.3): jede Kopfzeile endet in genau EINER 1-px-Linie in var(--line). Akzent gibt es nur als
+   Unterstrich am aktiven Tab / Chip (inset 0 -2px). Glas-Looks faerben dieselbe Linie als Schattenkante (siehe unten). */
+.cs-title, .cs-scopes, .cs-tabs, .cs-context, .cs-target, .cs-field, .cs-filters, .cs-notice, .cs-record, .cs-flow, .cs-crumb, .cs-groups { border-bottom: 1px solid var(--line); }
+.cs-flow:empty { display: none; }
+.cs-title { display: flex; align-items: center; gap: 6px; padding: 5px 8px; background: var(--panel); font-size: 12px; white-space: nowrap; overflow: hidden; }
 .cs-title b { font-weight: 700; }
 .cs-title .focus { overflow: hidden; text-overflow: ellipsis; }
 .cs-title .sp { flex: 1; }
@@ -37,7 +41,7 @@ button { appearance: none; border: 0; background: none; cursor: pointer; }
 
 .row-scroll { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; }
 .row-scroll::-webkit-scrollbar { display: none; }
-.cs-scopes { padding: 3px 6px; background: var(--panel2); border-bottom: 1px solid var(--line); align-items: center; }
+.cs-scopes { padding: 3px 6px; background: var(--panel2); align-items: center; font-size: 11px; }
 .cs-scopes .lbl { font-size: 10px; color: var(--dim); padding: 0 4px; letter-spacing: .05em; }
 .chip { flex: 0 0 auto; padding: 4px 8px; border-radius: 2px; color: var(--muted); font-size: 11px; background: transparent; }
 .chip.on { color: var(--text); background: var(--chip); box-shadow: inset 0 -2px 0 var(--accent); }
@@ -45,10 +49,10 @@ button { appearance: none; border: 0; background: none; cursor: pointer; }
 .chip .n { font-family: var(--mono); color: var(--dim); margin-left: 4px; }
 .chip.head { color: var(--dim); font-size: 10px; padding: 4px 2px 4px 8px; cursor: default; }
 
-.cs-tabs { display: flex; align-items: stretch; background: var(--panel); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.cs-tabs { display: flex; align-items: stretch; background: var(--panel); overflow-x: auto; scrollbar-width: none; }
 .cs-tabs::-webkit-scrollbar { display: none; }
-.tabgrp { display: flex; flex-direction: column; border-right: 1px solid var(--line); flex: 0 0 auto; }
-.tabgrp .gt { font-size: 9px; color: var(--dim); padding: 2px 8px 0; letter-spacing: .05em; white-space: nowrap; }
+.tabgrp { display: flex; flex-direction: row; align-items: stretch; border-right: 1px solid var(--line); flex: 0 0 auto; }
+.tabgrp .gt { display: flex; align-items: center; font-size: 9px; color: var(--dim); padding: 0 3px 0 8px; letter-spacing: .05em; white-space: nowrap; pointer-events: none; user-select: none; -webkit-user-select: none; }
 .tabgrp .gt.on { color: var(--text); }
 .tabgrp .tabs { display: flex; }
 .tab { padding: 6px 9px 7px; font-size: 11.5px; color: var(--muted); white-space: nowrap; letter-spacing: .02em; }
@@ -59,22 +63,24 @@ button { appearance: none; border: 0; background: none; cursor: pointer; }
 .tab-extra button { padding: 4px 7px; font-size: 11px; color: var(--muted); border: 1px solid var(--line2); border-radius: 2px; white-space: nowrap; }
 .tab-extra button.on { color: var(--text); border-color: var(--accent); }
 
-.cs-context { padding: 3px 6px; background: var(--panel2); border-bottom: 1px solid var(--line); align-items: center; font-size: 11px; }
+.cs-context { padding: 3px 6px; background: var(--panel2); align-items: center; font-size: 11px; }
 .cs-context:empty { display: none; }
-.cs-context .ctxinfo { color: var(--dim); padding: 0 6px; font-size: 10.5px; }
-.context-switch { display: flex; flex: 0 0 auto; gap: 8px; padding: 3px 5px 3px 0; }
-.cs-context .context-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; min-width: 120px; padding: 9px 11px; border: 2px solid var(--muted); border-radius: 6px; background: var(--win); color: var(--text); font-size: 12px; font-weight: 700; white-space: nowrap; touch-action: manipulation; }
+.ctxinfo { color: var(--dim); padding: 0 6px; font-size: 10.5px; align-self: center; }
+/* AUSWAHL / DIESE COMP: seit 1.10.3 in der SUCHEN-IN-Zeile (.cs-scopes), Regeln daher ohne Container-Bindung */
+.context-switch { display: flex; flex: 0 0 auto; gap: 8px; padding: 3px 5px 3px 6px; }
+.context-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; min-width: 120px; padding: 9px 11px; border: 2px solid var(--muted); border-radius: 6px; background: var(--win); color: var(--text); font-size: 12px; font-weight: 700; white-space: nowrap; touch-action: manipulation; }
 .context-check { display: inline-block; width: 12px; text-align: center; }
-.cs-context .context-button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
-.cs-context .context-button:active { transform: translateY(1px); }
-.cs-context .context-button:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.context-button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.context-button:active { transform: translateY(1px); }
+.context-button:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 @media (hover: hover) {
-  .cs-context .context-button[aria-pressed="false"]:hover { border-color: var(--accent); background: var(--sel); }
-  .cs-context .context-button[aria-pressed="true"]:hover { box-shadow: inset 0 0 0 2px var(--on-accent); }
+  .context-button[aria-pressed="false"]:hover { border-color: var(--accent); background: var(--sel); }
+  .context-button[aria-pressed="true"]:hover { box-shadow: inset 0 0 0 2px var(--on-accent); }
 }
+.cs-scopes .chip:disabled { cursor: default; }
 
-.cs-field { display: flex; align-items: center; gap: 6px; padding: 5px 6px; background: var(--win); border-bottom: 1px solid var(--line); }
-.cs-target { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 6px 9px; background: var(--panel2); border-bottom: 1px solid var(--line); }
+.cs-field { display: flex; align-items: center; gap: 6px; padding: 5px 6px; background: var(--win); }
+.cs-target { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 6px 9px; background: var(--panel2); }
 .cs-target:empty, .cs.min .cs-target { display: none; }
 .target-owner { display: flex; flex: 1 1 90px; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; }
 .target-label, .target-type, .target-pin { font-size: 10px; color: var(--muted); }
@@ -103,33 +109,40 @@ button:focus-visible { outline: 2px solid var(--sel-line); outline-offset: -2px;
 .search-window .hit.fam-POP { background: color-mix(in srgb, var(--cyan) 15%, transparent); }
 .search-window .hit.sel { background: var(--sel, rgba(80,120,200,.35)); }
 
-.cs-filters { padding: 2px 6px; background: var(--panel); border-bottom: 1px solid var(--line); align-items: center; }
-.cs-filters:empty, .cs-data:empty, .cs-record:empty { display: none; }
+.cs-filters { padding: 2px 6px; background: var(--panel); align-items: center; }
+.cs-filters:empty, .cs-record:empty { display: none; }
 .cs-filters .sep { width: 1px; align-self: stretch; background: var(--line2); margin: 2px 4px; flex: 0 0 auto; }
 
-.cs-data { padding: 3px 6px; background: var(--panel2); border-bottom: 1px solid var(--line); align-items: center; font-size: 11px; }
-.cs-data .base { font-family: var(--mono); color: var(--muted); font-size: 10.5px; padding: 0 4px; }
+.cs-notice { padding: 3px 6px; background: var(--panel2); align-items: center; font-size: 11px; }
 
-.cs-record { padding: 3px 6px; background: var(--panel2); border-bottom: 1px solid var(--line); align-items: center; }
+.cs-record { padding: 3px 6px; background: var(--panel2); align-items: center; }
 .cs-record .rbtn { flex: 0 0 auto; padding: 5px 8px; border: 1px solid var(--line2); border-radius: 2px; font-size: 11px; color: var(--text); white-space: nowrap; }
 .cs-record .rbtn.live { background: color-mix(in srgb, var(--red) 14%, var(--panel)); border-color: var(--red); }
 .cs-record .rbtn.on { border-color: var(--accent); }
 .cs-record .rinfo { flex: 0 0 auto; font-size: 10.5px; color: var(--muted); padding: 0 6px; font-family: var(--mono); }
 
-.cs-crumb { padding: 4px 8px; font-size: 10.5px; color: var(--muted); border-bottom: 1px solid var(--line); white-space: nowrap; overflow-x: auto; scrollbar-width: none; flex: 0 0 auto; }
+.cs-crumb { padding: 4px 8px; font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow-x: auto; scrollbar-width: none; flex: 0 0 auto; }
 .cs-crumb::-webkit-scrollbar { display: none; }
 .cs-crumb b { color: var(--text); font-weight: 600; }
-.cs-groups { padding: 2px 6px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.cs-groups { padding: 2px 6px; background: var(--panel); }
 .cs-groups:empty { display: none; }
 .cs-groups .g { flex: 0 0 auto; padding: 3px 8px; font-size: 10.5px; color: var(--muted); border-left: 3px solid var(--line2); }
 .cs-groups .g .n { color: var(--dim); font-family: var(--mono); margin-left: 4px; }
 
 .cs-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-.cs-list { flex: 1 1 auto; min-height: 60px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.cs-list { flex: 1 1 auto; min-height: 60px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; zoom: var(--zone-results, 1); }
+/* Zonen-Zoom (1.10.3): --zone-results / --zone-detail setzt js/ui/cswin.js renderStatus; Code bleibt beim CODE-Regler.
+   DETAILS zoomt die Inhalte (Leiste, Bloecke), nicht die Spalte selbst: deren px-Hoehe / -Breite vom Trenngriff (js/app.js)
+   soll wie native nur den Text skalieren, nicht die Flaeche. */
+.cs-detail > * { zoom: var(--zone-detail, 1); }
+.cs-detail > .code-viewport { zoom: 1; }
 .cs-split { flex: 0 0 auto; height: 12px; background: var(--panel); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); cursor: row-resize; touch-action: none; position: relative; }
 .cs-split::after { content: ""; position: absolute; left: 50%; top: 4px; width: 40px; height: 3px; margin-left: -20px; background: var(--line2); border-radius: 2px; }
 .cs-detail { flex: 0 0 auto; height: 42%; min-height: 40px; overflow-y: auto; background: var(--panel); -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .cs-detail.empty { height: auto !important; min-height: 0; }
+/* 1.10.3: DETAILS eingeklappt - Spalte und Griff weg, die Liste nimmt den Platz; Shift+F6-Cursor in der Detail-Spalte */
+.cs-detail.hidden-col, .cs-split.hidden-col { display: none !important; }
+.cs-detail .kv.cur { outline: 1px solid var(--accent); outline-offset: -1px; }
 .cs-detail.empty .det-empty { padding: 6px 8px; font-size: 11px; }
 .cs-split.empty { display: none; }
 
@@ -465,7 +478,7 @@ table.grid td.idx { color: var(--dim); cursor: default; }
 }
 
 /* ------------------------------------------------------------------ Kompakt am Handy: Kopfzeilen nie quetschen, Liste bekommt den Rest */
-.cs-title, .cs-scopes, .cs-tabs, .cs-context, .cs-field, .cs-filters, .cs-data, .cs-record, .cs-crumb, .cs-groups { flex-shrink: 0; }
+.cs-title, .cs-scopes, .cs-tabs, .cs-context, .cs-target, .cs-field, .cs-filters, .cs-notice, .cs-record, .cs-flow, .cs-crumb, .cs-groups { flex-shrink: 0; }
 .cs-title { padding: 3px 8px; }
 .cs-field { padding: 4px 6px; }
 .cs-field input, .cs-enter { height: 30px; }
@@ -582,7 +595,7 @@ button:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus
 .compact-viewport .tour-head h2 { flex: 1; }
 .compact-viewport .tour.mini .tour-head { display: none; }
 .keyboard-open .tour.mini .tour-actions { display: none; }
-.keyboard-open .cs-scopes, .keyboard-open .cs-data, .keyboard-open .cs-groups, .keyboard-open .cs-crumb { display: none; }
+.keyboard-open .cs-scopes [data-scope], .keyboard-open .cs-scopes .lbl, .keyboard-open .cs-groups, .keyboard-open .cs-crumb { display: none; }
 .keyboard-open .cs-target { display: none; }
 .compact-viewport .cs-target { padding-block: 2px; }
 .compact-viewport .cs-target .target-path, .compact-viewport .cs-target .ext-kind { display: none; }
@@ -725,8 +738,14 @@ body[data-glass] .cs-filters, body[data-glass] .cs-status, body[data-glass] .flo
   background: var(--glass-fill-strong);
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   border-top: 1px solid var(--glass-edge);
-  box-shadow: inset 0 -1px 0 var(--glass-rim);
 }
+/* Ein-Trenn-System unter Glas: dieselbe Linie wie ohne Glas, gefaerbt als Schattenkante (--glass-shadow-edge aus nativem
+   GLASS_SHADOW, gesetzt in js/ui/looks.js applyLook; Fallback die Lichtkante). */
+body[data-glass] .cs-title, body[data-glass] .cs-scopes, body[data-glass] .cs-tabs, body[data-glass] .cs-context, body[data-glass] .cs-target,
+body[data-glass] .cs-field, body[data-glass] .cs-filters, body[data-glass] .cs-notice, body[data-glass] .cs-record, body[data-glass] .cs-flow,
+body[data-glass] .cs-crumb, body[data-glass] .cs-groups, body[data-glass] .topbar { border-bottom-color: var(--glass-shadow-edge, var(--glass-rim)); }
+/* Gedimmte Tab-Namen bleiben auf dem Frost lesbar (native GLASS_TAB_MUTED_MIX): muted Richtung text mischen */
+body[data-glass] .tab:not(.on) { color: color-mix(in srgb, var(--muted) 65%, var(--text)); }
 body[data-glass] .cs.max .cs-title { background: var(--glass-fill-strong); }
 /* Schwebende Scheiben: Zweitfenster, Suchfenster, Menues - runde Ecken, Rand aus Licht, tiefer Schatten. */
 body[data-glass] .float, body[data-glass] .search-window, body[data-glass] .popup .box {
@@ -745,7 +764,7 @@ body[data-glass] .float.focus, body[data-glass] .search-window.active {
 }
 body[data-glass] .float .fb, body[data-glass] .float-text { background: color-mix(in srgb, var(--code) 80%, transparent); }
 /* Tasten und Chips als kleine Glasplaettchen. */
-body[data-glass] .key, body[data-glass] .cs-context .context-button, body[data-glass] .tb {
+body[data-glass] .key, body[data-glass] .context-button, body[data-glass] .tb {
   background: var(--glass-fill); border-color: var(--glass-rim); border-radius: 9px; box-shadow: inset 0 1px 0 var(--glass-edge);
 }
 /* Wer Transparenz abschaltet (Bedienungshilfen), bekommt deckende Flaechen ohne Blur und ohne Spiegelung. */
@@ -754,7 +773,6 @@ body[data-glass] .key, body[data-glass] .cs-context .context-button, body[data-g
   body[data-glass] .popup { -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 body[data-look="iridium"] .cs-title { background: linear-gradient(115deg,var(--panel),var(--panel2)); }
-body[data-look="titanium"] .cs-title { border-bottom: 1px solid var(--muted); }
 @media (prefers-reduced-motion: no-preference) {
   .context-button, .extension-source, .float .fh button, .search-window .qh button { transition: background-color 120ms ease,border-color 120ms ease; }
 }

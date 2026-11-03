@@ -1,14 +1,14 @@
 {
- "version": "9d9bf0be92",
- "total": 3886735,
+ "version": "a37f8c5882",
+ "total": 4001857,
  "files": [
   {
    "path": "./",
-   "size": 4467
+   "size": 4420
   },
   {
    "path": "index.html",
-   "size": 4467
+   "size": 4420
   },
   {
    "path": "manifest.json",
@@ -36,11 +36,11 @@
   },
   {
    "path": "css/app.css",
-   "size": 65297
+   "size": 66933
   },
   {
    "path": "js/app.js",
-   "size": 49452
+   "size": 50373
   },
   {
    "path": "js/core/analysis-workbench.js",
@@ -56,7 +56,7 @@
   },
   {
    "path": "js/core/cs.js",
-   "size": 82392
+   "size": 90791
   },
   {
    "path": "js/core/float-copies.js",
@@ -68,7 +68,7 @@
   },
   {
    "path": "js/core/gestures.js",
-   "size": 27182
+   "size": 30490
   },
   {
    "path": "js/core/investigation.js",
@@ -120,7 +120,7 @@
   },
   {
    "path": "js/core/tour.js",
-   "size": 22020
+   "size": 23366
   },
   {
    "path": "js/core/util.js",
@@ -128,7 +128,7 @@
   },
   {
    "path": "js/core/views/codeviews.js",
-   "size": 43482
+   "size": 44410
   },
   {
    "path": "js/core/views/common.js",
@@ -156,11 +156,11 @@
   },
   {
    "path": "js/ui/cs-host.js",
-   "size": 2623
+   "size": 2583
   },
   {
    "path": "js/ui/cswin.js",
-   "size": 30001
+   "size": 32781
   },
   {
    "path": "js/ui/dom.js",
@@ -176,11 +176,11 @@
   },
   {
    "path": "js/ui/learningview.js",
-   "size": 4684
+   "size": 5101
   },
   {
    "path": "js/ui/looks.js",
-   "size": 4034
+   "size": 5903
   },
   {
    "path": "js/ui/offline.js",
@@ -208,11 +208,11 @@
   },
   {
    "path": "js/ui/wheel.js",
-   "size": 2003
+   "size": 2651
   },
   {
    "path": "data/course.json",
-   "size": 1294032
+   "size": 1383592
   },
   {
    "path": "data/net.json",
@@ -224,11 +224,11 @@
   },
   {
    "path": "data/ui.json",
-   "size": 117511
+   "size": 118255
   },
   {
    "path": "data/features.json",
-   "size": 224874
+   "size": 227574
   },
   {
    "path": "img/05_flow.webp",
@@ -281,6 +281,6 @@
  ],
  "single": {
   "path": "CodeSearch-Pocket-offline.html",
-  "size": 4225296
+  "size": 4340494
  }
 }

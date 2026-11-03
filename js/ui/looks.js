@@ -16,11 +16,26 @@ function readable(color, backgrounds, text) {
   return text;
 }
 // Carbon LED / Carbon Glow (1.10.2): dieselben Rollen wie nativ LOOK_FAMILY_COLORS / LOOK_MEANING_COLORS - satter, DAT orange statt pink.
-const VIVID_ROLES = {
+// Seit 1.10.3 kommen die Werte aus ui.json (tools/uitext.py WANTED); diese Literale sind nur der Fallback, falls der Key fehlt.
+const VIVID_FALLBACK = {
   carbon_led: { purple: [0.78, 0.52, 1.0], green: [0.36, 0.98, 0.46], blue: [0.36, 0.66, 1.0], yellow: [1.0, 0.92, 0.26], cyan: [0.30, 0.95, 1.0], magenta: [1.0, 0.58, 0.20], red: [1.0, 0.40, 0.42] },
   carbon_glow: { purple: [0.82, 0.58, 1.0], green: [0.42, 1.0, 0.52], blue: [0.42, 0.72, 1.0], yellow: [1.0, 0.94, 0.32], cyan: [0.36, 0.98, 1.0], magenta: [1.0, 0.62, 0.24], red: [1.0, 0.40, 0.42], amber: [0.52, 0.78, 1.0] },
 };
-export function lookVariables(palette, key = "") {
+// Native Familienfarbe → Pocket-Rolle (COMP hat in Pocket keine eigene Rolle); Bedeutungsfarben: hot/trigger → red, write → amber
+const FAMILY_ROLE = { TOP: "purple", CHOP: "green", SOP: "blue", DAT: "magenta", MAT: "yellow", POP: "cyan" };
+const rgbOnly = (value) => (Array.isArray(value) ? value.slice(0, 3) : null);
+export function vividRoles(ui, key) {
+  const family = ui?.LOOK_FAMILY_COLORS?.[key];
+  const meaning = ui?.LOOK_MEANING_COLORS?.[key];
+  if (!family && !meaning) return VIVID_FALLBACK[key] || {};
+  const roles = {};
+  for (const [name, role] of Object.entries(FAMILY_ROLE)) if (rgbOnly(family?.[name])) roles[role] = rgbOnly(family[name]);
+  if (rgbOnly(meaning?.trigger)) roles.red = rgbOnly(meaning.trigger);
+  if (rgbOnly(meaning?.hot)) roles.red = rgbOnly(meaning.hot);
+  if (rgbOnly(meaning?.write)) roles.amber = rgbOnly(meaning.write);
+  return roles;
+}
+export function lookVariables(palette, key = "", ui = null) {
   if (!palette || palette.length !== 9) return {};
   const [, base, surface, raised, line, text, muted, accent, light] = palette;
   const selected = mix(surface, accent, 0.3);
@@ -34,7 +49,7 @@ export function lookVariables(palette, key = "") {
     yellow: [0.65, 0.71, 1.0], magenta: [0.95, 0.56, 0.82], purple: [0.72, 0.56, 0.95], blue: [0.45, 0.66, 0.98],
     string: [0.76, 0.91, 0.55],
   };
-  Object.assign(roles, VIVID_ROLES[key] || {});
+  Object.assign(roles, vividRoles(ui, key));
   const colors = Object.fromEntries(Object.entries(roles).map(([key, value]) => [key, readable(value, backgrounds, text)]));
   const safeMuted = readable(muted, backgrounds, text);
   const uiAccent = readable(accent, backgrounds, text);
@@ -51,12 +66,23 @@ export function lookVariables(palette, key = "") {
   return Object.fromEntries(Object.entries(tokens).map(([key, value]) => [`--${key}`, rgb(value)]));
 }
 // Glas-Looks: body[data-glass] schaltet in css/app.css Blur, Spiegelung und Lichtkanten frei (smoke | black | navy | frost).
+// Welche Looks Glas sind, sagt seit 1.10.3 das native GLASS_LOOKS (ui.json); diese Tabelle ordnet die CSS-Variante zu
+// und ist zugleich der Fallback, wenn der Key fehlt. Ein neuer nativer Glas-Look ohne Eintrag bekommt 'smoke'.
 export const GLASS_LOOKS = { smoked_glass: 'smoke', glass_black: 'black', glass_navy: 'navy', frosted_glass: 'frost' };
+export function glassVariant(ui, key) {
+  const glass = Array.isArray(ui?.GLASS_LOOKS) ? ui.GLASS_LOOKS : Object.keys(GLASS_LOOKS);
+  return glass.includes(key) ? (GLASS_LOOKS[key] || 'smoke') : '';
+}
 export function applyLook(body, ui, key) {
   const palette = ui.CODESEARCH_LOOKS?.[key];
   body.dataset.look = key;
-  if (GLASS_LOOKS[key]) body.dataset.glass = GLASS_LOOKS[key]; else delete body.dataset.glass;
+  const variant = glassVariant(ui, key);
+  if (variant) body.dataset.glass = variant; else delete body.dataset.glass;
   if (!palette) return;
   body.style.colorScheme = palette[8] ? "light" : "dark";
-  for (const [name, value] of Object.entries(lookVariables(palette, key))) body.style.setProperty(name, value);
+  for (const [name, value] of Object.entries(lookVariables(palette, key, ui))) body.style.setProperty(name, value);
+  // Native GLASS_SHADOW: Schattenkante unter jeder Leiste = Grundfarbe × Faktor (dunkel / hell); nur bei Glas-Looks gesetzt
+  const factor = ui.GLASS_SHADOW?.[palette[8] ? "light" : "dark"];
+  if (variant && typeof factor === "number") body.style.setProperty("--glass-shadow-edge", rgb(palette[1].map((v) => v * factor)));
+  else body.style.removeProperty("--glass-shadow-edge");
 }

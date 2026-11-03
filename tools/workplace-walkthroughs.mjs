@@ -1,4 +1,4 @@
-// Bedienfolgen für die 31 Arbeitsplatz-Stationen; nur öffentliche Aktionen.
+// Bedienfolgen für die Arbeitsplatz-Stationen (workspace_01 … workspace_52); nur öffentliche Aktionen.
 // Scrollposition, Trennkante und Touch-Fokus benötigen zusätzlich einen Browser-/Gerätetest.
 const method = (name) => (hit) => hit.kind === 'method' && hit.ctx === name;
 const followStation = (hit) => hit.kind === 'chain' && hit.dist > 0;
@@ -117,5 +117,65 @@ export const WORKPLACE_SCRIPTS = {
     g.cs.state.menu = {title: 'SCHNELLSUCHE', items: g.cs.quickRowMenuItems(q.id, row)};
     g.cs.state.menu.items.find((item) => item.label === 'PFAD KOPIEREN')?.run();
     g.cs.quickClose(q.id);
+  }),
+  // ---------------------------------------------------------------- 1.10.3 · Kapitel Zonen-Zoom, Looks und Kopfzeile
+  // Zonen-Zoom, Verlauf, Spalten, Zielzeile und Schnellsuche-Menue sind Modellaktionen; Daumentasten, Shift+Rad,
+  // Alt+Klick auf die Info-Zeile und der Perf-Monitor bleiben Beobachtung (Gesehen) ohne eigenes Modell.
+  workspace_32: observed((g) => { g.context('comp'); g.context('selection'); g.context('comp'); }),
+  workspace_33: observed((g) => { g.type('Sensor'); g.ctrlWheel('results', 1); g.ctrlWheel('results', 1); }),
+  workspace_34: observed((g) => { g.tapRow(method('Fire')); g.ctrlWheel('detail', -1); }),
+  workspace_35: observed((g) => { g.tapRow(method('Fire')); g.ctrlWheel('code', 1); g.ctrlWheel('code', 1); }),
+  workspace_36: observed((g) => { g.type('Sensor'); g.ctrlWheel('ui', 1); g.ctrlWheel('results', -1); }),
+  workspace_37: observed((g) => g.key('Alt+0')),
+  workspace_38: observed((g) => {
+    g.tab('map'); g.historyStep(-1); g.historyStep(1); g.historyStep(-1);
+  }),
+  workspace_39: observed((g) => {
+    // zwei Spruenge, dann die Daumentaste Zurueck (= historyStep); Fensterfokus und Mausposition kennt das Modell nicht
+    g.cs.OpenAt('trace', {target: 'SignalGarden/Sensor'}); g.cs.OpenAt('trace', {target: 'BranchLab'});
+    g.historyStep(-1);
+  }),
+  workspace_40: observed((g) => {
+    g.type(''); g.filter('all');
+    const focusRow = (h) => h.kind === 'opfind' && h.detail === 'FOCUS' && /\/Sensor$/.test(h.path || '');
+    if (!g.cs.state.hits.some(focusRow)) { g.enter('SignalGarden/Sensor'); g.enter('BranchLab'); g.type(''); }
+    g.tapRow(focusRow); g.key('Enter');
+  }),
+  workspace_41: observed((g) => {
+    g.lookMenu(); g.menu('Carbon LED');
+    g.lookMenu(); g.menu('Carbon Glow');
+    g.lookMenu(); g.menu('Carbon LED');
+  }),
+  workspace_42: observed((g) => {
+    g.lookMenu(); g.menu('Glass Navy'); g.cs.floatList();
+    g.lookMenu(); g.menu('Glass Black'); g.lookMenu(); g.menu('Glass Navy');
+    g.lookMenu(); g.menu('Carbon LED'); g.lookMenu(); g.menu('Glass Navy');
+  }),
+  workspace_43: observed((g) => {
+    g.lookMenu(); g.menu('Smoked Glass'); g.type('Sensor');
+    g.key('Ctrl+Plus'); g.key('Ctrl+Minus');
+  }),
+  workspace_44: observed((g) => g.data('relative')),
+  workspace_45: observed((g) => {
+    g.type('Sensor'); g.column('left'); g.column('right');
+    g.key('Esc'); g.key('Shift+K');   // Schliessen und wieder oeffnen: beide Spalten bleiben eingeklappt
+  }),
+  workspace_46: observed((g) => { g.tapRow(method('Fire')); g.key('Alt+D'); }),
+  workspace_47: observed((g) => g.netEnter('BranchLab')),   // Segment BranchLab der Info-Zeile: Netz springt, Tab bleibt
+  workspace_48: observed((g) => {
+    g.tapRow(method('Fire')); g.key('Shift+F6'); g.key('Down'); g.key('Down');
+  }),
+  workspace_49: observed((g) => g.enter('Farbmischer/werkzeug')),
+  workspace_50: observed((g) => {
+    g.targetEdit(); g.enter('StateLab');
+    g.targetEdit(); g.key('Esc');
+  }),
+  workspace_51: observed((g) => g.tab('map')),
+  workspace_52: observed((g) => {
+    g.key('Ctrl+P'); g.cs.quickScope('comp:BranchLab'); g.quickType('control');   // Bereich = BranchLab wie das Hauptfenster
+    const q = g.cs.state.searchWindows.find((item) => item.open && item.id === g.cs.state.quick.id);
+    g.quickRowMenu(q.id, (h) => h.kind !== 'section' && /BranchLab\/control$/.test(h.path || ''));
+    g.menu('→ IN USED BY');
+    g.cs.quickClose(q.id);   // Esc schliesst die Schnellsuche; das Hauptfenster bleibt auf USED BY
   }),
 };

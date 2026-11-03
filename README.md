@@ -1,8 +1,10 @@
 # CodeSearch Pocket
 
-Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **645 Schritte in 53 Kapiteln**, ein bedienbares Übungsnetz und **Laptop-Anleitungen für alle Kapitel**. Quellenstand: **CodeSearch 1.10.2, Commit [517c5d2](https://github.com/Tombkn/td-codesearch/tree/517c5d22f6f6284f1abd0ff4e335385731acded1)**, abgeglichen am 02.11.2026.
+Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **666 Schritte in 54 Kapiteln**, ein bedienbares Übungsnetz und **Laptop-Anleitungen für alle Kapitel**. Quellenstand: **CodeSearch 1.10.3, Commit [9f953e1](https://github.com/Tombkn/td-codesearch/tree/9f953e12bc1c1a1b9f264400feed0d6c4565a5e9)**, abgeglichen am 03.11.2026.
 
 [Veröffentlichte Handyseite](https://tombkn.github.io/codesearch-pocket/)
+
+**Neu in 1.10.3:** Der Kopf ist wie in der Laptop-Fassung aufgeräumt: AUSWAHL / DIESE COMP, Zieltext, LLM ANALYSE, FLOWLENS und ZWEITANSICHT stehen in der Zeile SUCHEN IN (bei DIESE COMP werden die Bereichs-Chips gedimmt, das Label heißt BEREICH), die Gruppentitel stehen klein vor ihren Tabs, die Brotkrume nennt nur FOCUS › Art › Symbol › Zeile, und ein Trennsystem ersetzt die gemischten Linien. Im Desktop-Browser zoomt Strg+Rad je Zone (Liste, Details, Code; über Leisten alles), Alt+0 setzt alles zurück; Shift+F6 führt die Tastatur in die Detail-Spalte (Enter führt die Zeile aus, Esc zurück zur Liste); ◁ GRUPPEN / DETAILS ▷ klappen Spalten ein; „Ziel ändern…“ wechselt den FOCUS ohne Netzklick; die Schnellsuche hat im Zeilenmenü → IN USES / USED BY / FLOW. **Kapitel 51** übt alles Neue in 21 Stationen, jeweils mit Laptop- und iPhone-Schritten.
 
 **Neu in 1.10.2:** Maus-Daumentasten blättern im Verlauf wie ◀ ▶ (Desktop-Browser, Tasten 3/4); die Laptop-Fassung zoomt mit Strg+Rad jetzt auch über Listen (Trefferliste, Detail-Liste, Kopien, Suchfenster) und je Zone getrennt (Liste, Details, Code). Stationen 29 und 30 nennen beides. Smoked Glass und Frosted Glass sind jetzt echtes Glas (durchscheinend, Blur, Spiegelung oben, Lichtkante, runde Ecken; ohne Transparenz-Wunsch des Systems deckend), dazu neu Glass Black (fast schwarz) und Glass Navy (sehr dunkles Blau); Graphite und Ember weichen Carbon LED und Carbon Glow – Carbon-Flächen mit kräftigeren Familienfarben, DAT orange statt pink; dazu Glass Black und Glass Navy (26 Looks).
 
@@ -74,7 +76,7 @@ npm ci
 npm test
 ```
 
-- `verify.mjs`: alle 636 Stationen über Gestenfunktionen; **kein Browser-Touchtest**.
+- `verify.mjs`: alle 666 Stationen über Gestenfunktionen; **kein Browser-Touchtest**.
 - `progress-tests.mjs` und `workflow-tests.mjs`: alte Lesestellen/Häkchen, frische Aufnahmen, Scope-Gegenprobe, isolierte Fallvergleiche und Wiederaufnahme.
 - `signalgarden-tests.mjs`: zwölf gemeinsame Szenarien mit derselben Erwartungsdatei wie die Python- und nativen TD-Tests.
 - `gesture-tests.mjs`: acht Gegenproben für Tap, Double-Tap, Hold, horizontales/vertikales Wischen, Pointer-Abbruch, zweiten Finger, Scroll-Events und nachlaufende Clicks. **Synthetische Ereignisse, keine Messung der iPhone-Flüssigkeit.**
@@ -86,7 +88,8 @@ npm test
 - `browser-layout-tests.py`: echte Headless-Browser WebKit/Chromium, kleine Viewports, Scrollflächen, Regler und Menüs; keine physischen iPhone-Swipes. Benötigt lokal installiertes Playwright und Browser.
 - `smoke.mjs`: Aufbau der Ansichten, Detailfelder und Kopiermenüs.
 - `ui-tests.mjs`: DOM-Integration der echten App-Handler mit jsdom; Lesen/Üben, Lesestelle, Schriftgröße, Rückmeldung, JSON-Eingabe, überlagernde Fenster und Kapitelwechsel. **jsdom besitzt keine Layout- oder Touch-Engine.**
-- `ui-upgrade-tests.mjs`: Extension-Menüs, Alt-Hilfe, Shortcutkatalog und Textkontraste aller 24 Looks einschließlich der Kontext-Buttons.
+- `ui-upgrade-tests.mjs`: Extension-Menüs, Alt-Hilfe, Shortcutkatalog und Textkontraste aller importierten Looks (Anzahl aus `ui.json`) einschließlich der Kontext-Buttons.
+- `pocket-1103-tests.mjs`: Kopfzeile wie native 1.10.3 (AUSWAHL / DIESE COMP in SUCHEN IN, Präfix-Schilder vor den Tabs, kurze Brotkrume), Zonen-Zoom per Strg + Rad, Kurs-Keys `cs.zone_results` / `cs.zone_detail` / `cs.detail_focus`, prep `zoom_reset` / `zone_zoom`, Looks-Konstanten aus `ui.json`.
 - `viewport-tests.mjs`: simulierte Ereignisse für Bildschirmtastatur, Drehung, Pinch-Zoom und Browser ohne VisualViewport. **Kein Safari-Gerätetest.**
 - `package-tests.mjs`: Start und Grundbedienung der erzeugten Einzeldatei im DOM-Test; enthaltene Dateien und Versionskennung.
 
@@ -94,11 +97,11 @@ Die Prüfung auf einem echten Android/Chrome und iPhone/Safari bleibt eine eigen
 
 ## Quellen reproduzierbar bauen
 
-`upstream.json` enthält Commit und SHA-256-Hashes der 38 Build-Eingaben. `source/` bleibt lokal; eine neue Revision erhält einen eigenen Unterordner. Aus einem Clone von `Tombkn/td-codesearch`:
+`upstream.json` enthält Commit und SHA-256-Hashes der 42 Build-Eingaben. `source/` bleibt lokal; eine neue Revision erhält einen eigenen Unterordner. Aus einem Clone von `Tombkn/td-codesearch`:
 
 ```sh
 python -m pip install -r requirements-build.txt
-python tools/upstream.py --repo ../td-codesearch --ref 517c5d22f6f6284f1abd0ff4e335385731acded1 --version 1.10.2 --checked 2026-11-02 --freeze
+python tools/upstream.py --repo ../td-codesearch --ref 9f953e12bc1c1a1b9f264400feed0d6c4565a5e9 --version 1.10.3 --checked 2026-11-03 --freeze
 python tools/build_data.py
 python tools/build_offline.py
 npm test

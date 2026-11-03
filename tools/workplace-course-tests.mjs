@@ -36,15 +36,24 @@ const mainSummary = (cs) => ({query: cs.state.query, mode: cs.state.mode, focus:
   owner: cs.state.paneOwner, scope: cs.cs.Scope, scopeComp: cs.cs.Scopecomp, filter: cs.cs.Searchfilter});
 const parentControls = (app) => Object.keys(app.lab.garden.pars.root).sort();
 
-test('31 Arbeitsplatz-Stationen bestehen in Reihenfolge erst nach Bedienaktionen', async (t) => {
-  assert.equal(lessons.length, 31);
-  assert.deepEqual(lessons.map(({id}) => id), Object.keys(WORKPLACE_SCRIPTS));
+// Die Stationen kommen aus data/course.json (gefrorener Native-Stand). Jede braucht ein Script; Scripts fuer noch nicht
+// gefrorene Stationen (z. B. 1.10.3 vor dem Freeze) sind erlaubt und werden nur als Warnung gemeldet.
+test('Arbeitsplatz-Stationen bestehen in Reihenfolge erst nach Bedienaktionen', async (t) => {
+  assert.ok(lessons.length >= 31, `mindestens 31 Arbeitsplatz-Stationen erwartet, gefunden ${lessons.length}`);
+  const ids = lessons.map(({id}) => id);
+  const scripted = Object.keys(WORKPLACE_SCRIPTS);
+  assert.deepEqual(ids.filter((id) => !scripted.includes(id)), [], 'jede Arbeitsplatz-Station braucht ein Script');
+  assert.deepEqual(ids, scripted.filter((id) => ids.includes(id)), 'Scripts stehen in Kursreihenfolge');
+  const orphans = scripted.filter((id) => !ids.includes(id));
+  if (orphans.length) t.diagnostic(`Scripts ohne Lektion im gefrorenen Kurs (erst nach dem naechsten Freeze scharf): ${orphans.join(', ')}`);
   const app = create();
   for (const lesson of lessons) {
     await t.test(lesson.id, () => {
       assert.equal(SCRIPTS[lesson.id], WORKPLACE_SCRIPTS[lesson.id]);
       start(app, lesson.id);
-      app.gestures.seen();
+      // Lese-Stationen (nur 'observed') bestehen erst mit Gesehen; alle anderen duerfen auch mit Gesehen nicht ohne Handgriff bestehen
+      const readingOnly = (lesson.rules || []).every((rule) => rule.key === 'observed');
+      if (!readingOnly) app.gestures.seen();
       assert.equal(evaluate(lesson.rules, app.tour.snapshot(), app.tour.baseline).passed,
         false, `${lesson.id}: vor der Bedienung bereits erfüllt`);
       SCRIPTS[lesson.id](app.gestures);

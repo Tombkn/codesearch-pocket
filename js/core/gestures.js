@@ -118,8 +118,22 @@ export class Gestures {
     const s = this.cs.state;
     if (text !== null) return this.cs.fieldEnter(text);
     if (s.dialog) { const d = s.dialog; d.confirm?.(); if (s.dialog === d) s.dialog = null; return this.cs.rebuild(); }
+    // Shift+F6: Enter gilt der Detailzeile unter dem Cursor (native _detail_key → OnSideClick('detail', …)), nicht der Listenzeile
+    if (s.detailFocus && !s.menu && !s.viewer && !s.editor) return this.detailActivate();
     if (s.selected >= 0) return this.cs.activate();
     return this.cs.fieldEnter(s.mode === "search" ? s.query : s.fieldDraft);
+  }
+  // Enter unter Shift+F6: dieselbe Aktion wie das Antippen der Detailzeile (data-detail in js/app.js); Zeilen ohne act tun nichts
+  detailActivate() {
+    const cs = this.cs;
+    const row = cs.detailCursorRow();
+    const act = row ? row[2] : "";
+    if (!act) { cs.state.status = "Zeile ohne Aktion"; return cs.emit(); }
+    const [name, arg] = String(act).split(":");
+    if (name === "exec") { cs.state.status = "AUSFÜHREN ruft die Methode jetzt auf – im Kurs nur in TD selbst."; return cs.emit(); }
+    if (name === "chain") return this.detail("chain", Number(arg));
+    if (name === "expr") return this.detail("expr", arg);
+    return this.detail(name);
   }
   filter(key) { this.cs.cs.Searchfilter = key; this.cs.state.selected = -1; this.cs.rebuild(); }
   family(key) { this.cs.cs.Opfamily = key; this.cs.cs.Searchfilter = "op"; this.cs.rebuild(); }
@@ -211,6 +225,7 @@ export class Gestures {
   tapRow(match, options={}) {
     const i = this._find(match);
     if (i < 0) throw new Error(`Zeile nicht gefunden: ${match}`);
+    this.cs.state.detailFocus = false;   // Antippen der Liste holt den Shift+F6-Fokus zurueck (wie der Klick im Browser)
     this.cs.select(i, { ctrl: Boolean(this.mods.ctrl || options.ctrl || this.cs.state.multiSelect) });
     if (this.mods.alt && this.cs.state.mode === "errors") this.altClickError();
     this.mods = { ctrl: false, alt: false, shift: false };
@@ -313,6 +328,8 @@ export class Gestures {
           break;
       }
     }
+    // Shift+F6: Pfeile gehoeren der Detail-Spalte, solange sie den Fokus hat (Buchstaben bleiben bei der Liste)
+    if (s.detailFocus && !s.menu && !s.dialog && !s.viewer && !s.editor && (name === "Up" || name === "Down")) return cs.detailMove(name === "Up" ? -1 : 1);
     switch (name) {
       case "Esc": return cs.escape();
       case "Enter": return this.enter();
@@ -324,6 +341,7 @@ export class Gestures {
       case "Alt+F": return cs.altF();
       case "Ctrl+R": return cs.ctrlR();
       case "F6": return cs.dataCycle();
+      case "Shift+F6": return cs.toggleDetailFocus();
       case "Alt+D": return cs.dataDetails(!s.display.details);
       case "Ctrl+G": return cs.routeToggleStep();
       case "Left": if (!cs.routeStep(-1)) this._move(-1); return undefined;
@@ -354,6 +372,7 @@ export class Gestures {
 
   _move(delta) {
     const s = this.cs.state;
+    s.detailFocus = false;   // Pfeile in der Liste holen den Fokus aus der Detail-Spalte zurueck
     let i = s.selected;
     for (let n = 0; n < s.hits.length; n += 1) {
       i += delta;
@@ -371,6 +390,33 @@ export class Gestures {
   }
 
   // ------------------------------------------------------------------ DATEN-Leiste
+  // ------------------------------------------------------------------ 1.10.3: Rad, Verlauf, Spalten, Zielzeile, Schnellsuche-Menue
+  // Strg + Rad ueber einer Zone des Hauptfensters: 'code' = CODE-Regler +-10 %, 'results' / 'detail' = Zonen-Zoom,
+  // alles andere ('ui') = Gesamtzoom wie Strg+Plus/Minus. floatId gesetzt = Zweitfenster unter dem Zeiger.
+  ctrlWheel(zone, step, floatId = null) {
+    const cs = this.cs, dir = step > 0 ? 1 : -1;
+    if (floatId) { this.focusFloat(floatId); return this.key(dir > 0 ? "Ctrl+Plus" : "Ctrl+Minus"); }
+    if (zone === "code") return cs.setCodeZoom(Math.round(((cs.state.codeZoom || 1) + dir * 0.1) * 10) / 10);
+    if (zone === "results" || zone === "detail") return cs.ZoomZone(zone, dir);
+    return this.key(dir > 0 ? "Ctrl+Plus" : "Ctrl+Minus");
+  }
+  // Pfeiltasten-Knoepfe in der Fensterleiste bzw. Maus-Daumentasten: Verlauf (Tab + Ziel) zurueck / vor
+  historyStep(dir) { if (dir < 0) this.cs.historyBack(); else this.cs.historyForward(); }
+  // GRUPPEN / DETAILS: Seitenspalte ein- oder ausklappen
+  column(side) { this.cs.ToggleColumn(side); }
+  // 'Ziel aendern…' in der Zielzeile: Pfadfeld oeffnen; danach enter(text) oder key('Esc')
+  targetEdit() { this.cs.beginTargetEdit(); }
+  // Rechtsklick / langes Druecken auf eine Zeile der Schnellsuche: ihr Zeilenmenue (danach menu(label))
+  quickRowMenu(id, match) {
+    const q = this.cs.state.searchWindows.find((item) => item.id === id);
+    if (!q) throw new Error(`Suchfenster fehlt: ${id}`);
+    const i = typeof match === "function" ? q.hits.findIndex(match) : q.hits.findIndex((h) => h.kind !== "section" && JSON.stringify(h).includes(match));
+    if (i < 0) throw new Error(`Zeile fehlt in der Schnellsuche: ${match}`);
+    this.cs.state.menu = { title: "SCHNELLSUCHE", items: this.cs.quickRowMenuItems(id, i) };
+    this.cs.emit();
+    return i;
+  }
+
   data(format) { this.cs.setDataFormat(format); }
   dataDetails() { this.cs.dataDetails(true); }
   dataBack() { this.cs.dataDetails(false); }

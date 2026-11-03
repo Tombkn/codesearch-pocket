@@ -1,7 +1,7 @@
 """Kurs, Uebungsnetz, Code-Analyse und Beschriftungen fuer CodeSearch Pocket erzeugen.
 
 Quelle ist der eingefrorene Stand in source/ (siehe source/FROZEN.sha256):
-  lessons.json            Mitmach-Tour (merged, 462 Schritte)
+  lessons.json            Mitmach-Tour (merged; Anzahl = lesson_count in upstream.json, 619 bei 1.10.2)
   CodeSearch_Tutorial.tdn das Uebungsnetz mit allen Ops, Parametern, Kabeln und DAT-Inhalten
   CodeModelExt.py         echte Code-Analyse von CodeSearch (TD-freie Teile)
   CodeSearchExt.py        echte Beschriftungen, Tooltips und Hilfetexte

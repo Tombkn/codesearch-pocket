@@ -31,6 +31,6 @@ export function createHostContext(ctx, host, id) {
 export function hostTemplate() {
   return `<div class="cs-title" id="cs-title"></div><div class="cs-scopes" id="cs-scopes"></div><div class="cs-tabs" id="cs-tabs"></div><div class="cs-context" id="cs-context"></div><div class="cs-target" id="cs-target"></div>
     <div class="cs-field"><span class="cs-gt" id="cs-mode-label"></span><input id="cs-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go"><button class="cs-enter" id="cs-enter">⏎</button><button data-act="json">JSON</button></div>
-    <div class="cs-filters" id="cs-filters"></div><div class="cs-data" id="cs-data"></div><div class="cs-record" id="cs-record"></div><div class="cs-flow" id="cs-flow"></div><div class="cs-crumb" id="cs-crumb"></div><div class="cs-groups" id="cs-groups"></div>
+    <div class="cs-filters" id="cs-filters"></div><div class="cs-record" id="cs-record"></div><div class="cs-flow" id="cs-flow"></div><div class="cs-crumb" id="cs-crumb"></div><div class="cs-groups" id="cs-groups"></div>
     <div class="cs-body" id="cs-body"><div class="cs-analysis" id="cs-analysis" role="region" aria-label="LLM-Analyse" tabindex="0" hidden></div><div class="cs-spec cs-analysis" id="cs-spec" role="region" aria-label="Spec-Arbeitsplatz" tabindex="0" hidden></div><div class="cs-list" id="cs-list"></div><div class="cs-split" id="cs-split"></div><aside class="cs-detail" id="cs-detail"></aside></div><div class="cs-status" id="cs-status"></div>`;
 }

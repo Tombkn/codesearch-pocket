@@ -17,7 +17,7 @@ import {hostQuery} from './ui/cs-host.js';
 
 const KEYS_ALL = ["Enter", "Esc", "Ctrl+C", "Ctrl+Enter", "Ctrl+I", "Ctrl+Shift+I", "Ctrl+P", "Ctrl+F", "Alt+P", "Alt+F", "Ctrl+R", "F6", "Alt+D",
   "Ctrl+G", "Left", "Right", "Up", "Down", "Ctrl+Right", "Ctrl+Left", "Alt+Left", "Alt+Right", "Ctrl+Alt+Left", "Ctrl+Alt+Right",
-  "Ctrl+Plus", "Ctrl+Minus", "Alt+0", "Alt+Shift+A", "Shift+K", "Alt+Shift+K", "Ctrl+Shift+K", "Ctrl+Z", "Ctrl+Y", "Ctrl+Shift+Z"];
+  "Ctrl+Plus", "Ctrl+Minus", "Alt+0", "Alt+Shift+A", "Shift+K", "Alt+Shift+K", "Ctrl+Shift+K", "Ctrl+Z", "Ctrl+Y", "Ctrl+Shift+Z", "Shift+F6"];
 const KEY_LABEL = { Left: "←", Right: "→", Up: "↑", Down: "↓", "Ctrl+Right": "Strg+→", "Ctrl+Left": "Strg+←", "Alt+Left": "Alt+←", "Alt+Right": "Alt+→",
   "Ctrl+Alt+Left": "Strg+Alt+←", "Ctrl+Alt+Right": "Strg+Alt+→", Enter: "⏎ Enter" };
 
@@ -182,7 +182,7 @@ function renderClipboardStatus(ctx) {
   if (!box) {
     box = document.createElement('div');
     box.id = 'clipboard-notice';
-    box.className = 'cs-data';
+    box.className = 'cs-notice';
     box.setAttribute('role', 'status');
     box.setAttribute('aria-live', 'polite');
     box.style.cssText = 'flex:0 0 auto;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 8px';
@@ -533,11 +533,8 @@ function wire(ctx) {
     if (KEYS_ALL.includes(name)) { ev.preventDefault(); return g.key(name); }
     return undefined;
   }));
-  bindShiftWheel(document, (floatId, step) => {
-    if (floatId) g.focusFloat(floatId);
-    g.key(step > 0 ? "Ctrl+Plus" : "Ctrl+Minus");
-    ctx.render();
-  });
+  // Strg + Rad (1.10.3): Zweitfenster → dessen Zoom; Code → CODE-Regler ±10 %; Liste / Details → Zonen-Zoom; Leisten → Gesamtzoom
+  bindShiftWheel(document, (floatId, step, zone) => { g.ctrlWheel(zone, step, floatId); ctx.render(); });
 }
 
 function bindCSHost(ctx) {
@@ -647,6 +644,9 @@ function bindCSHost(ctx) {
         ] };
         return cs.emit();
       }
+      case "column-left": return g.column("left");
+      case "column-right": return g.column("right");
+      case "target-edit": g.targetEdit(); $("#cs-input")?.focus(); return undefined;
       case "data-details": return g.dataDetails();
       case "data-back": return g.dataBack();
       case "data-copy": return g.dataCopy();
@@ -676,7 +676,15 @@ function bindCSHost(ctx) {
     $('#cs').style.setProperty('--code-height',ctx.codeHeight+'px');handle.setAttribute('aria-valuenow',String(ctx.codeHeight));
   });
   // READ ORDER lange druecken = ReadPath-Marken (Shift+Klick)
-  tapper($('#cs-context'),'[data-ctx="comp"]',{tap:()=>{},long:act(()=>g.compMenu())});
+  // DIESE COMP sitzt seit 1.10.3 in der SUCHEN-IN-Zeile (#cs-scopes): lange druecken = COMP-Aktionen
+  tapper($('#cs-scopes'),'[data-ctx="comp"]',{tap:()=>{},long:act(()=>g.compMenu())});
+  // Detail-Fokus (Modell-Flag wie native Shift+F6): Antippen einer Detailzeile setzt ihn auf genau diese Zeile; Knoepfe der
+  // Detailleiste, Blockkoepfe, CODE-Regler, Griff und Code-Viewport lassen ihn in Ruhe. Antippen der Liste nimmt ihn zurueck.
+  $('#cs-detail').addEventListener('click',(ev)=>{
+    const row=ev.target.closest?.('[data-detail-row]');if(!row)return;
+    cs.setDetailFocus(true,false,Number(row.dataset.detailRow));
+  },true);
+  $('#cs-list').addEventListener('click',()=>cs.setDetailFocus(false,false),true);
   tapper($("#cs-tabs"), "[data-act=readorder]", { tap: () => {}, long: act(() => { g.readOrderMarks(); toast(`ReadPath-Marken ${cs.state.readMarks ? "an" : "aus"}`); }) });
   tapper($("#cs-tabs"), "[data-mode]", { tap: () => {}, long: act((el) => g.altHelp(el.dataset.mode)) });
   ctx.tabHelp = bindTabHelp($("#cs-tabs"), {

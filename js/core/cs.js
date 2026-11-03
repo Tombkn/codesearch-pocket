@@ -28,8 +28,13 @@ const CODE_MODES = new Set(["map", "entries", "tour", "record", "check"]);
 export const CONTEXT_CONTENT_MODES = new Set(['search', 'errors', 'map', 'entries', 'check']);
 export const CONTEXT_OP_MODES = new Set(['trace', 'refs', 'chain']);
 export const CONTEXT_MODES = new Set([...CONTEXT_CONTENT_MODES, ...CONTEXT_OP_MODES]);
+// Tabs, in denen das Feld einen Pfad als neues Ziel uebernimmt (fieldEnter). Nur dort darf 'Ziel aendern…' erscheinen:
+// in SEARCH ist das Feld der Suchtext, in IMPACT / ERRORS gibt es keinen Pfad-Zweig.
+export const TARGET_EDIT_MODES = ["trace", "refs", "chain", "map", "entries"];
 const DATA_FORMATS = ["name", "relative", "full", "op_relative", "op_full"];
 export const DATA_LABELS = { name: "NAME", relative: "RELATIV", full: "FULL PATH", op_relative: "op(RELATIV)", op_full: "op(FULL)" };
+// Zonen des Zonen-Zooms wie native ZONE_LABELS; 'code' hat keinen eigenen Zonenfaktor (dort gilt der CODE-Regler)
+export const ZONE_LABELS = { results: "LISTE", detail: "DETAILS", code: "CODE" };
 
 export const CS_DEFAULTS = {
   Scope: "comp", Scopecomp: "", Searchfilter: "all", Opfamily: "all", Includeui: false, Includesys: false, Includetables: true,
@@ -41,6 +46,7 @@ export const CS_DEFAULTS = {
 export class CodeSearch {
   constructor({ net, lab, ui, storage = null }) {
     this.spec = new SpecWorkbench(this, storage);
+    this.storage = storage;   // cs_split_layout (GRUPPEN / DETAILS eingeklappt) ueberlebt Schliessen und Neustart
     this.net = net;
     this.lab = lab;
     this.ui = ui;
@@ -74,6 +80,10 @@ export class CodeSearch {
       inv: { cases: [], visuals: [], request: null, comparison: null, explanation: null, preview: null, repro: null, sample: "", watching: false, watchTarget: "", watchHistory: [], watchView: false, error: "" },
       flowlens: { open: false, target: "", story: true, colors: false, hidden: true, selected: "" },
       zoom: 1, look: "classic", window: "normal", editor: null, viewer: null, intent: "", context: "selection", fieldDraft: "",
+      // 1.10.3: Zonen-Zoom (Strg + Rad ueber Liste / Details, 10-%-Raster 0.5-2.5) und Detail-Fokus (Shift+F6 / Antippen der Detail-Spalte)
+      zoneZoom: { results: 1, detail: 1 }, detailFocus: false,
+      // 1.10.3: Shift+F6-Cursor in der Detail-Spalte, 'Ziel aendern…' (Pfadfeld offen) und die beiden Seitenspalten
+      detailCursor: 0, targetEdit: false, splitLayout: this._loadSplitLayout(),
     };
   }
 
@@ -126,6 +136,8 @@ export class CodeSearch {
     this.state.overview = "";
     this.state.selected = -1;
     this.state.multi = new Set();
+    this.state.detailFocus = false;   // Oeffnen / Moduswechsel gibt den Shift+F6-Fokus an die Liste zurueck (wie native)
+    this.state.detailCursor = 0;
     if (scope != null) {
       this.cs.Scope = "comp";
       this.cs.Scopecomp = abs(rel(scope));
@@ -173,6 +185,8 @@ export class CodeSearch {
     this.state.overview = "";
     this.state.selected = -1;
     this.state.multi = new Set();
+    this.state.detailFocus = false;   // Tab-Wechsel gibt den Shift+F6-Fokus an die Liste zurueck (native: mode != Mode)
+    this.state.detailCursor = 0;
     if (mode === "tour" && !this.state.tourEntry) this.state.tourDat = "";
     this._remember();
     this.rebuild();
@@ -438,6 +452,12 @@ export class CodeSearch {
       s.record.chainIndex = h.chain_index;
       return this.rebuild();
     }
+    if (h.kind === "opfind" && h.detail === "FOCUS") {
+      // LETZTE FOCUS in der leeren Suche: Enter / Doppeltippen macht den Op wieder zum FOCUS - ohne Netzklick, Fenster bleibt offen
+      this.OpenAt(s.mode, { target: rel(h.path), query: "" });
+      s.status = `FOCUS wieder ${abs(h.path)} (LETZTE FOCUS)`;
+      return this.emit();
+    }
     if (s.mode === "search" && !s.view) {
       // Enter in SEARCH springt zur Fundstelle und schliesst CodeSearch
       this.jumpTo(h);
@@ -593,9 +613,17 @@ export class CodeSearch {
     if (s.menu) { s.menu = null; return this.emit(); }
     if (s.viewer) { s.viewer = null; return this.emit(); }
     if (s.editor) { s.editor = null; return this.emit(); }
+    if (s.targetEdit) {   // 'Ziel aendern…' mit Esc verlassen: das Ziel bleibt, das Feld wird wieder leer
+      s.targetEdit = false; s.fieldDraft = ""; s.status = `Ziel bleibt ${abs(s.focus)}`;
+      return this.emit();
+    }
     // Esc wirkt im Fenster mit dem Fokus: zweites Fenster (Schnellsuche) oder Hauptfenster
     if (s.quick.open && s.focusWin === "quick") return this.quickClose(s.quick.id);
     if (s.help) { s.help = null; return this.emit(); }
+    if (s.detailFocus) {   // Shift+F6-Fokus: Esc gibt nur die Spalte an die Liste zurueck (native _detail_key verbraucht Esc)
+      s.detailFocus = false; s.status = "Liste · Shift+F6 wieder ins Detail";
+      return this.emit();
+    }
     if (s.view === "route") {
       if (s.route.thread) { s.route.thread = ""; return this.rebuild(); }
       if (s.route.mode !== "ganz") { s.route.mode = "ganz"; return this.rebuild(); }
@@ -628,6 +656,7 @@ export class CodeSearch {
 
   fieldEnter(text) {
     const s = this.state;
+    s.targetEdit = false;   // 'Ziel aendern…' + Enter: das Feld uebernimmt den Pfad wie immer
     const value = String(text || "").trim();
     if (value.startsWith(">")) return this.command(value);
     if (s.mode === "table") {
@@ -648,7 +677,7 @@ export class CodeSearch {
       if (first >= 0) return this.activate(s.selected >= 0 ? s.selected : first);
       return;
     }
-    if (["trace", "refs", "chain", "map", "entries"].includes(s.mode) && value) {
+    if (TARGET_EDIT_MODES.includes(s.mode) && value) {
       const t = rel(value.replace(/^op\(['"]|['"]\)$/g, ""));
       const found = this.net.op(t) ? t : [...this.net.ops.keys()].find((p) => baseName(p) === value);
       if (found != null) { if(s.mode==='chain')return this.flowSetTarget(found); s.focus = found; s.targets = [abs(found)]; return this.rebuild(); }
@@ -1370,6 +1399,12 @@ export class CodeSearch {
   }
 
   quickToMain(i,id=this.state.quick.id) {return transferSearch(this,id,i);}
+  // Zeilenmenue der Schnellsuche '→ IN …': Hauptfenster auf Tab + Ziel, das Suchfenster bleibt offen (wie native quick_mode)
+  quickToMode(mode,path) {
+    this.OpenAt(mode,{target:path});
+    this.state.status=`${(this.ui.TAB_LABELS || {})[mode] || mode} · ${abs(path)} · Schnellsuche bleibt offen (Esc schließt sie)`;
+    this.emit();
+  }
   // Halte-Menue einer Suchfenster-Zeile (wie das native Zeilenmenue der Schnellsuche)
   quickRowMenuItems(id,i) {
     const q=this.state.searchWindows.find(item=>item.id===id);const h=q?.hits?.[i];
@@ -1378,6 +1413,8 @@ export class CodeSearch {
     const path=rel(h.path || '');const target=this.net.op(path);
     const items=[{label:'IM HAUPTFENSTER ÖFFNEN',run:()=>this.quickToMain(i,id)},
       {label:'HINSPRINGEN (Doppelklick)',run:()=>{if(this.quickActivate(id))this.quickJump(i);}}];
+    // 1.10.3: → IN USES / USED BY / FLOW - das Hauptfenster wechselt auf dieses Ziel, die Schnellsuche bleibt offen
+    if(target)for(const mode of ['trace','refs','chain'])items.push({label:`→ IN ${(this.ui.TAB_LABELS || {})[mode] || mode.toUpperCase()}`,run:()=>this.quickToMode(mode,path)});
     if(target)items.push({label:'VIEWER ÖFFNEN',run:()=>{this.state.viewer={path,line:null};}});
     if(h.line || target?.family==='DAT')items.push({label:'IM DAT / EDITOR ÖFFNEN',run:()=>{this.state.viewer={path,line:h.line || null};}});
     if(target && target.family!=='DAT')items.push({label:'PARAMETER ZEIGEN',run:()=>{
@@ -1589,7 +1626,125 @@ export class CodeSearch {
   }
 
   zoom(delta) {
-    this.state.zoom = delta === 0 ? 1 : Math.max(0.7, Math.min(1.6, this.state.zoom + delta));
+    // Alt+0 (delta 0) = alles 100 %: Gesamtzoom, beide Zonen und der CODE-Regler (wie native ZoomUi(0) + _reset_zone_zoom)
+    if (delta === 0) {
+      this.state.zoom = 1;
+      this.state.zoneZoom = { results: 1, detail: 1 };
+      this.state.codeZoom = 1;
+    } else {
+      this.state.zoom = Math.max(0.7, Math.min(1.6, Math.round((this.state.zoom + delta) * 10) / 10));
+    }
+    this.state.status = this._zoomLabel();
+    this.emit();
+  }
+
+  // Native ZoomUi(step): +1 / -1 = ein 10-%-Schritt Gesamtzoom, 0 = zurueck auf 100 % (inkl. Zonen und CODE)
+  ZoomUi(step) {
+    if (![-1, 0, 1].includes(step)) return;
+    this.zoom(step === 0 ? 0 : step * 0.1);
+  }
+
+  // Native ZoomZone(zone, step): nur die Trefferliste ('results') oder die Detail-Spalte ('detail') groesser / kleiner.
+  // step = ganze Zahl im 10-%-Raster (+2 = zwei Schritte groesser), 0 = diese Zone zurueck auf 100 %. Bereich 0.5-2.5.
+  ZoomZone(zone, step) {
+    if (!ZONE_LABELS[zone] || zone === "code" || !Number.isInteger(step)) return;
+    const zones = { ...this.state.zoneZoom };
+    const old = zones[zone] || 1;
+    const next = step === 0 ? 1 : Math.max(0.5, Math.min(2.5, Math.round((old + step * 0.1) * 10) / 10));
+    zones[zone] = next;
+    this.state.zoneZoom = zones;
+    this.state.status = next === old && step !== 0 ? `${ZONE_LABELS[zone]} ${Math.round(next * 100)} % (Grenze)` : this._zoomLabel();
+    this.emit();
+  }
+
+  // Statuszeile wie native _zoom_label: 'SCHRIFT 100 %' plus abweichende Zonen, z. B. ' · LISTE 120 %'
+  _zoomLabel() {
+    let label = `SCHRIFT ${Math.round(this.state.zoom * 100)} %`;
+    for (const zone of ["results", "detail"]) {
+      const factor = this.state.zoneZoom?.[zone] || 1;
+      if (factor !== 1) label += ` · ${ZONE_LABELS[zone]} ${Math.round(factor * 100)} %`;
+    }
+    return label;
+  }
+
+  // Detail-Fokus (native Shift+F6): Pfeile gelten der rechten Spalte. Pocket fuehrt nur das Modell-Flag;
+  // Shift+F6 schaltet um, Antippen einer Detailzeile setzt (Cursor = diese Zeile), Zeilenwechsel in der Liste,
+  // Tab-Wechsel und Esc loeschen. Ohne Detailzeilen gibt es nichts zu fokussieren (wie toggleDetailFocus).
+  setDetailFocus(on, notify = true, cursor = 0) {
+    const rows = this._detailRowCount();
+    if (on && !rows) return;
+    this.state.detailFocus = Boolean(on);
+    if (on) this.state.detailCursor = Math.max(0, Math.min(rows - 1, Number(cursor) || 0));
+    if (notify) this.emit();
+  }
+
+  // Die Detailzeile unter dem Shift+F6-Cursor als [k, v, act] - ueber alle Bloecke hintereinander gezaehlt wie in renderDetail
+  detailCursorRow() {
+    const h = this.selectedHit || (this.state.mode === "table" ? this.tableSelectedHit() : null);
+    if (!h) return null;
+    const rows = this.detailFor(h).flatMap((block) => block.rows);
+    return rows[this.state.detailCursor || 0] || null;
+  }
+
+  // Zeilen der rechten Spalte (alle Bloecke hintereinander) - Grundlage fuer den Shift+F6-Cursor
+  _detailRowCount() {
+    const h = this.selectedHit || (this.state.mode === "table" ? this.tableSelectedHit() : null);
+    if (!h) return 0;
+    return this.detailFor(h).reduce((n, block) => n + block.rows.length, 0);
+  }
+
+  // Shift+F6 (native ToggleDetailFocus): ohne Detailzeilen gibt es nichts zu fokussieren
+  toggleDetailFocus() {
+    const s = this.state;
+    if (s.detailFocus) {
+      s.detailFocus = false; s.status = "Liste · Shift+F6 wieder ins Detail";
+      return this.emit();
+    }
+    if (!this._detailRowCount()) { s.status = "DETAIL ist leer"; return this.emit(); }
+    s.detailFocus = true; s.detailCursor = 0;
+    s.status = "DETAIL · ↑↓ · Enter führt aus · Shift+F6 oder Esc zurück zur Liste";
+    this.emit();
+  }
+
+  // ↑↓ solange Shift+F6 die rechte Spalte hat: der Cursor wandert dort, die Liste bleibt stehen
+  detailMove(delta) {
+    const n = this._detailRowCount();
+    if (!n) return;
+    this.state.detailCursor = Math.max(0, Math.min(n - 1, (this.state.detailCursor || 0) + delta));
+    this.emit();
+  }
+
+  // ---------------------------------------------------------------- Seitenspalten (native ToggleColumn, Storage cs_split_layout)
+  _loadSplitLayout() {
+    const layout = { leftHidden: false, rightHidden: false };
+    try {
+      const raw = this.storage?.getItem?.("cs_split_layout");
+      if (raw) Object.assign(layout, JSON.parse(raw));
+    } catch { /* kaputter Speicher: Standardlayout */ }
+    return layout;
+  }
+
+  // GRUPPEN (links) bzw. DETAILS + CODE (rechts) ein- oder ausklappen; die Liste nimmt den Platz. Bleibt ueber Schliessen.
+  ToggleColumn(side) {
+    if (!["left", "right"].includes(side)) return;
+    const key = side === "left" ? "leftHidden" : "rightHidden";
+    const layout = { ...this.state.splitLayout };
+    layout[key] = !layout[key];
+    this.state.splitLayout = layout;
+    try { this.storage?.setItem?.("cs_split_layout", JSON.stringify(layout)); } catch { /* ohne Speicher nur fuer diese Sitzung */ }
+    this.state.status = (side === "left" ? "GRUPPEN" : "DETAILS + CODE") + (layout[key] ? " eingeklappt · Liste nimmt den Platz" : " ausgeklappt");
+    this.emit();
+  }
+
+  // 'Ziel aendern…' in der Zielzeile: das Pfadfeld oeffnet sich; Enter uebernimmt, Esc laesst das Ziel stehen
+  beginTargetEdit() {
+    if (!TARGET_EDIT_MODES.includes(this.state.mode)) {   // SEARCH: Feld = Suchtext; IMPACT / ERRORS: kein Pfad-Zweig
+      this.state.status = "Ziel ändern gibt es nur in USES, USED BY, FLOW, STRUCTURE und ENTRIES";
+      return this.emit();
+    }
+    this.state.targetEdit = true;
+    this.state.fieldDraft = "";
+    this.state.status = `Ziel ändern: Pfad tippen + Enter · Esc behält ${abs(this.state.focus)}`;
     this.emit();
   }
 

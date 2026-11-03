@@ -283,6 +283,20 @@ export function buildModuleStructure(cs, dat) {
     h.art = "AUFRUFER";
     rows.push(h);
   }
+  // 1.10.3: AUSLÖSER → MODUL - Execute-DATs, deren Aufruf eine Funktion dieses DATs erreicht. Leer = kein Fehler, nur Information.
+  const triggers = outside.filter((c) => (net.op(c.from.dat)?.type || "").endsWith("executeDAT"));
+  rows.push(section("AUSLÖSER → MODUL", "Einstiege von außen (Taste, Parameter, Execute-DAT), deren Kette eine Funktion dieses DATs erreicht · → = erreichte Funktionen", triggers.length, { num: "4" }));
+  if (!triggers.length) {
+    const note = info("LEER", dat, "kein Einstieg im Modell führt hierher   ·   Importeure ohne Execute-DAT, oder Index fehlt   ·   kein Fehler, nur Information");
+    note.art = "LEER";
+    note.dim = true;
+    rows.push(note);
+  }
+  for (const c of triggers) {
+    const h = hit("call", abs(c.from.dat), `${callerLabel(c)}   →   ${c.to.name}()`, { line: c.line, ctx: c.from.name, detail: "AUSLÖSER" });
+    h.art = "AUSLÖSER";
+    rows.push(h);
+  }
   return { rows, dat, comp: net.op(dat).parent };
 }
 

@@ -177,7 +177,7 @@ try {
   await click("[data-atlas=laptop]");
   check("Laptop-Start und sämtliche Kapitel sind zugänglich", () => {
     assert.equal(document.querySelectorAll("[data-learn-chapter]").length, window.__POCKET_DATA__["course.json"].chapters.length);
-    assert.match($("#layer-atlas").textContent, /619 Lektionen/);
+    assert.match($("#layer-atlas").textContent, new RegExp(`${window.__POCKET_DATA__["course.json"].source.lessons} Lektionen`));
   });
   const atlasBody = $("#layer-atlas .lbody");
   const stableSearchButton = $('[data-mode="search"]');
@@ -201,7 +201,8 @@ try {
     assert.equal(document.querySelector("#tour-body details[data-persist=meaning]"), null);
   });
   await click("#tour-body [data-tour=laptop]");
-  await click("[data-learn-chapter='26']");
+  const llmChapter = window.__POCKET_DATA__["course.json"].chapters.findIndex((ch) => /^LLM: fehlenden Kontext/.test(typeof ch === "string" ? ch : ch.title));   // StateLab-Kapitel per Titel, nicht per fester Nummer
+  await click("[data-learn-chapter='" + llmChapter + "']");
   await click("#tour-body [data-tour=labparams]");
   check("State-Lektion öffnet das passende StateLab-Parameterblatt", () => assert.ok(document.querySelector("[data-sl-pulse=Fire]")));
   await click("[data-act=td-close]");
@@ -253,7 +254,7 @@ try {
     assert.match($('#cs-target .target-path').textContent, /SignalGarden\/Sensor/);
   });
   check('Kontextwahl sind zwei getrennte Buttons mit eindeutigem aktivem Zustand', () => {
-    assert.equal(document.querySelectorAll('#cs-context .context-switch .context-button').length, 2);
+    assert.equal(document.querySelectorAll('#cs-scopes .context-switch .context-button').length, 2);
     assert.equal($('[data-ctx=selection]').getAttribute('aria-pressed'), 'true');
     assert.equal($('[data-ctx=comp]').getAttribute('aria-pressed'), 'false');
     assert.match($('[data-ctx=selection]').textContent, /✓.*AUSWAHL/);
@@ -308,9 +309,11 @@ try {
   });
   await click('[data-fla=close]');
   await click('[data-act=look]');
-  check('Look-Auswahl enthält alle 26 importierten Paletten mit Farbproben', () => {
-    assert.equal(document.querySelectorAll('#popup [data-menu]').length, 26);
-    assert.equal(document.querySelectorAll('#popup .look-swatches').length, 26);
+  check('Look-Auswahl enthält alle importierten Paletten mit Farbproben', () => {
+    const lookCount = Object.keys(window.__POCKET_DATA__['ui.json'].CODESEARCH_LOOKS).length;
+    assert.ok(lookCount >= 26, 'mindestens die 26 Looks von 1.10.2');
+    assert.equal(document.querySelectorAll('#popup [data-menu]').length, lookCount);
+    assert.equal(document.querySelectorAll('#popup .look-swatches').length, lookCount);
     assert.deepEqual([...document.querySelectorAll('#popup .menu-group')].map((item) => item.textContent), ['Dunkel', 'Hell', 'Hoher Kontrast']);
   });
   [...document.querySelectorAll('#popup [data-menu]')].find((button) => button.textContent.includes('Mist')).click(); await delay(15);

@@ -34,6 +34,9 @@ export function transferCard(lesson) {
 
 export function laptopOverview(course) {
   const guides = course.chapters.map((_, index) => guideForLesson(course.lessons.find((l) => l.chapter === index)));
+  // Zahlen aus den Daten statt hart im Text: SignalGarden-Stationen (sg_*) und Workflow-Kapitel ('Workflow N …')
+  const gardenStations = (course.lessons || []).filter((lesson) => /^sg_/.test(String(lesson.id || ""))).length;
+  const workflows = course.chapters.filter((title) => /^Workflow \d/.test(typeof title === "string" ? title : title?.title || "")).length;
   return `<div class="md learning-guide"><h2>Vom Handy ins echte Projekt</h2>
     <p>Die Tour trainiert die Bedienung am nachgebildeten Übungsnetz. Am Laptop kontrollierst du zusätzlich echte Operatoren, Fensterfokus, Outputs und das Verhalten nach einem Neustart.</p>
     <p>Abgeglichen mit CodeSearch ${esc(SOURCE_REF.version)}, Stand ${esc(SOURCE_REF.checked)}. ${sourceLink("README.de.md", "Version und Installation")}</p>
@@ -43,6 +46,6 @@ export function laptopOverview(course) {
     ${guides.map((guide, index) => `<details data-persist="chapter-${index}"><summary>${index + 1}. ${esc(course.chapters[index] || guide.title)}</summary>
       <p>${esc(guide.goal)}</p><p><strong>Praktische Prüfung:</strong> ${esc(guide.proof)}</p><p><strong>Grenze:</strong> ${esc(guide.limit)}</p>
       <button class="feat" data-learn-chapter="${index}">Kapitel ${index + 1} öffnen →</button>${sourceLink(guide.source)}</details>`).join("")}
-    <h2>Was „vollständig“ hier bedeutet</h2><p>Der Kurs enthält alle ${course.source?.lessons || 558} Lektionen des abgeglichenen TD-Stands, darunter 96 SignalGarden-Stationen in acht vollständigen Workflows, zusätzlich Abschluss- und Werkstattfälle. Neue spätere GitHub-Versionen sind erst nach einem erneuten Quellenabgleich abgedeckt. Die Kapitelzahl und grüne Modelltests sind kein Beweis für Lernerfolg oder vollständige TouchDesigner-Kompatibilität.</p>
+    <h2>Was „vollständig“ hier bedeutet</h2><p>Der Kurs enthält alle ${course.source?.lessons || (course.lessons || []).length} Lektionen des abgeglichenen TD-Stands, darunter ${gardenStations} SignalGarden-Stationen in ${workflows} vollständigen Workflows, zusätzlich Abschluss- und Werkstattfälle. Neue spätere GitHub-Versionen sind erst nach einem erneuten Quellenabgleich abgedeckt. Die Kapitelzahl und grüne Modelltests sind kein Beweis für Lernerfolg oder vollständige TouchDesigner-Kompatibilität.</p>
     <h2>Agenda – Begriffe &amp; Methoden</h2><p>Simulation: nachgebautes Verhalten im Browser. Native Prüfung: Ausführung im echten TouchDesigner. Revision: Kennung eines Quelltextstands. Scope: untersuchter Bereich. Re-Init: eine Extension-Instanz wird neu erzeugt. Reload: Projektdatei erneut laden.</p></div>`;
 }

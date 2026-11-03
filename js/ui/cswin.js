@@ -7,7 +7,7 @@ import { renderSpec } from './spec.js';
 
 import { $, esc, updateHtml } from "./dom.js";
 import { abs, rel, baseName, fmtNum } from "../core/util.js";
-import { DATA_LABELS, CONTEXT_MODES } from "../core/cs.js";
+import { DATA_LABELS, CONTEXT_MODES, TARGET_EDIT_MODES } from "../core/cs.js";
 import { applyLook } from "./looks.js";
 
 const GROUP_TABS = { both: ["search", "trace", "refs", "impact", "errors"], net: ["chain", "table"], code: ["map", "entries", "tour", "record", "check"] };
@@ -62,21 +62,43 @@ export function renderTitle(ctx) {
     <button class="wbtn" data-act="win-close" title="Schließen (Esc)">✕</button>`);
 }
 
+// Bereich (Par Scope) gilt fuer SEARCH, USES, USED BY, IMPACT, ERRORS - nur dort erscheinen die Scope-Chips.
+const SCOPE_MODES = ["search", "trace", "refs", "impact", "errors"];
+
 export function renderScopes(ctx) {
   const $ = selector => hostQuery(ctx, selector);
   const { cs } = ctx;
-  // Bereich gilt fuer SEARCH, USES, USED BY, IMPACT, ERRORS (Par Scope) - in den anderen Tabs spart die Zeile Platz
-  const showScopes = ["search", "trace", "refs", "impact", "errors"].includes(cs.state.mode) && !cs.state.view;
-  $("#cs-scopes").style.display = showScopes ? "" : "none";
-  const pane = baseName(abs(cs.state.paneOwner)) || "CodeSearch_Tutorial";
+  const s = cs.state;
+  // 1.10.3: eine Kopfzeile wie native ui/scopes - SUCHEN IN + Scope-Chips, danach AUSWAHL / DIESE COMP, Zieltext,
+  // FLOWLENS, LLM ANALYSE, SPEC, ZWEITANSICHT. Die Zeile bleibt immer sichtbar (die drei Werkzeug-Knoepfe gelten in
+  // jedem Tab); Scope-Chips und Kontext-Umschalter zeigen sich nach ihren eigenen Regeln (Vereinigung beider Mengen).
+  const showScopeChips = SCOPE_MODES.includes(s.mode) && !s.view;
+  const showContext = CONTEXT_MODES.has(s.mode) && !["analysis", "spec"].includes(s.view);
+  const box = $("#cs-scopes");
+  box.style.display = "";
+  const pane = baseName(abs(s.paneOwner)) || "CodeSearch_Tutorial";
   const scope = cs.cs.Scope;
   const comp = baseName(cs.cs.Scopecomp || "") || "…";
-  $("#cs-scopes").className = "cs-scopes row-scroll";
-  updateHtml($("#cs-scopes"), `<span class="lbl">SUCHEN IN</span>
-    <button class="chip ${scope === "project" ? "on" : ""}" data-scope="project">GLOBAL</button>
-    <button class="chip ${scope === "currentflat" ? "on" : ""}" data-scope="currentflat">${esc(pane)}  NUR</button>
-    <button class="chip ${scope === "currentpane" ? "on" : ""}" data-scope="currentpane">${esc(pane)}  REKURSIV</button>
-    <button class="chip ${scope === "comp" ? "on" : ""}" data-scope="comp">IN ${esc(comp)}  ▼</button>`);
+  const contextActive = cs.contextActive();
+  const parts = [];
+  if (showScopeChips) {
+    // DIESE COMP legt den Bereich selbst fest: Chips bleiben sichtbar, aber gedimmt und nicht klickbar; Label BEREICH wie native.
+    const chip = (key, label) => `<button class="chip ${scope === key ? "on" : ""} ${contextActive ? "dim" : ""}" data-scope="${key}"${contextActive ? " disabled" : ""}>${label}</button>`;
+    parts.push(`<span class="lbl">${contextActive ? "BEREICH" : "SUCHEN IN"}</span>`);
+    parts.push(chip("project", "GLOBAL"), chip("currentflat", `${esc(pane)}  NUR`), chip("currentpane", `${esc(pane)}  REKURSIV`), chip("comp", `IN ${esc(comp)}  ▼`));
+  }
+  if (showContext) {
+    parts.push(`<div class="context-switch" role="group" aria-label="Analyse-Kontext wählen">
+      ${[['selection', 'AUSWAHL', 'Kontext: ausgewählter Operator'], ['comp', 'DIESE COMP', 'Kontext: das offene Netzwerk · Rechtsklick oder lange drücken für COMP-Aktionen']].map(([key, label, title]) => `<button type="button" class="context-button" data-ctx="${key}" aria-pressed="${s.context === key}" title="${title}"><span class="context-check" aria-hidden="true">${s.context === key ? '✓' : ''}</span><span>${label}</span></button>`).join('')}
+    </div>`);
+    parts.push(`<span class="ctxinfo">${esc(cs.contextDescription())}</span>`);
+    parts.push(`<button class="chip" data-act="flowlens">FLOWLENS ↗</button>`);
+  }
+  parts.push(`<button class="chip ${s.view === "analysis" ? "on" : ""}" data-act="analysis" title="Geführte Analyse mit deinen vorhandenen Chats">LLM ANALYSE ↗</button>`);
+  parts.push(`<button class="chip ${s.view === 'spec' ? 'on' : ''}" data-act="spec" title="Gewünschtes Verhalten und eigene Tests">SPEC ↗</button>`);
+  parts.push(`<button class="chip" data-act="float-menu" title="Bedienbare Zweitansicht: Fenster daneben oder groß öffnen">ZWEITANSICHT ↗ ▾</button>`);
+  box.className = "cs-scopes row-scroll";
+  updateHtml(box, parts.join(""));
 }
 
 export function renderTabs(ctx) {
@@ -91,8 +113,10 @@ export function renderTabs(ctx) {
       const off = (CODE_TABS.has(mode) && !codeOk) || (mode === "table" && !cs._isTable(s.focus) && !cs._isTable(s.table.path));
       return `<button class="tab ${s.mode === mode ? "on" : ""} ${off ? "off" : ""}" data-mode="${mode}">${esc((ui.TAB_LABELS || {})[mode] || mode)}</button>`;
     }).join("");
-    const title = `${(ui.GROUP_LABELS || {})[grp] || grp} · ${(ui.GROUP_TITLES || {})[grp] || ""}`;
-    return `<div class="tabgrp"><span class="gt ${activeGroup === grp ? "on" : ""}">${esc(title)}</span><div class="tabs">${tabs}</div></div>`;
+    // 1.10.3: Praefix-Schild vor den Tabs (wie native ui/tabs/grp_*): kurze Gruppenbezeichnung, langer Titel als Tooltip
+    const title = (ui.GROUP_LABELS || {})[grp] || grp;
+    const long = (ui.GROUP_TITLES || {})[grp] || "";
+    return `<div class="tabgrp"><span class="gt ${activeGroup === grp ? "on" : ""}" title="${esc(long)}">${esc(title)}</span><div class="tabs">${tabs}</div></div>`;
   }).join("");
   $("#cs-tabs").className = `cs-tabs ${g.mods.alt ? "helpmode" : ""}`;
   updateHtml($("#cs-tabs"), html + `<div class="tab-extra">
@@ -106,17 +130,9 @@ export function renderContext(ctx) {
   const { cs } = ctx;
   const s = cs.state;
   const box = $("#cs-context");
+  // 1.10.3: AUSWAHL / DIESE COMP, Zieltext, FLOWLENS, LLM ANALYSE, SPEC und ZWEITANSICHT stehen in der SUCHEN-IN-Zeile
+  // (renderScopes). Hier bleiben nur die PROJEKT-Chips der Code-Tabs und der ENTRIES-Bereichstext; leer = Zeile weg.
   const parts = [];
-  parts.push(`<button class="chip ${s.view === "analysis" ? "on" : ""}" data-act="analysis" title="Geführte Analyse mit deinen vorhandenen Chats">LLM ANALYSE ↗</button>`);
-  parts.push(`<button class="chip ${s.view === 'spec' ? 'on' : ''}" data-act="spec" title="Gewünschtes Verhalten und eigene Tests">SPEC ↗</button>`);
-  parts.push(`<button class="chip" data-act="float-menu" title="Bedienbare Zweitansicht: Fenster daneben oder groß öffnen">ZWEITANSICHT ↗ ▾</button>`);
-  if (CONTEXT_MODES.has(s.mode) && !['analysis','spec'].includes(s.view)) {
-    parts.unshift(`<div class="context-switch" role="group" aria-label="Analyse-Kontext wählen">
-      ${[['selection', 'AUSWAHL', 'Kontext: ausgewählter Operator'], ['comp', 'DIESE COMP', 'Kontext: das offene Netzwerk · Rechtsklick oder lange drücken für COMP-Aktionen']].map(([key, label, title]) => `<button type="button" class="context-button" data-ctx="${key}" aria-pressed="${s.context === key}" title="${title}"><span class="context-check" aria-hidden="true">${s.context === key ? '✓' : ''}</span><span>${label}</span></button>`).join('')}
-    </div>`);
-    parts.push(`<span class="ctxinfo">${esc(cs.contextDescription())}</span>`);
-    parts.push(`<button class="chip" data-act="flowlens">FLOWLENS ↗</button>`);
-  }
   if (CODE_TABS.has(s.mode)) {
     parts.push(`<span class="chip head">PROJEKT ›</span>`);
     for (const [key, label] of [["ext", "ALLE EXTENSIONS"], ["atlas", "ATLAS"], ["short", "SHORTCUTS"], ["health", "GESUND"]]) {
@@ -140,7 +156,8 @@ export function renderField(ctx) {
   updateHtml($("#cs-target"), extensions.length ? `
     <div class="target-owner"><span class="target-label">${CODE_TABS.has(s.mode) ? "ANALYSEZIEL" : "FOCUS"}</span>
       <strong>${esc(owner?.name || comp)}</strong><span class="target-type">${esc(owner?.type || "")}</span>
-      ${CODE_TABS.has(s.mode) && !cs.contextActive() && cs.cs.Analysistarget ? '<span class="target-pin">📌 gepinnt</span>' : ""}</div>
+      ${CODE_TABS.has(s.mode) && !cs.contextActive() && cs.cs.Analysistarget ? '<span class="target-pin">📌 gepinnt</span>' : ""}
+      ${TARGET_EDIT_MODES.includes(s.mode) ? `<button class="chip target-edit" data-act="target-edit" title="Pfad tippen + Enter · Esc behält das Ziel">Ziel ändern…</button>` : ""}</div>
     <div class="extension-list">${extensions.map((ext) => `<button class="extension-source" data-act="extension-menu" data-comp="${esc(comp)}" data-slot="${ext.slot}" aria-haspopup="dialog" title="${esc(ext.available ? `Code öffnen: ${abs(ext.path)}` : ext.reason)}">
       <span class="ext-kind">EXTENSION</span> <strong>${esc(ext.name)}</strong><span>${ext.available ? "Code öffnen ▾" : "Quelle prüfen ▾"}</span></button>`).join("")}</div>
     <span class="target-path">${esc(abs(comp))}</span>` : "");
@@ -171,23 +188,16 @@ export function renderFilters(ctx) {
   updateHtml(box, html + searchOptions({caseSensitive:cs.cs.Casesensitive,regex:cs.cs.Regex,includeTables:cs.cs.Includetables,includeSys:cs.cs.Includesys,maxResults:cs.cs.Maxresults},'data-search-option'));
 }
 
-export function renderData(ctx) {
-  const $ = selector => hostQuery(ctx, selector);
-  const { cs } = ctx;
-  const s = cs.state;
-  const box = $("#cs-data");
-  if (["record", "errors", "check"].includes(s.mode) || s.view === "why") { box.innerHTML = ""; return; }
-  // DATEN sitzt am Handy in der Gruppen-Zeile ueber der Liste (siehe renderGroups) - spart eine Zeile
-  box.innerHTML = "";
-}
-
 function dataControls(cs) {
   const s = cs.state;
   if (["record", "errors", "check"].includes(s.mode) || s.view === "why") return "";
-  const d = s.display;
-  return `<button class="chip on" data-act="data-menu" title="DATEN: wie Adressen geschrieben werden">DATEN · ${DATA_LABELS[d.format]} ▾</button>
+  const d = s.display, layout = s.splitLayout || {};
+  // 1.10.3: GRUPPEN und DETAILS klappen die Seitenspalten ein (native ui/floatbar); Zustand bleibt ueber Schliessen
+  return `<button class="chip" data-act="column-left" title="Gruppen-Chips ein- oder ausklappen">${layout.leftHidden ? '▷ GRUPPEN' : '◁ GRUPPEN'}</button>
+    <button class="chip on" data-act="data-menu" title="DATEN: wie Adressen geschrieben werden">DATEN · ${DATA_LABELS[d.format]} ▾</button>
     ${d.details ? `<button class="chip on" data-act="data-back">ZURÜCK</button>` : `<button class="chip" data-act="data-details">DETAILS</button>`}
-    <button class="chip" data-act="data-copy">KOPIEREN</button><span class="sep"></span>`;
+    <button class="chip" data-act="data-copy">KOPIEREN</button>
+    <button class="chip" data-act="column-right" title="Detail-Spalte und Code ein- oder ausklappen">${layout.rightHidden ? 'DETAILS ◁' : 'DETAILS ▷'}</button><span class="sep"></span>`;
 }
 
 export function renderFlowControls(ctx) {
@@ -224,15 +234,24 @@ export function renderCrumb(ctx) {
   const $ = selector => hostQuery(ctx, selector);
   const { cs, ui } = ctx;
   const s = cs.state;
-  const group = (ui.GROUP_LABELS || {})[(ui.GROUP_OF_MODE || {})[s.mode]] || "";
-  const label = s.view === "path" ? "READ ORDER" : ((ui.TAB_LABELS || {})[s.mode] || s.mode);
-  const view = { landkarte: "LANDKARTE", why: "WARUM", route: "ROUTE", system: "SYSTEM", guide: "FUNKTIONEN", states: "STATE-ATLAS" }[s.view] || "";
+  // 1.10.3: kurze Brotkrume wie native - 'FOCUS name' (📌 wenn gepinnt) › Art › [Symbol] › [Zeile]. Gruppe und Tab stehen
+  // schon in der Tab-Zeile, 'sieht:' im Alt-Hilfetext; 'braucht:' (die Handlungsanweisung) nur, solange keine Zeile markiert ist.
+  const view = { landkarte: "LANDKARTE", why: "WARUM", route: "ROUTE", system: "SYSTEM", guide: "FUNKTIONEN", states: "STATE-ATLAS", path: "READ ORDER" }[s.view] || "";
   const target = s.mode === "chain" ? cs.flowTarget() : s.mode === "table" ? s.table.path : (CODE_TABS.has(s.mode) ? cs.codeTargetPath() : s.focus);
+  const pinned = CODE_TABS.has(s.mode) && !cs.contextActive() && Boolean(cs.cs.Analysistarget);
+  const hit = cs.selectedHit || (s.mode === "table" ? cs.tableSelectedHit() : null);
+  const owner = cs.net.op(target);
+  const art = hit ? artOf(ui, hit) : (owner?.type || "");
   const back = document.getElementById("cs-back"), forward = document.getElementById("cs-forward");
   if (back) back.disabled = (s.history || []).length < 2;
   if (forward) forward.disabled = !(s.future || []).length;
-  $("#cs-crumb").innerHTML = `<b>FOCUS</b> ${esc(baseName(abs(s.focus)) || "CodeSearch_Tutorial")} › ${esc(group)} › <b>${esc(label)}</b>${view ? ` › <b>${view}</b>` : ""} › ${esc(baseName(abs(target)) || "")}
-    &nbsp; sieht: ${esc((ui.MODE_SEES || {})[s.view === "path" ? "path" : s.mode] || "")} · braucht: ${esc((ui.MODE_NEEDS || {})[s.view === "path" ? "path" : s.mode] || "")}`;
+  const segments = [`<b>FOCUS</b> ${pinned ? "📌 " : ""}${esc(baseName(abs(target)) || "CodeSearch_Tutorial")}`];
+  if (view) segments.push(`<b>${view}</b>`);
+  if (art) segments.push(esc(art));
+  if (hit?.ctx) segments.push(esc(hit.ctx));
+  if (hit?.line) segments.push(`Zeile ${esc(String(hit.line))}`);
+  const needs = hit ? "" : ((ui.MODE_NEEDS || {})[s.view === "path" ? "path" : s.mode] || "");
+  $("#cs-crumb").innerHTML = segments.join(" › ") + (needs ? ` &nbsp; braucht: ${esc(needs)}` : "");
 }
 
 export function renderGroups(ctx) {
@@ -243,7 +262,9 @@ export function renderGroups(ctx) {
   box.className = "cs-groups row-scroll";
   const s=cs.state,count=s.multi.size,choose=s.mode!=='table' && s.hits.some(selectableHit)
     ? `<button class="chip ${s.multiSelect?'on':''}" data-act="selection-mode" aria-pressed="${Boolean(s.multiSelect)}">${s.multiSelect?'✓ Mehrfachauswahl':'Mehrere auswählen'}</button>${count>1 || s.multiSelect?`<button class="chip" data-act="selection-menu">${count} ausgewählt · Aktionen ▾</button><button class="chip" data-act="selection-clear">Aufheben</button>`:''}`:'';
-  updateHtml(box, choose+dataControls(cs) + groups.map((gp) => `<button class="g" data-jump="${gp.index}">${esc(gp.num)} · ${esc(gp.title)}${gp.count !== null && gp.count !== undefined ? `<span class="n">${gp.count}</span>` : ""}</button>`).join(""));
+  // GRUPPEN eingeklappt: nur die Werkzeugzeile bleibt, die Gruppen-Chips verschwinden (Liste nimmt den Platz)
+  const shownGroups = s.splitLayout?.leftHidden ? [] : groups;
+  updateHtml(box, choose+dataControls(cs) + shownGroups.map((gp) => `<button class="g" data-jump="${gp.index}">${esc(gp.num)} · ${esc(gp.title)}${gp.count !== null && gp.count !== undefined ? `<span class="n">${gp.count}</span>` : ""}</button>`).join(""));
 }
 
 export function renderList(ctx) {
@@ -344,6 +365,9 @@ export function renderDetail(ctx) {
   const s = cs.state;
   const box = $("#cs-detail");
   const h = cs.selectedHit || (s.mode === "table" ? cs.tableSelectedHit() : null);
+  const rightHidden = Boolean(s.splitLayout?.rightHidden);   // DETAILS eingeklappt: Spalte und Griff weg
+  box.classList.toggle("hidden-col", rightHidden);
+  $("#cs-split").classList.toggle("hidden-col", rightHidden);
   box.classList.toggle("empty", !h);
   $("#cs-split").classList.toggle("empty", !h);
   if (!h) {
@@ -357,11 +381,13 @@ export function renderDetail(ctx) {
   if (s.learning) bar.push(`<button data-act="reveal">AUFDECKEN</button>`);
   let blocks = s.mode === "table" ? tableDetail(cs, h) : cs.detailFor(h);
   const hidden = !cs.cs.Showcallgraph && !s.revealed;
+  let detailRow = 0;   // laufende Zeilennummer ueber alle Bloecke = Shift+F6-Cursor (cs.state.detailCursor)
   const blocksHtml = blocks.map((b) => {
     const closed = s.collapsedBlocks.has(b.title);
     const veiled = hidden && b.title === "AUFRUFE";
     const rows = closed ? "" : (veiled ? `<div class="kv act" data-act="reveal"><span class="k">VERDECKT</span><span class="v">Call-Graph verdeckt (Showcallgraph aus) – antippen zum Aufdecken</span></div>`
-      : b.rows.map(([k, v, act]) => `<div class="kv ${act ? "act" : ""}" ${act ? `data-detail="${esc(act)}"` : ""}><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`).join(""));
+      : b.rows.map(([k, v, act]) => { const index = detailRow++; return `<div class="kv ${act ? "act" : ""}${s.detailFocus && index === s.detailCursor ? " cur" : ""}" data-detail-row="${index}" ${act ? `data-detail="${esc(act)}"` : ""}><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`; }).join(""));
+    if (closed || veiled) detailRow += b.rows.length;   // verborgene Zeilen zaehlen mit, damit der Cursor zum Modell passt
     return `<div class="blk"><button class="blk-h" data-block="${esc(b.title)}">${esc(b.title)}<span class="tw">${closed ? "▸" : "▾"}</span></button>${rows}</div>`;
   }).join("");
   let code = "";
@@ -375,7 +401,7 @@ export function renderDetail(ctx) {
       <div class="code-resize" data-code-resize tabindex="0" role="separator" aria-label="Höhe des Codebereichs einstellen" aria-orientation="horizontal" aria-valuemin="100" aria-valuemax="900" aria-valuenow="${ctx.codeHeight || 300}">↕ Codebereich ziehen</div>
       <div class="code-viewport" data-scroll-key="code-${esc(dat)}-${s.codeFull?'full':'excerpt'}" tabindex="0" aria-label="${s.codeFull?'Vollständiger Code':'Codeausschnitt'}">${codeHtml(cs, dat, cv.line, s.codeFull?{from:1,to:dat==='BranchLab/experiment_script'?cs.lab.script.split('\n').length:cs.net.lines(dat).length}:{})}</div>`;
   }
-  const detailKey = `${s.mode}|${h.path}|${h.ctx}|${h.line}|${h.row}|${h.col}|${cv.path}|${cv.line}`;
+  const detailKey = `${s.mode}|${h.path}|${h.ctx}|${h.line}|${h.row}|${h.col}|${cv.path}|${cv.line}|${s.detailFocus ? s.detailCursor : "-"}`;
   updateHtml(box, `<div class="det-bar">${bar.join("")}</div>${blocksHtml}${code}`, ctx.detailKey !== detailKey);
   const slider=box.querySelector('[data-code-zoom]');if(slider){slider.value=String(Math.round((s.codeZoom || 1)*100));slider.nextElementSibling.textContent=slider.value+' %';}
   ctx.detailKey = detailKey;
@@ -411,6 +437,9 @@ export function renderStatus(ctx) {
   if (ctx.appliedLook !== cs.cs.Look) { applyLook(document.body, ui, cs.cs.Look); ctx.appliedLook = cs.cs.Look; }
   win.style.zoom = String(s.zoom);
   win.style.setProperty('--code-zoom',String(s.codeZoom || 1));
+  // Zonen-Zoom (1.10.3, Strg + Rad ueber Liste / Details): Faktor je Zone, 1 = wie der Gesamtzoom
+  win.style.setProperty('--zone-results',String(s.zoneZoom?.results || 1));
+  win.style.setProperty('--zone-detail',String(s.zoneZoom?.detail || 1));
   win.style.setProperty('--code-height',`${ctx.codeHeight || 300}px`);
 }
 
@@ -422,7 +451,6 @@ export function renderCS(ctx) {
   renderContext(ctx);
   renderField(ctx);
   renderFilters(ctx);
-  renderData(ctx);
   renderRecord(ctx);
   renderFlowControls(ctx);
   renderCrumb(ctx);

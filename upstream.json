@@ -1,9 +1,9 @@
 {
   "repo": "Tombkn/td-codesearch",
-  "commit": "517c5d22f6f6284f1abd0ff4e335385731acded1",
-  "version": "1.10.2",
-  "checked": "2026-11-02",
-  "lesson_count": 619,
+  "commit": "9f953e12bc1c1a1b9f264400feed0d6c4565a5e9",
+  "version": "1.10.3",
+  "checked": "2026-11-03",
+  "lesson_count": 640,
   "files": {
     "upstream_docs/SPEC-KIT-HANDOFF.md": {
       "path": "docs/SPEC-KIT-HANDOFF.md",
@@ -11,7 +11,7 @@
     },
     "upstream_docs/workplace-workflows.md": {
       "path": "docs/workplace-workflows.md",
-      "sha256": "cb3632eae50c19e897b31eeaffaf853732aaa54843f3f5a702743240f490f119"
+      "sha256": "f0b9140ca9984087b287a36ce5c7d36d1740e277f84d55bd961476e427ac9bbd"
     },
     "cs_search_sessions.py": {
       "path": "src/cs_search_sessions.py",
@@ -43,7 +43,7 @@
     },
     "CodeSearchExt.py": {
       "path": "src/CodeSearchExt.py",
-      "sha256": "7d38ea573f05d61f80338ceb22d4689a24c8205fa7fa99f0a3f00b27a3e50f50"
+      "sha256": "6013c9ad41919d22bcadb73112633a04a2f736b1ca55272428dbb1ed57e4e9e0"
     },
     "CodeModelExt.py": {
       "path": "src/CodeModelExt.py",
@@ -51,19 +51,19 @@
     },
     "CodeSearch.tdn": {
       "path": "src/tdn/CodeSearch.tdn",
-      "sha256": "d82cce159897832ba867b33e81b3a83741e8b25897b3b9b38b600701203f3dc4"
+      "sha256": "9ed93dd62a8e35413d490f569bc5c8d37a9b86952f3b12e6d95e8f854b10e717"
     },
     "CodeSearch_Tutorial.tdn": {
       "path": "src/tdn/CodeSearch_Tutorial.tdn",
-      "sha256": "99c751aab6bc7e87b6eaeb19abb97778770f4f410885545c99544fb69260a854"
+      "sha256": "8f238219bb32cd77da983b5b7a871b007ab852f48033083c201a70a59f65cba6"
     },
     "TourExt.py": {
       "path": "src/tutorial/TourExt.py",
-      "sha256": "3ca75105455a2464f3fa058c1190b32af9e6134b4817ad41e2434adc3676d3e3"
+      "sha256": "8ff9b38f57f677f7bb7936df60e42c4077ed2615e1ee7e06d2acab972e23ca8d"
     },
     "lessons.json": {
       "path": "src/tutorial/lessons.json",
-      "sha256": "20fc407813f9298dcb136cdb88a3d67e5dd642f0661633ce5c16d83f5e278a99"
+      "sha256": "42227341d3405aa561bfafc0a87dc4e733703f67ac67f160d15d3882b9556066"
     },
     "marker_catalogue.json": {
       "path": "src/tutorial/marker_catalogue.json",
@@ -91,7 +91,7 @@
     },
     "tutorial_adapter.py": {
       "path": "src/stateatlas/tutorial_adapter.py",
-      "sha256": "e2598a239379c58a7459908728c1b9d26626addb0990221a566c5a03d8273f36"
+      "sha256": "1a4e8ac6ce2758a57cfed2b0b7951f474809d202085f20fd4c8edfd97706ea9c"
     },
     "tutorial_fixture.py": {
       "path": "src/stateatlas/tutorial_fixture.py",
@@ -163,7 +163,7 @@
     },
     "upstream_docs/floating-copies.md": {
       "path": "docs/floating-copies.md",
-      "sha256": "5be626c2d6eda8e6eb76464b5c9973df6d98f1636bc70ed6eb251e577323d1a4"
+      "sha256": "15301e48a0d626bf5281810c0a9227582cf5c8a00f592d6a814422f740dda681"
     },
     "upstream_docs/flowlens-integration.md": {
       "path": "docs/flowlens-integration.md",

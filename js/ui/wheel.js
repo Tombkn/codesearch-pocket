@@ -21,7 +21,18 @@ export function shiftWheelHorizontal(ev, styleOf) {
   return true;
 }
 
-// Strg + Rad = Inhaltszoom wie Strg+Plus/Minus: Zweitfenster unter dem Zeiger, sonst das Hauptfenster.
+// Zone unter dem Zeiger im Hauptfenster (1.10.3, wie native ZONE_OF_BODY_PANEL): Code → CODE-Regler, Detail-Spalte →
+// 'detail', Trefferliste → 'results', Leisten → Gesamtzoom ('ui'). Zweitfenster haben ihren eigenen Zoom (null).
+export function wheelZone(target) {
+  if (!target?.closest) return "ui";
+  if (target.closest(".code-viewport")) return "code";
+  if (target.closest(".cs-detail")) return "detail";
+  if (target.closest(".cs-list")) return "results";
+  return "ui";
+}
+
+// Strg + Rad = Inhaltszoom wie Strg+Plus/Minus: Zweitfenster unter dem Zeiger, sonst die Zone des Hauptfensters.
+// zoom(floatId, step, zone): floatId gesetzt = Zweitfenster; sonst zone 'code' | 'detail' | 'results' | 'ui'.
 export function ctrlWheelZoom(ev, zoom) {
   if (!ev.ctrlKey || !zoom) return false;
   const delta = ev.deltaY || ev.deltaX;
@@ -30,7 +41,7 @@ export function ctrlWheelZoom(ev, zoom) {
   const main = ev.target.closest?.("#cs, .cs");
   if (!card && !main) return false;
   ev.preventDefault();          // sonst zoomt der Browser die ganze Seite
-  zoom(card ? card.dataset.float : null, delta < 0 ? 1 : -1);
+  zoom(card ? card.dataset.float : null, delta < 0 ? 1 : -1, card ? null : wheelZone(ev.target));
   return true;
 }
 

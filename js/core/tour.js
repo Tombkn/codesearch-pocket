@@ -127,14 +127,27 @@ export class Tour {
       this.lab.Reset(false);
     }
     for (const [key, value] of Object.entries(prep)) {
+      if (key === "cs.context") continue;   // Perspektive AUSWAHL / DIESE COMP ist Fensterzustand, kein Custom-Par (unten, nach showWorkplace)
       if (key.startsWith("cs.")) cs.cs[key.slice(3)] = value;
       else if (key.startsWith("lab.")) this.lab.blPars[key.slice(4)] = value;
     }
+    // 1.10.3 (TourExt.Prepare): 'zoom_reset' = alles 100 %; 'zone_zoom': {'results': 2} = Zone erst 100 %, dann zwei
+    // 10-%-Schritte (= 120 %). 'look' braucht keinen eigenen Key: 'cs.Look' setzt oben bereits cs.cs.Look.
+    if (prep.zoom_reset) cs.ZoomUi(0);
+    for (const [zone, step] of Object.entries(prep.zone_zoom || {})) {
+      cs.ZoomZone(zone, 0);
+      cs.ZoomZone(zone, Math.trunc(Number(step) || 0));
+    }
+    if (prep.zoom_reset || prep.zone_zoom) cs.state.status = "";   // der Zoom-Hinweis gehoert nicht zum Stationsstart
     if ("palette" in prep) this.lab.setPalette(prep.palette);
     if (prep.error === "clean") this.lab.restoreError();
     if (prep.snapshot_folder) cs.cs.Mapfolder = "CodeSearch_Tutorial/codemaps";
     if (!lesson.keep && this.step !== 0) this.showWorkplace(false);
+    // 1.10.3: prep 'cs.context' = gemerkte Perspektive (selection | comp) - erst nach showWorkplace, das AUSWAHL setzt
+    if ("cs.context" in prep) cs.state.context = prep["cs.context"] === "comp" ? "comp" : "selection";
     if (!lesson.keep) {
+      cs.state.detailFocus = false;   // Shift+F6-Fokus und offenes Zielfeld gehoeren zur vorigen Station
+      cs.state.targetEdit = false;
       cs.state.display = { format: prep["display.format"] || "name", base: abs("BranchLab"), details: false, prevFormat: prep["display.format"] || "name" };
     }
     if (lesson.target === "StateLab" && prep["investigation.prepare"]) this.lab.stateLab.Prepare();
@@ -301,6 +314,10 @@ export class Tour {
       "cs.float_count": s.floats.length,
       "cs.float_zoomed": s.floats.some((f) => f.zoom !== f.zoomStart),
       "cs.ui_scale": s.zoom,
+      // 1.10.3: Zonen-Zoom und Detail-Fokus - immer vorhanden, sonst 'nicht lesbar'
+      "cs.zone_results": s.zoneZoom?.results ?? 1,
+      "cs.zone_detail": s.zoneZoom?.detail ?? 1,
+      "cs.detail_focus": Boolean(s.detailFocus),
       'workspace.search_count': 1+s.searchWindows.filter(q=>q.open).length,
       'workspace.search_queries': s.searchWindows.filter(q=>q.open).map(q=>q.query).join('\n'),
       'workspace.code_full': Boolean(s.codeFull),
@@ -316,8 +333,8 @@ export class Tour {
       'workspace.scope_mode': cs.cs.Scope,
       'workspace.scope_depth': s.scopeDepth || 0,
       'workspace.network_follow': Boolean(s.networkFollow),
-      'workspace.left_hidden': false,
-      'workspace.right_hidden': false,
+      'workspace.left_hidden': Boolean(s.splitLayout?.leftHidden),
+      'workspace.right_hidden': Boolean(s.splitLayout?.rightHidden),
       'workspace.contents_comp': darin ? s.contents.path : '',
       'workspace.contents_family': darin ? s.contents.family : '',
       'workspace.module_target': s.moduleView ? s.moduleView.path : '',
