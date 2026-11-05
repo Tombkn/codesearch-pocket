@@ -1,0 +1,1095 @@
+{
+ "format": "codesearch.pocket.vectors",
+ "version": 1,
+ "contract": "docs/POCKET-PROJECTS-SPEC.md",
+ "canonicalization": "cspocket-c14n-1",
+ "schemaVersion": 1,
+ "schemaMinor": 0,
+ "pocketMaxBytes": 16777216,
+ "exporterMaxBytes": 33554432,
+ "packages": [
+  {
+   "file": "valid-minimal.json",
+   "ok": true,
+   "codes": [],
+   "category": null,
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Nur der Root-COMP."
+  },
+  {
+   "file": "valid-weichzeichner.json",
+   "ok": true,
+   "codes": [],
+   "category": null,
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Referenzexport Vertrag 17 (oeffentliches Tutorial)."
+  },
+  {
+   "file": "valid-source.json",
+   "ok": true,
+   "codes": [],
+   "category": null,
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Ein Text-DAT mit exaktem Text."
+  },
+  {
+   "file": "valid-hostile.json",
+   "ok": true,
+   "codes": [],
+   "category": null,
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "constructor/toString/hasOwnProperty/__proto__ als Namen, XSS-Texte als Daten, U+202E, Nullbreite, UTF-16-Sortierung (U+1F600 vor U+FF61), CRLF/CR/U+2028 im Code, helper, duplicateOf, Tabelle."
+  },
+  {
+   "file": "valid-unknown-field.json",
+   "ok": true,
+   "codes": [],
+   "category": null,
+   "ignored": [
+    "/futureField"
+   ],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Unbekanntes Feld gleicher Hauptversion: ignorieren und nennen (4.1)."
+  },
+  {
+   "file": "valid-integrity-extra.json",
+   "ok": true,
+   "codes": [],
+   "category": null,
+   "ignored": [
+    "/integrity/note"
+   ],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Unbekanntes Feld im integrity-Objekt: ignorieren und nennen (4.1)."
+  },
+  {
+   "file": "valid-depth-64.json",
+   "ok": true,
+   "codes": [],
+   "category": null,
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Operator in Tiefe 64: genau an der Grenze (Vertrag 9)."
+  },
+  {
+   "file": "valid-minimal.json",
+   "ok": false,
+   "codes": [
+    "size.bytes"
+   ],
+   "category": "limit",
+   "ignored": [],
+   "maxBytes": 100,
+   "expect": null,
+   "note": "Grenze vor dem Dekodieren (hier 100 Bytes)."
+  },
+  {
+   "file": "valid-minimal.json",
+   "ok": false,
+   "codes": [
+    "binding.project"
+   ],
+   "category": "binding",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": {
+    "projectId": "psp_ffffffffffffffffffffffffffffffff"
+   },
+   "note": "projectId ist nicht der angefragte."
+  },
+  {
+   "file": "valid-minimal.json",
+   "ok": false,
+   "codes": [
+    "binding.revision"
+   ],
+   "category": "binding",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": {
+    "revisionId": "rev_ffffffffffffffffffffffffffffffff"
+   },
+   "note": "revision.id ist nicht die angefragte."
+  },
+  {
+   "file": "invalid-bom.json",
+   "ok": false,
+   "codes": [
+    "encoding.bom"
+   ],
+   "category": "encoding",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "UTF-8-BOM vor dem JSON."
+  },
+  {
+   "file": "invalid-utf16.json",
+   "ok": false,
+   "codes": [
+    "encoding.utf8"
+   ],
+   "category": "encoding",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "UTF-16-Datei (mit FF FE)."
+  },
+  {
+   "file": "invalid-utf8.json",
+   "ok": false,
+   "codes": [
+    "encoding.utf8"
+   ],
+   "category": "encoding",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Ungueltiges UTF-8-Byte in einem String."
+  },
+  {
+   "file": "invalid-truncated.json",
+   "ok": false,
+   "codes": [
+    "json.syntax"
+   ],
+   "category": "json",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Abgeschnittenes Paket."
+  },
+  {
+   "file": "invalid-dup-same.json",
+   "ok": false,
+   "codes": [
+    "json.duplicate-key"
+   ],
+   "category": "json",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Doppelter Schluessel mit gleichem Wert."
+  },
+  {
+   "file": "invalid-dup-diff.json",
+   "ok": false,
+   "codes": [
+    "json.duplicate-key"
+   ],
+   "category": "json",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Doppelter Schluessel mit anderem Wert (JSON.parse behielte den letzten)."
+  },
+  {
+   "file": "invalid-float.json",
+   "ok": false,
+   "codes": [
+    "json.number"
+   ],
+   "category": "json",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Zahl 1.0."
+  },
+  {
+   "file": "invalid-exponent.json",
+   "ok": false,
+   "codes": [
+    "json.number"
+   ],
+   "category": "json",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Zahl 1e2."
+  },
+  {
+   "file": "invalid-minus-zero.json",
+   "ok": false,
+   "codes": [
+    "json.number"
+   ],
+   "category": "json",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Zahl -0."
+  },
+  {
+   "file": "invalid-nan.json",
+   "ok": false,
+   "codes": [
+    "json.constant"
+   ],
+   "category": "json",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "NaN."
+  },
+  {
+   "file": "invalid-int-range.json",
+   "ok": false,
+   "codes": [
+    "json.int-range"
+   ],
+   "category": "json",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Ganzzahl 2^53."
+  },
+  {
+   "file": "invalid-surrogate-value.json",
+   "ok": false,
+   "codes": [
+    "json.surrogate"
+   ],
+   "category": "json",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Einzelnes Surrogat in einem Wert."
+  },
+  {
+   "file": "invalid-surrogate-key.json",
+   "ok": false,
+   "codes": [
+    "json.surrogate"
+   ],
+   "category": "json",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Einzelnes Surrogat in einem Schluessel."
+  },
+  {
+   "file": "invalid-proto.json",
+   "ok": false,
+   "codes": [
+    "json.proto"
+   ],
+   "category": "json",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Schluessel __proto__."
+  },
+  {
+   "file": "invalid-depth.json",
+   "ok": false,
+   "codes": [
+    "json.depth"
+   ],
+   "category": "json",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Verschachtelung 42 > 32."
+  },
+  {
+   "file": "invalid-whitespace.json",
+   "ok": false,
+   "codes": [
+    "c14n.mismatch"
+   ],
+   "category": "canonical",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Gueltiges JSON, aber nicht kanonisch (Leerraum)."
+  },
+  {
+   "file": "invalid-escape.json",
+   "ok": false,
+   "codes": [
+    "c14n.mismatch"
+   ],
+   "category": "canonical",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Unicode-Escape eines Nicht-Steuerzeichens."
+  },
+  {
+   "file": "invalid-corrupted.json",
+   "ok": false,
+   "codes": [
+    "integrity.mismatch"
+   ],
+   "category": "integrity",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Ein Zeichen veraendert, integrity alt."
+  },
+  {
+   "file": "invalid-algorithm.json",
+   "ok": false,
+   "codes": [
+    "integrity.algorithm"
+   ],
+   "category": "integrity",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "integrity.algorithm nicht sha256."
+  },
+  {
+   "file": "invalid-integrity-missing.json",
+   "ok": false,
+   "codes": [
+    "integrity.missing"
+   ],
+   "category": "integrity",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "integrity fehlt (sonst kanonisch)."
+  },
+  {
+   "file": "invalid-version-newer.json",
+   "ok": false,
+   "codes": [
+    "schema.version-newer"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Neuere Hauptversion: App aktualisieren."
+  },
+  {
+   "file": "invalid-version-older.json",
+   "ok": false,
+   "codes": [
+    "schema.version-older"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Aeltere Hauptversion: Paket zu alt."
+  },
+  {
+   "file": "invalid-format.json",
+   "ok": false,
+   "codes": [
+    "schema.format"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Falsches format."
+  },
+  {
+   "file": "invalid-enum.json",
+   "ok": false,
+   "codes": [
+    "schema.enum"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "family ausserhalb der Aufzaehlung."
+  },
+  {
+   "file": "invalid-project-name.json",
+   "ok": false,
+   "codes": [
+    "limit.length"
+   ],
+   "category": "limit",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "projectName laenger als 120 Zeichen."
+  },
+  {
+   "file": "invalid-explicit-scopes.json",
+   "ok": false,
+   "codes": [
+    "schema.value"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "explicitScopes muss in v1 leer sein."
+  },
+  {
+   "file": "invalid-root.json",
+   "ok": false,
+   "codes": [
+    "consistency.root"
+   ],
+   "category": "consistency",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Root mit parent statt null."
+  },
+  {
+   "file": "invalid-op-depth.json",
+   "ok": false,
+   "codes": [
+    "limit.depth"
+   ],
+   "category": "limit",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Operator in Tiefe 65 > 64 (Vertrag 9); sonst konsistent."
+  },
+  {
+   "file": "invalid-name-slash.json",
+   "ok": false,
+   "codes": [
+    "schema.pattern"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Op-Name mit '/' (rel waere mehrdeutig); parent, rel und path passen."
+  },
+  {
+   "file": "invalid-sort.json",
+   "ok": false,
+   "codes": [
+    "consistency.sort"
+   ],
+   "category": "consistency",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "operators nicht nach (Tiefe, rel) sortiert."
+  },
+  {
+   "file": "invalid-dangling-parameter.json",
+   "ok": false,
+   "codes": [
+    "consistency.reference"
+   ],
+   "category": "consistency",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Parameter an einem nicht exportierten Op."
+  },
+  {
+   "file": "invalid-mode.json",
+   "ok": false,
+   "codes": [
+    "consistency.mode"
+   ],
+   "category": "consistency",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "storedConstant bei mode constant."
+  },
+  {
+   "file": "invalid-counts.json",
+   "ok": false,
+   "codes": [
+    "consistency.counts"
+   ],
+   "category": "consistency",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "report.counts passt nicht."
+  },
+  {
+   "file": "valid-warning-own-text.json",
+   "ok": true,
+   "codes": [],
+   "category": null,
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Warnung mit eigenem Meldungstext: gueltig, Pocket zeigt ihn nie (Vertrag 4.15, 16)."
+  },
+  {
+   "file": "invalid-warning-severity.json",
+   "ok": false,
+   "codes": [
+    "consistency.warning"
+   ],
+   "category": "consistency",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Schwere passt nicht zum Warnungscode (capture.retried ist info)."
+  },
+  {
+   "file": "invalid-secret-sha.json",
+   "ok": false,
+   "codes": [
+    "consistency.status"
+   ],
+   "category": "consistency",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "omitted-secret behaelt sha256."
+  },
+  {
+   "file": "invalid-text-sha.json",
+   "ok": false,
+   "codes": [
+    "consistency.sha256"
+   ],
+   "category": "consistency",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Text veraendert, sha256 alt."
+  },
+  {
+   "file": "invalid-duplicate-of.json",
+   "ok": false,
+   "codes": [
+    "consistency.duplicate-of"
+   ],
+   "category": "consistency",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "duplicateOf ohne erste gleiche Quelle."
+  },
+  {
+   "file": "invalid-content-hash.json",
+   "ok": false,
+   "codes": [
+    "hash.content"
+   ],
+   "category": "integrity",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Inhalt veraendert, integrity neu, contentHash alt."
+  },
+  {
+   "file": "invalid-analysis-hash.json",
+   "ok": false,
+   "codes": [
+    "hash.analysis"
+   ],
+   "category": "integrity",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "analysisHash passt nicht."
+  },
+  {
+   "file": "invalid-revision-id.json",
+   "ok": false,
+   "codes": [
+    "hash.revision"
+   ],
+   "category": "integrity",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "revision.id passt nicht zu projectId und contentHash."
+  },
+  {
+   "file": "valid-code-refs.json",
+   "ok": true,
+   "codes": [],
+   "category": null,
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Code-Verweise (4.12): fester Name, parent-Shortcut ueber dem Root als {external}, dynamisches Ziel mit name \"\" plus dynamic/reason."
+  },
+  {
+   "file": "valid-color-null.json",
+   "ok": true,
+   "codes": [],
+   "category": null,
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "operators.color null (nicht lesbar, 4.7)."
+  },
+  {
+   "file": "invalid-code-null.json",
+   "ok": false,
+   "codes": [
+    "schema.type"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "code-* ohne code-Objekt (4.12: Pflicht, auch bei dynamischem Ziel)."
+  },
+  {
+   "file": "invalid-dynamic-name.json",
+   "ok": false,
+   "codes": [
+    "schema.value"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "dynamic:true mit festem Namen (4.12: dann name \"\")."
+  },
+  {
+   "file": "invalid-dynamic-target.json",
+   "ok": false,
+   "codes": [
+    "schema.value"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "dynamic:true mit aufgeloestem Ziel (4.12: dynamisch heisst unresolved dynamic)."
+  },
+  {
+   "file": "invalid-color-partial.json",
+   "ok": false,
+   "codes": [
+    "schema.type"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "color mit Luecke statt null (4.7)."
+  },
+  {
+   "file": "valid-warning-newer-minor.json",
+   "ok": true,
+   "codes": [],
+   "category": null,
+   "ignored": [
+    "/warnings/0/code"
+   ],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Warncode einer neueren Minor-Version: nennen statt ablehnen (4.1, 4.15)."
+  },
+  {
+   "file": "invalid-warning-code.json",
+   "ok": false,
+   "codes": [
+    "schema.enum"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Warncode ausserhalb der Liste v1.0 bei schemaMinor 0."
+  },
+  {
+   "file": "invalid-key-ascii.json",
+   "ok": false,
+   "codes": [
+    "schema.keys"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Unbekannter Schluessel, der kein ASCII-Feldname ist (Vertrag 4)."
+  },
+  {
+   "file": "invalid-key-integrity.json",
+   "ok": false,
+   "codes": [
+    "schema.keys"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Nicht-ASCII-Schluessel im integrity-Objekt: keine Ausnahme von Vertrag 16."
+  },
+  {
+   "file": "invalid-annotation-name.json",
+   "ok": false,
+   "codes": [
+    "schema.pattern"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Annotationsname mit '/' (rel waere mehrdeutig)."
+  },
+  {
+   "file": "invalid-annotate-operator.json",
+   "ok": false,
+   "codes": [
+    "schema.value"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Operator vom opType annotateCOMP (4.7: Annotationen und ihr Innenleben sind nie Operatoren)."
+  },
+  {
+   "file": "invalid-children-non-comp.json",
+   "ok": false,
+   "codes": [
+    "schema.value"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "children an einem TOP (4.7: nur an COMPs)."
+  },
+  {
+   "file": "invalid-connectors-non-comp.json",
+   "ok": false,
+   "codes": [
+    "schema.value"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "connectors an einem TOP (4.7: nur an COMPs)."
+  },
+  {
+   "file": "invalid-extensions-non-comp.json",
+   "ok": false,
+   "codes": [
+    "schema.value"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "extensions an einem TOP (4.7: nur an COMPs)."
+  },
+  {
+   "file": "invalid-internal-shortcuts-non-comp.json",
+   "ok": false,
+   "codes": [
+    "schema.value"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "internalShortcuts an einem TOP (4.7: nur an COMPs)."
+  },
+  {
+   "file": "invalid-allow-cooking-non-comp.json",
+   "ok": false,
+   "codes": [
+    "schema.value"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "flags.allowCooking an einem TOP (4.7: nur an COMPs)."
+  },
+  {
+   "file": "invalid-helper-outside.json",
+   "ok": false,
+   "codes": [
+    "schema.value"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "role helper ausserhalb eines COMP mit Tag ExtUtils (4.7)."
+  },
+  {
+   "file": "invalid-helper-comp-missing.json",
+   "ok": false,
+   "codes": [
+    "schema.value"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "COMP mit Tag ExtUtils ohne role helper (4.7: genau dieser COMP und sein Inneres)."
+  },
+  {
+   "file": "invalid-helper-inner-missing.json",
+   "ok": false,
+   "codes": [
+    "schema.value"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Op im Inneren des ExtUtils-COMP ohne role helper (4.7)."
+  },
+  {
+   "file": "invalid-wire-both-external.json",
+   "ok": false,
+   "codes": [
+    "schema.value"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Leitung mit zwei externen Enden (4.9: mindestens ein Ende liegt im Teilbaum)."
+  },
+  {
+   "file": "invalid-external-relative.json",
+   "ok": false,
+   "codes": [
+    "schema.pattern"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Externes Leitungsende als relativer Pfad (4.9: absolute TD-Pfade)."
+  },
+  {
+   "file": "invalid-dependency-relative.json",
+   "ok": false,
+   "codes": [
+    "schema.pattern"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "externalDependencies.path relativ (4.13: absolute TD-Pfade); Sortierung bleibt erhalten."
+  },
+  {
+   "file": "invalid-double-error.json",
+   "ok": false,
+   "codes": [
+    "schema.type",
+    "limit.length"
+   ],
+   "category": "schema",
+   "ignored": [],
+   "maxBytes": null,
+   "expect": null,
+   "note": "Doppelfehler an parameters[0]: custom \"yes\" UND style mit 1025 Zeichen. Pruefreihenfolge label, page, custom, style, tuplet: erster Fehler /parameters/0/custom (Kategorie schema, nicht limit)."
+  }
+ ],
+ "c14n": "c14n-cases.json",
+ "sorting": "sort-cases.json",
+ "codes": {
+  "input.type": "Eingabe ist keine Byte-Folge bzw. kein Objekt.",
+  "size.bytes": "Paket gr\u00f6\u00dfer als die Grenze; vor dem Dekodieren abgelehnt.",
+  "encoding.bom": "Paket beginnt mit einer UTF-8-BOM.",
+  "encoding.utf8": "Paket ist kein g\u00fcltiges UTF-8.",
+  "json.syntax": "Kein g\u00fcltiges JSON.",
+  "json.duplicate-key": "Doppelter Schl\u00fcssel in einem Objekt.",
+  "json.number": "Zahl ist keine kanonische Ganzzahl (1.0, 1e2, -0).",
+  "json.int-range": "Ganzzahl au\u00dferhalb von +-(2^53-1).",
+  "json.constant": "NaN oder Infinity.",
+  "json.depth": "Verschachtelung tiefer als 32.",
+  "json.surrogate": "Einzelnes Surrogat in Wert oder Schl\u00fcssel.",
+  "json.proto": "Schl\u00fcssel __proto__.",
+  "json.type": "Wert ist kein JSON-Typ.",
+  "c14n.mismatch": "Bytes sind nicht genau die kanonische Form.",
+  "integrity.missing": "integrity fehlt oder hat keine Form.",
+  "integrity.mismatch": "integrity.value passt nicht zum Inhalt.",
+  "integrity.algorithm": "algorithm/canonicalization sind nicht sha256/cspocket-c14n-1.",
+  "schema.format": "format ist nicht codesearch.pocket.snapshot.",
+  "schema.version-newer": "Neuere Hauptversion: App aktualisieren.",
+  "schema.version-older": "\u00c4ltere Hauptversion: Paket zu alt.",
+  "schema.missing": "Pflichtfeld fehlt.",
+  "schema.type": "Falscher Typ.",
+  "schema.enum": "Wert nicht in der Aufz\u00e4hlung.",
+  "schema.pattern": "Wert passt nicht zum Muster.",
+  "schema.value": "Wert verletzt eine Feldregel.",
+  "schema.keys": "Schl\u00fcssel ist kein ASCII-Feldname (Vertrag 4).",
+  "limit.count": "Zu viele Eintr\u00e4ge (Vertrag 9).",
+  "limit.length": "Zeichenkette zu lang (Vertrag 9).",
+  "limit.total": "Gesamttext zu lang (Vertrag 9).",
+  "limit.depth": "Operator tiefer als 64 Ebenen (Vertrag 9).",
+  "consistency.root": "Root nicht genau einmal oder passt nicht zu exportRoot.",
+  "consistency.parent": "parent fehlt oder ist kein COMP.",
+  "consistency.rel": "rel ist nicht parent/name.",
+  "consistency.path": "path ist nicht abs(rel).",
+  "consistency.duplicate": "Schl\u00fcssel doppelt.",
+  "consistency.key": "codeSources.key ist nicht op.",
+  "consistency.reference": "Verweis auf einen nicht exportierten Operator oder eine fehlende Quelle.",
+  "consistency.sort": "Sortierung nach 4.17 verletzt.",
+  "consistency.status": "text/table/sha256 passen nicht zum status.",
+  "consistency.sha256": "sha256 passt nicht zum Text bzw. zur Tabelle.",
+  "consistency.chars": "chars/lines passen nicht zum Text.",
+  "consistency.duplicate-of": "duplicateOf passt nicht zur ersten Quelle mit gleichem sha256.",
+  "consistency.counts": "report.counts passen nicht zum Paket.",
+  "consistency.warning": "Schwere passt nicht zum Warnungscode (4.15).",
+  "consistency.mode": "value/storedConstant passen nicht zum mode.",
+  "hash.content": "contentHash passt nicht zum Inhalt.",
+  "hash.analysis": "analysisHash passt nicht zu analysis.code.",
+  "hash.revision": "revision.id passt nicht zu projectId und contentHash.",
+  "binding.project": "projectId ist nicht der angefragte.",
+  "binding.revision": "revision.id ist nicht die angefragte."
+ },
+ "categories": {
+  "input.type": "encoding",
+  "size.bytes": "limit",
+  "encoding.bom": "encoding",
+  "encoding.utf8": "encoding",
+  "json.syntax": "json",
+  "json.duplicate-key": "json",
+  "json.number": "json",
+  "json.int-range": "json",
+  "json.constant": "json",
+  "json.depth": "json",
+  "json.surrogate": "json",
+  "json.proto": "json",
+  "json.type": "json",
+  "c14n.mismatch": "canonical",
+  "integrity.missing": "integrity",
+  "integrity.mismatch": "integrity",
+  "integrity.algorithm": "integrity",
+  "schema.format": "schema",
+  "schema.version-newer": "schema",
+  "schema.version-older": "schema",
+  "schema.missing": "schema",
+  "schema.type": "schema",
+  "schema.enum": "schema",
+  "schema.pattern": "schema",
+  "schema.value": "schema",
+  "schema.keys": "schema",
+  "limit.count": "limit",
+  "limit.length": "limit",
+  "limit.total": "limit",
+  "limit.depth": "limit",
+  "consistency.root": "consistency",
+  "consistency.parent": "consistency",
+  "consistency.rel": "consistency",
+  "consistency.path": "consistency",
+  "consistency.duplicate": "consistency",
+  "consistency.key": "consistency",
+  "consistency.reference": "consistency",
+  "consistency.sort": "consistency",
+  "consistency.status": "consistency",
+  "consistency.sha256": "consistency",
+  "consistency.chars": "consistency",
+  "consistency.duplicate-of": "consistency",
+  "consistency.counts": "consistency",
+  "consistency.warning": "consistency",
+  "consistency.mode": "consistency",
+  "hash.content": "integrity",
+  "hash.analysis": "integrity",
+  "hash.revision": "integrity",
+  "binding.project": "binding",
+  "binding.revision": "binding"
+ },
+ "categoryNames": [
+  "encoding",
+  "json",
+  "canonical",
+  "integrity",
+  "schema",
+  "limit",
+  "consistency",
+  "binding"
+ ],
+ "warnings": {
+  "capture.changed": [
+   "warning",
+   "Das Netz hat sich w\u00e4hrend der Erfassung ver\u00e4ndert; Senden nur nach ausdr\u00fccklicher Best\u00e4tigung."
+  ],
+  "capture.retried": [
+   "info",
+   "Die Erfassung wurde wiederholt, bis zwei Durchl\u00e4ufe \u00fcbereinstimmten."
+  ],
+  "capture.long-frames": [
+   "info",
+   "Einzelne unteilbare Lesezugriffe dauerten l\u00e4nger als eine Zeitscheibe."
+  ],
+  "root.slash": [
+   "warning",
+   "Export ab / gew\u00e4hlt: der ganze Projektbaum ist im Umfang."
+  ],
+  "package.large": [
+   "warning",
+   "Das Paket ist gr\u00f6\u00dfer als 8 MiB."
+  ],
+  "package.pocket-limit": [
+   "warning",
+   "Das Paket ist gr\u00f6\u00dfer als 16 MiB; Pocket v1 lehnt es ab."
+  ],
+  "operator.name-length": [
+   "warning",
+   "Operator ausgelassen: Name oder Pfad l\u00e4nger als 1.024 Zeichen."
+  ],
+  "operator.depth": [
+   "warning",
+   "Operator ausgelassen: tiefer als 64 Ebenen."
+  ],
+  "operator.secret-name": [
+   "warning",
+   "Operator ausgelassen: sein Name trifft eine Geheimnis-Regel."
+  ],
+  "annotation.omitted": [
+   "warning",
+   "Annotation ausgelassen: Name zu lang oder trifft eine Geheimnis-Regel."
+  ],
+  "value.size": [
+   "warning",
+   "Wert, Expression oder Text l\u00e4nger als 65.536 Zeichen; nicht \u00fcbertragen."
+  ],
+  "source.size": [
+   "warning",
+   "Code-Quelle l\u00e4nger als 4.194.304 Zeichen; nicht \u00fcbertragen."
+  ],
+  "source.truncated": [
+   "warning",
+   "Tabelle gek\u00fcrzt: mehr als 100.000 Zellen oder Zelle l\u00e4nger als 65.536 Zeichen."
+  ],
+  "source.invalid-unicode": [
+   "warning",
+   "Code-Quelle enth\u00e4lt ung\u00fcltige Unicode-Zeichen; nicht \u00fcbertragen."
+  ],
+  "secret.source": [
+   "warning",
+   "Code-Quelle wegen eines Geheimnis-Funds nicht \u00fcbertragen."
+  ],
+  "secret.value": [
+   "warning",
+   "Wert oder Text wegen eines Geheimnis-Funds nicht \u00fcbertragen."
+  ],
+  "analysis.skipped-size": [
+   "info",
+   "Analyse \u00fcbersprungen: Quelle \u00fcber 1.000.000 Zeichen oder 200.000 Syntaxknoten."
+  ],
+  "analysis.schema": [
+   "warning",
+   "Analyse-Eintrag verletzt das Schema und wurde verworfen."
+  ],
+  "analysis.parse": [
+   "info",
+   "Quelle ist kein lesbares Python; Analyse nur zeilenweise."
+  ]
+ }
+}

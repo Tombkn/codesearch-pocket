@@ -14,6 +14,15 @@ import { bindSpec } from './ui/spec.js';
 import {syncFloatFocus, trapFloatTab} from './ui/float-focus.js';
 import { bindShiftWheel, sideButtonStep } from './ui/wheel.js';
 import {hostQuery} from './ui/cs-host.js';
+import { SPEC_STORAGE_KEY } from "./core/spec-workbench.js";
+import { createProjectsShell } from "./ui/projects.js";
+
+// Fortschritt sichern/laden nur mit diesen Kurs-Schluesseln (Vertrag POCKET-PROJECTS-SPEC 13). Projekte, Notizen und
+// das Token liegen in IndexedDB und kommen so nie in die Datei; ein fremder "codesearch-pocket*"-Schluessel derselben
+// Origin (Vertrag 15) wird weder gesichert noch beim Laden geschrieben. cs_split_layout gehoerte nie dazu.
+const PROGRESS_KEYS = Object.freeze(["codesearch-pocket-v2", "codesearch-pocket-v1", "codesearch-pocket-intro",
+  "codesearch-pocket-reader-size", SPEC_STORAGE_KEY]);
+const PROGRESS_KEY_SET = new Set(PROGRESS_KEYS);
 
 const KEYS_ALL = ["Enter", "Esc", "Ctrl+C", "Ctrl+Enter", "Ctrl+I", "Ctrl+Shift+I", "Ctrl+P", "Ctrl+F", "Alt+P", "Alt+F", "Ctrl+R", "F6", "Alt+D",
   "Ctrl+G", "Left", "Right", "Up", "Down", "Ctrl+Right", "Ctrl+Left", "Alt+Left", "Alt+Right", "Ctrl+Alt+Left", "Ctrl+Alt+Right",
@@ -35,7 +44,7 @@ async function main() {
   const ctx = {
     app, cs, tour, g, ui, features, course,
     td: { open: false, tab: "net", sheet: "BranchLab", zoom: 1, hidden: true, opPath: null },
-    layers: { course: false, atlas: false, atlasTab: "cheat", doc: null, offline: false },
+    layers: { course: false, atlas: false, atlasTab: "cheat", doc: null, offline: false, projects: false },
     offline, storage,
     popup: { tooltip: null, compare: false },
     lastCheck: null, keysOpen: false, tourOpen: true, fieldFocused: false,
@@ -79,6 +88,8 @@ async function main() {
   };
   ctx.render = render;
   cs.onChange(render);
+  // Eigene Projekte: eigene Ebene auf dem Projektmodell. Die Kurs-Engine (cs, tour, g, Lab) bekommt die Ebene nie.
+  ctx.projects = createProjectsShell({ host: ctx, layer: $("#layer-projects"), nav: projectsNavigation(ctx) });
   // Einmalig: wie das Handy CodeSearch und TouchDesigner nachbildet
   let introSeen = false;
   try { introSeen = storage && storage.getItem("codesearch-pocket-intro") === "1"; } catch { introSeen = false; }
@@ -95,6 +106,7 @@ async function main() {
   renderAll(ctx);
   wire(ctx);
   startOffline(ctx);
+  startProjects(ctx);
   setInterval(() => {
     if (tour.playing) { cs.lab.step(6); if (cs.state.mode === "record" && cs.state.record.recording) render(); }
   }, 100);
@@ -155,6 +167,7 @@ function renderAll(ctx) {
   $("#quick").inert = ctx.tourOpen;
   $("#floats").inert = ctx.tourOpen;
   syncFloatFocus(ctx);
+  renderProjectsLayer(ctx);
   $("#tour-grip").textContent = ctx.tourOpen ? "Zur Übung →" : "↑ Lektion lesen";
   $("#tour-grip").setAttribute("aria-expanded", String(ctx.tourOpen));
   $("#keys").classList.toggle("show", ctx.keysOpen);
@@ -163,6 +176,78 @@ function renderAll(ctx) {
   // Erst das fertige Layout restaurieren: Chromium begrenzt scrollTop sonst
   // noch gegen die Höhe der eingeklappten Lernkarte.
   if (ctx.tourOpen && !wasReading) $("#tour-body").scrollTop = ctx.readerScroll;
+}
+
+// Nach syncFloatFocus: die Projekt-Ebene ist modal (aria-modal), darum alles dahinter inert - auch Schnellsuche und
+// Lesekopien, die sonst ueber jeder Ebene liegen (z 35/40). Geschlossen setzen die Kurs-Regeln oben die Werte wieder.
+function renderProjectsLayer(ctx) {
+  const open = ctx.layers.projects === true;
+  const btn = $("#btn-projects");
+  btn.classList.toggle("on", open);
+  btn.setAttribute("aria-expanded", String(open));
+  $("#app").classList.toggle("pp-open", open);
+  if (open) {
+    $("#app").inert = true;
+    $("#quick").inert = true;
+    $("#floats").inert = true;
+  }
+  ctx.projects.renderFromHost();
+}
+
+// Zurueck fuer Ebene, Projekt, Tab und Blatt ueber history (Android-Zurueck, Wischen, Maustasten). Jeder Eintrag
+// kennt seine Tiefe ueber dem Ausgangseintrag: Schliessen springt genau zurueck dorthin, statt die App zu verlassen.
+// Die Kurs-Ebenen nutzen den Verlauf weiter nicht. window.history statt history: die Node-Tests setzen nur window.
+function projectsNavigation(ctx) {
+  const depth = () => {
+    const entry = window.history.state && window.history.state.cspp;
+    return entry && Number.isSafeInteger(entry.depth) && entry.depth > 0 ? entry.depth : 0;
+  };
+  return {
+    push(entry) {
+      try {
+        window.history.pushState({ cspp: { ...entry, depth: depth() + 1 } }, "");
+      } catch (error) {
+        // Safari begrenzt pushState (SecurityError ab 100 Aufrufen in 30 s): dann ohne Verlauf weiter.
+        if (!(error instanceof DOMException)) throw error;
+      }
+    },
+    back() {
+      if (depth() > 0) window.history.back();
+      else ctx.projects.apply(null);
+    },
+    up() {
+      const d = depth();
+      if (d > 1) window.history.go(1 - d);
+      else ctx.projects.apply({ page: "list" });
+    },
+    close() {
+      const d = depth();
+      if (d > 0) window.history.go(-d);
+      else ctx.projects.apply(null);
+    },
+  };
+}
+
+// Projekte: gemerkten Zustand nach einem Neuladen wiederherstellen und den Abgleich ausloesen - nur im Vordergrund
+// (Vertrag 13): Start, Rueckkehr in den Vordergrund, Netz wieder da, manuell (⟳ in der Ebene). Entprellt wird im
+// Abgleich selbst (js/projects/sync.js), dort gelten auch Single-Flight und die 3 Wiederholungen.
+function startProjects(ctx) {
+  const saved = window.history.state && window.history.state.cspp;
+  if (saved) ctx.projects.apply(saved);
+  ctx.projects.ready().then(() => ctx.projects.requestSync("start"), (error) => console.error(error));
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") ctx.projects.requestSync("visible");
+  });
+  window.addEventListener("online", () => {
+    ctx.projects.requestSync("online");
+    ctx.projects.render();
+  });
+  window.addEventListener("offline", () => ctx.projects.render());
+  window.addEventListener("popstate", (event) => {
+    const entry = event.state && event.state.cspp ? event.state.cspp : null;
+    if (entry === null && !ctx.projects.isOpen) return;
+    ctx.projects.apply(entry);
+  });
 }
 
 function scrollSelectedIntoView(ctx) {
@@ -239,6 +324,7 @@ function wire(ctx) {
   $("#btn-td").addEventListener("click", act(() => { ctx.td.open = !ctx.td.open; }));
   $("#btn-keys").addEventListener("click", act(() => { ctx.keysOpen = !ctx.keysOpen; if (ctx.keysOpen) ctx.tourOpen = false; }));
   $("#btn-course").addEventListener("click", act(() => { ctx.layers.course = true; }));
+  $("#btn-projects").addEventListener("click", act(() => ctx.projects.openLayer()));
   $("#btn-atlas").addEventListener("click", act(() => { ctx.layers.atlas = true; }));
   $("#btn-reopen").addEventListener("click", act(() => g.openCodeSearch()));
   $("#btn-offline").addEventListener("click", act(() => { ctx.layers.offline = true; checkStatus().then(render); }));
@@ -512,6 +598,14 @@ function wire(ctx) {
     return undefined;
   }));
 
+  // Esc schliesst die Projekt-Ebene auch dann, wenn der Fokus nicht in ihr liegt (die Ebene faengt Esc sonst selbst).
+  // Vor dem Kurs-Handler registriert: defaultPrevented haelt ihn heraus, er laesst offene Ebenen ohnehin in Ruhe.
+  document.addEventListener("keydown", (ev) => {
+    if (!ctx.layers.projects || ev.key !== "Escape" || ev.defaultPrevented) return;
+    ev.preventDefault();
+    ctx.projects.escape();
+  });
+
   // Hardware-Tastatur (Tablet / Desktop): dieselben Gesten
   document.addEventListener("keydown", act((ev) => {
     if (ev.defaultPrevented) return undefined;
@@ -736,14 +830,16 @@ function bindCSHost(ctx) {
   $("#cs-forward")?.addEventListener("click", act(() => cs.historyForward()));
   // Maus-Daumentasten (Desktop-Browser) = ◀ ▶: nur im Arbeitsplatz, nicht im Lesetext oder in der TD-Ansicht.
   // preventDefault haelt die Browser-Navigation auf, soweit der Browser es zulaesst (Chrome ignoriert es teils).
+  // Offene Ebene PROJEKTE: weder Kurs-Verlauf noch preventDefault - dort fuehrt das Browser-Zurueck (history) die
+  // Projekt-Navigation, und der Kurs hinter der modalen Ebene bleibt unveraendert (Befund oberflaeche-f5).
   const sideButton = act((ev) => {
     const step = sideButtonStep(ev);
-    if (!step || ctx.tourOpen || ctx.td.open) return undefined;
+    if (!step || ctx.tourOpen || ctx.td.open || ctx.layers.projects) return undefined;
     ev.preventDefault();
     return step < 0 ? cs.historyBack() : cs.historyForward();
   });
   document.addEventListener("mouseup", sideButton);
-  document.addEventListener("mousedown", (ev) => { if (sideButtonStep(ev)) ev.preventDefault(); });
+  document.addEventListener("mousedown", (ev) => { if (sideButtonStep(ev) && !ctx.layers.projects) ev.preventDefault(); });
 
   // Splitter zwischen Liste und Detail
   const split = $("#cs-split");
@@ -824,9 +920,9 @@ function exportProgress(ctx) {
   const { storage } = ctx;
   if (!storage) return toast("Dieser Browser erlaubt keinen Speicher.");
   const data = {};
-  for (let i = 0; i < storage.length; i += 1) {
-    const key = storage.key(i);
-    if (key && key.startsWith("codesearch-pocket")) data[key] = storage.getItem(key);
+  for (const key of PROGRESS_KEYS) {
+    const value = storage.getItem(key);
+    if (value !== null) data[key] = value;
   }
   const blob = new Blob([JSON.stringify({ app: "codesearch-pocket", saved: new Date().toISOString(), data }, null, 1)], { type: "application/json" });
   const a = document.createElement("a");
@@ -842,10 +938,12 @@ function exportProgress(ctx) {
 async function importProgress(ctx, file) {
   try {
     const parsed = JSON.parse(await file.text());
-    if (parsed.app !== "codesearch-pocket" || !parsed.data) throw new Error("keine Fortschritts-Datei von CodeSearch Pocket");
-    for (const [key, value] of Object.entries(parsed.data)) {
-      if (key.startsWith("codesearch-pocket")) ctx.storage.setItem(key, value);
-    }
+    const isData = parsed && typeof parsed.data === "object" && parsed.data !== null && !Array.isArray(parsed.data);
+    if (parsed.app !== "codesearch-pocket" || !isData) throw new Error("keine Fortschritts-Datei von CodeSearch Pocket");
+    // Nur die festen Kurs-Schluessel als Text: alles andere in der Datei bleibt draussen (Vertrag 13).
+    const entries = Object.entries(parsed.data).filter(([key, value]) => PROGRESS_KEY_SET.has(key) && typeof value === "string");
+    if (!entries.length) throw new Error("die Datei enthält keinen Kurs-Fortschritt");
+    for (const [key, value] of entries) ctx.storage.setItem(key, value);
     toast("Fortschritt geladen – Seite startet neu");
     setTimeout(() => location.reload(), 600);
   } catch (error) {

@@ -1,14 +1,14 @@
 {
- "version": "6604501e3c",
- "total": 4002420,
+ "version": "025cbe83a6",
+ "total": 4563031,
  "files": [
   {
    "path": "./",
-   "size": 4420
+   "size": 5651
   },
   {
    "path": "index.html",
-   "size": 4420
+   "size": 5651
   },
   {
    "path": "manifest.json",
@@ -36,11 +36,11 @@
   },
   {
    "path": "css/app.css",
-   "size": 66933
+   "size": 90906
   },
   {
    "path": "js/app.js",
-   "size": 50373
+   "size": 55462
   },
   {
    "path": "js/core/analysis-workbench.js",
@@ -151,6 +151,34 @@
    "size": 17151
   },
   {
+   "path": "js/projects/anchors.js",
+   "size": 10532
+  },
+  {
+   "path": "js/projects/c14n.js",
+   "size": 9585
+  },
+  {
+   "path": "js/projects/model.js",
+   "size": 37200
+  },
+  {
+   "path": "js/projects/schema.js",
+   "size": 68128
+  },
+  {
+   "path": "js/projects/store.js",
+   "size": 46809
+  },
+  {
+   "path": "js/projects/sync.js",
+   "size": 41647
+  },
+  {
+   "path": "js/projects/verify.js",
+   "size": 16783
+  },
+  {
    "path": "js/ui/analysis.js",
    "size": 8601
   },
@@ -160,11 +188,11 @@
   },
   {
    "path": "js/ui/cswin.js",
-   "size": 32781
+   "size": 33597
   },
   {
    "path": "js/ui/dom.js",
-   "size": 6662
+   "size": 7368
   },
   {
    "path": "js/ui/float-focus.js",
@@ -172,7 +200,7 @@
   },
   {
    "path": "js/ui/layers.js",
-   "size": 50753
+   "size": 50936
   },
   {
    "path": "js/ui/learningview.js",
@@ -185,6 +213,42 @@
   {
    "path": "js/ui/offline.js",
    "size": 4187
+  },
+  {
+   "path": "js/ui/project-code.js",
+   "size": 45432
+  },
+  {
+   "path": "js/ui/project-details.js",
+   "size": 40104
+  },
+  {
+   "path": "js/ui/project-dom.js",
+   "size": 7494
+  },
+  {
+   "path": "js/ui/project-highlight.js",
+   "size": 15612
+  },
+  {
+   "path": "js/ui/project-netmath.js",
+   "size": 15463
+  },
+  {
+   "path": "js/ui/project-network.js",
+   "size": 31515
+  },
+  {
+   "path": "js/ui/project-notes.js",
+   "size": 9122
+  },
+  {
+   "path": "js/ui/project-views.js",
+   "size": 1923
+  },
+  {
+   "path": "js/ui/projects.js",
+   "size": 128912
   },
   {
    "path": "js/ui/search-options.js",
@@ -224,7 +288,7 @@
   },
   {
    "path": "data/ui.json",
-   "size": 118255
+   "size": 118381
   },
   {
    "path": "data/features.json",
@@ -276,11 +340,11 @@
   },
   {
    "path": "offline.json",
-   "size": 4218
+   "size": 5213
   }
  ],
  "single": {
   "path": "CodeSearch-Pocket-offline.html",
-  "size": 4341057
+  "size": 4901712
  }
 }

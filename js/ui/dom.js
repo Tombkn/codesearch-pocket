@@ -28,8 +28,18 @@ export function updateHtml(element, html, reset = false) {
   return true;
 }
 
+// HTML-Maskierung fuer Text UND Attributwerte. Auch ' wird maskiert: sonst schliesst ein Wert ein einfach
+// quotiertes Attribut (title='…') und haengt einen Event-Handler an (Vertrag POCKET-PROJECTS-SPEC 14).
 export function esc(text) {
-  return String(text ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return String(text ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+// Op-Familie als Baustein eines Klassennamens (k-COMP, fam-TOP …). Ins class-Attribut kommt nur ein Wert aus der
+// Schema-Aufzaehlung (Vertrag 14); alles andere - auch ein praepariertes Datenfeld mit Anfuehrungszeichen oder
+// Leerzeichen - ergibt "", also gar keine Klasse statt einer fremden.
+const OP_FAMILIES = new Set(["COMP", "TOP", "CHOP", "SOP", "DAT", "MAT", "POP"]);
+export function familyToken(family) {
+  return OP_FAMILIES.has(family) ? family : "";
 }
 
 export function md(text) {

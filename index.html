@@ -2,6 +2,11 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self' blob:; connect-src 'self' https://api.github.com; object-src 'none'; base-uri 'none'">
+  <!-- CSP (POCKET-PROJECTS-SPEC Vertrag 14), aktiv nach Browser-Test Welle 3b (WebKit + Chromium): Abweichung vom
+       Vertragstext nur "worker-src 'self' blob:" statt "worker-src blob:" - sonst verbietet sie die Anmeldung von sw.js
+       (Offline faellt aus). Blob fuer den Regex-Worker. Steht direkt nach charset: eine Meta-CSP gilt erst ab ihrer Stelle.
+       Die Einzeldatei (build_single, file://) lebt von Inline-Skripten und nimmt diese Meta wieder heraus. -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="theme-color" content="#15161a">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,17 +17,18 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-180.png">
   <meta name="apple-mobile-web-app-title" content="CodeSearch">
-  <link rel="stylesheet" href="css/app.css?v=6604501e3c">
+  <link rel="stylesheet" href="css/app.css?v=025cbe83a6">
 </head>
 <body data-look="classic">
   <div id="app" class="app">
-    <!-- Kopf der Seite: TD-Seite, Kurs, Atlas -->
+    <!-- Kopf der Seite: TD-Seite, Kurs, eigene Projekte, Atlas -->
     <header class="topbar">
       <button class="tb" id="btn-td" title="TouchDesigner: Netz, Parameter, Timeline">TD</button>
       <span class="tb-title" id="tb-title">CodeSearch Pocket</span>
       <span class="tb-prog" id="tb-prog">0/0</span>
       <button class="tb" id="btn-keys" title="Tastenleiste">⌨</button>
       <button class="tb" id="btn-course" title="Kapitel">KURS</button>
+      <button class="tb" id="btn-projects" type="button" title="Eigene Projekte: statische Momentaufnahmen aus CodeSearch" aria-label="Projekte" aria-haspopup="dialog" aria-controls="layer-projects" aria-expanded="false">PROJEKTE</button>
       <button class="tb" id="btn-atlas" title="Nachschlagen">ATLAS</button>
       <button class="tb" id="btn-offline" title="Offline auf dem Handy speichern">⇩</button>
     </header>
@@ -76,11 +82,13 @@
   <div class="layer" id="layer-atlas"></div>
   <div class="layer" id="layer-flowlens"></div>
   <div class="layer" id="layer-offline"></div>
+  <!-- Eigene Projekte: Dialog-Ebene, Inhalt baut js/ui/projects.js nur aus DOM-Knoten (nie innerHTML) -->
+  <div class="layer" id="layer-projects" role="dialog" aria-modal="true" aria-label="Projekte" aria-hidden="true" tabindex="-1"></div>
   <div class="popup" id="popup"></div>
   <div class="quick" id="quick"></div>
   <div class="floats" id="floats"></div>
   <div class="toast" id="toast"></div>
 
-  <script type="module" src="js/app.js?v=6604501e3c"></script>
+  <script type="module" src="js/app.js?v=025cbe83a6"></script>
 </body>
 </html>

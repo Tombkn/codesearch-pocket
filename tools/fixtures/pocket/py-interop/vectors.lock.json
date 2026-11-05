@@ -1,0 +1,63 @@
+{
+ "format": "codesearch.pocket.vectors",
+ "version": 1,
+ "owner": "codesearch-pocket tools/fixtures/pocket/make_interop.py (echter Python-Exporter, synthetisch)",
+ "exporterSha256": "7c9836b354b6c7c6120e9323c0e95ccbc18f2a76dc4d00f10e7abe968fc88c93",
+ "files": [
+  {
+   "file": "extension.json",
+   "bytes": 3800,
+   "sha256": "d89578dd9f73a870d799855aba8b258e34c04f533803067ddab903fa265a29aa",
+   "expect": {
+    "valid": true,
+    "ignored": [],
+    "entryErrors": 0
+   },
+   "note": "COMP mit Extension: object/name/promote als {value} (promote bool)"
+  },
+  {
+   "file": "markers.json",
+   "bytes": 4831,
+   "sha256": "fbb7490c4984468171fdf025bd336b2f2a9f02d2a166d517c5fb7f997d89fa8a",
+   "expect": {
+    "valid": true,
+    "ignored": [],
+    "entryErrors": 0
+   },
+   "note": "Platzhalter: comment {omitted:\"secret\"}/{unknown:\"size\"}, Shortcut geheim/Expression, Ext-Objekt als Expression, Annotation title geheim, body zu lang"
+  },
+  {
+   "file": "table-truncated.json",
+   "bytes": 69303,
+   "sha256": "06febf5cc91bf3389352994921faf79ffc9398d7b279e96d34e45104638c56cb",
+   "expect": {
+    "valid": true,
+    "ignored": [],
+    "entryErrors": 0
+   },
+   "note": "Tabelle mit Zelle > 65 536 Zeichen: status truncated + truncation"
+  },
+  {
+   "file": "expr-size.json",
+   "bytes": 3693,
+   "sha256": "27fd1d4818a3d8a2d0b4453a33e15723541b2b059562f9d8cb685b8e0bc4352e",
+   "expect": {
+    "valid": true,
+    "ignored": [],
+    "entryErrors": 0
+   },
+   "note": "Expression und Wert > 65 536 Zeichen: expr null + omitted \"size\", value unknown/size"
+  },
+  {
+   "file": "real-analysis.json",
+   "bytes": 18628,
+   "sha256": "b24437b18f11749405abeb956db652b8c82b65ada6a66330075d9a14cb6b0069",
+   "expect": {
+    "valid": true,
+    "ignored": [],
+    "entryErrors": 0
+   },
+   "note": "Echte Analyse: self, op(), op.Global, parent(), op(<Ausdruck>), zwei __init__, StateAtlas"
+  }
+ ]
+}

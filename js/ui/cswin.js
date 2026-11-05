@@ -5,7 +5,7 @@ import { renderAnalysis } from "./analysis.js";
 import { renderSpec } from './spec.js';
 // Zeichnet das CodeSearch-Fenster aus dem Zustand von cs (js/core/cs.js). Keine Logik ausser Darstellung.
 
-import { $, esc, updateHtml } from "./dom.js";
+import { $, esc, familyToken, updateHtml } from "./dom.js";
 import { abs, rel, baseName, fmtNum } from "../core/util.js";
 import { DATA_LABELS, CONTEXT_MODES, TARGET_EDIT_MODES } from "../core/cs.js";
 import { applyLook } from "./looks.js";
@@ -21,11 +21,16 @@ export function artOf(ui, h) {
 }
 
 export function artClass(h) {
-  if (h.family && ["opfind", "chain", "wire"].includes(h.kind)) return `k-${h.family}`;
+  // Familie kommt aus den Daten: nur eine bekannte Familie wird Klasse. Eine unbekannte ergab schon frueher keine
+  // passende CSS-Regel - darum hier "" statt eines Rueckfalls auf k-wire o.ae., das Aussehen bleibt gleich.
+  if (h.family && ["opfind", "chain", "wire"].includes(h.kind)) {
+    const family = familyToken(h.family);
+    return family ? `k-${family}` : "";
+  }
   if (h.kind === "code") return h.hitkind === "KOMMENTAR" ? "k-comment" : "k-code";
   if (h.kind === "lint") return "k-warn";
   if (h.kind === "hot" || h.art === "STOPP" || h.art === "✗ STOPP" || h.kind === "error") return "k-stop";
-  if (h.cat) return `k-${h.cat === "par" ? "callback" : h.cat}`;
+  if (h.cat) return `k-${esc(h.cat === "par" ? "callback" : h.cat)}`;
   const map = { expr: "k-expr", export: "k-export", bind: "k-bind", wire: "k-wire", oppar: "k-oppar", watcher: "k-watcher", trigger: "k-hot", entry: h.entry_state === "HOT" ? "k-hot" : (h.entry_state === "AUS" ? "k-comment" : "k-ok") };
   return map[h.kind] || "";
 }
@@ -144,6 +149,15 @@ export function renderContext(ctx) {
   updateHtml(box, parts.join(""));
 }
 
+// Ein Knopf je Extension (eigene Funktion, damit der Test das Markup direkt pruefen kann). slot stammt aus den
+// Daten (ext[].slot) und ist dort nicht zwingend eine Zahl - darum wie jeder andere Wert escaped. String() statt
+// esc()-Default: ein fehlender slot bleibt "undefined" (Number() = NaN, kein Menue) und wird nie "" (= Slot 0).
+// app.js liest den Wert danach unveraendert ueber dataset.slot.
+export function extensionButtonHtml(comp, ext) {
+  return `<button class="extension-source" data-act="extension-menu" data-comp="${esc(comp)}" data-slot="${esc(String(ext.slot))}" aria-haspopup="dialog" title="${esc(ext.available ? `Code öffnen: ${abs(ext.path)}` : ext.reason)}">
+      <span class="ext-kind">EXTENSION</span> <strong>${esc(ext.name)}</strong><span>${ext.available ? "Code öffnen ▾" : "Quelle prüfen ▾"}</span></button>`;
+}
+
 export function renderField(ctx) {
   const $ = selector => hostQuery(ctx, selector);
   const { cs, ui } = ctx;
@@ -158,8 +172,7 @@ export function renderField(ctx) {
       <strong>${esc(owner?.name || comp)}</strong><span class="target-type">${esc(owner?.type || "")}</span>
       ${CODE_TABS.has(s.mode) && !cs.contextActive() && cs.cs.Analysistarget ? '<span class="target-pin">📌 gepinnt</span>' : ""}
       ${TARGET_EDIT_MODES.includes(s.mode) ? `<button class="chip target-edit" data-act="target-edit" title="Pfad tippen + Enter · Esc behält das Ziel">Ziel ändern…</button>` : ""}</div>
-    <div class="extension-list">${extensions.map((ext) => `<button class="extension-source" data-act="extension-menu" data-comp="${esc(comp)}" data-slot="${ext.slot}" aria-haspopup="dialog" title="${esc(ext.available ? `Code öffnen: ${abs(ext.path)}` : ext.reason)}">
-      <span class="ext-kind">EXTENSION</span> <strong>${esc(ext.name)}</strong><span>${ext.available ? "Code öffnen ▾" : "Quelle prüfen ▾"}</span></button>`).join("")}</div>
+    <div class="extension-list">${extensions.map((ext) => extensionButtonHtml(comp, ext)).join("")}</div>
     <span class="target-path">${esc(abs(comp))}</span>` : "");
   $("#cs-mode-label").textContent = s.view === "path" ? "READ ORDER" : ((ui.TAB_LABELS || {})[s.mode] || s.mode).toUpperCase();
   input.placeholder = s.mode === "table" ? "filtern … oder [zeile,spalte] + ⏎" : ((ui.MODE_HINTS || {})[s.mode] || "suchen …");

@@ -2,7 +2,7 @@ import {searchOptions,searchScopeOptions} from './search-options.js';
 import {MAX_SEARCH_WINDOWS} from '../core/search-sessions.js';
 // Ebenen ueber dem Fenster: TD-Seite (Netz, Parameter, Timeline), Kurs, Atlas, FlowLens, Popup, Schnellsuche, Lesekopien.
 
-import { $, esc, md, updateHtml } from "./dom.js";
+import { $, esc, familyToken, md, updateHtml } from "./dom.js";
 import { laptopOverview } from "./learningview.js";
 import { abs, rel, baseName, fmtNum } from "../core/util.js";
 import { artOf, artClass, pathText, codeHtml, snapshotCodeHtml, renderCS } from "./cswin.js";
@@ -540,8 +540,9 @@ function compareText(ctx) {
 }
 
 // ------------------------------------------------------------------ Schnellsuche (zweites Fenster)
-// Familie einer Suchfenster-Zeile: Op-Familie, Codezeilen gehoeren zu einem DAT
-function familyClass(cs,h){const fam=h.family || (h.kind==='code'?'DAT':(cs.net.op(rel(h.path || ''))?.family || ''));return fam?`fam-${fam}`:'';}
+// Familie einer Suchfenster-Zeile: Op-Familie, Codezeilen gehoeren zu einem DAT. Die Familie kommt aus den Daten und
+// geht nur als bekannte Familie ins class-Attribut (familyToken), sonst keine Klasse. Export nur fuer den Test.
+export function familyClass(cs,h){const fam=familyToken(h.family || (h.kind==='code'?'DAT':(cs.net.op(rel(h.path || ''))?.family || '')));return fam?`fam-${fam}`:'';}
 
 export function renderQuick(ctx) {
   const {cs,ui}=ctx,s=cs.state,box=$('#quick'),windows=s.searchWindows.filter(q=>q.open);

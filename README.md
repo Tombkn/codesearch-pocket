@@ -1,8 +1,10 @@
 # CodeSearch Pocket
 
-Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **666 Schritte in 54 Kapiteln**, ein bedienbares Übungsnetz und **Laptop-Anleitungen für alle Kapitel**. Quellenstand: **CodeSearch 1.10.4, Commit [15e8356](https://github.com/Tombkn/td-codesearch/tree/15e8356835380d4518159058740cb02daf25612c)**, abgeglichen am 05.11.2026.
+Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **666 Schritte in 54 Kapiteln**, ein bedienbares Übungsnetz und **Laptop-Anleitungen für alle Kapitel**. Quellenstand: **CodeSearch 1.11.0, Commit [34dd122](https://github.com/Tombkn/td-codesearch/tree/34dd1225a8b9d9213a31c830cabef369c567f064)**, abgeglichen am 05.11.2026.
 
 [Veröffentlichte Handyseite](https://tombkn.github.io/codesearch-pocket/)
+
+**Neu in 1.11.0: My Pocket Projects.** Unter **PROJEKTE** liest du eigene TouchDesigner-Projekte, die CodeSearch am PC mit **SEND TO POCKET …** als private, statische Momentaufnahme geschickt hat: Übersicht, Hierarchie, Netz mit Leitungen und Annotationen (verschieben, mit zwei Fingern zoomen), Details, exakter Code, Projektsuche, Verstehen und lokale Notizen. Offline dauerhaft nur in der installierten Home-Screen-App. Abgleich mit dem privaten Daten-Repo über ein eigenes Nur-Lese-Token je iPhone, nur solange Pocket offen ist; ohne Zugang geht der Datei-Import. Pocket führt nichts aus und zeigt keine Laufzeitwerte. Kurs und Lernfortschritt bleiben getrennt und unverändert; Projekte, Notizen und Tokens stehen nie im Fortschritts-Export. Pocket läuft unter der geteilten Adresse `tombkn.github.io`; Restrisiko und Gegenmaßnahmen sind dokumentiert. [Einrichten und benutzen](https://github.com/Tombkn/td-codesearch/blob/main/docs/POCKET-PROJECTS.md) · [Vertrag](https://github.com/Tombkn/td-codesearch/blob/main/docs/POCKET-PROJECTS-SPEC.md).
 
 **Neu in 1.10.4:** Station 40 (LETZTE FOCUS) führt ihren Hilfsschritt wie die Laptop-Fassung über USES: Pfad ins Feld tippen und Enter setzt den FOCUS und landet jetzt auch in LETZTE FOCUS. Die übrigen 1.10.4-Änderungen (lesbares Tour-Fenster, getippte Pfade, LETZTE FOCUS nach einer Schnellsuche, AUSLÖSEN im Methodenmenü) betreffen die Laptop-Fassung in TouchDesigner.
 
@@ -63,7 +65,7 @@ Code und Netz stammen aus den gepinnten TD-Quellen. Lab-Abläufe laufen in JavaS
 
 Die Seite einmal mit Internet öffnen. **⇩ / ✓ offline** zeigt, ob alle benötigten Dateien gespeichert sind. Dort findest du Installation, Fortschritt sichern/laden und erneutes Nachladen. Nach einer veröffentlichten Aktualisierung die Seite online neu laden und den Versionsstand kontrollieren.
 
-[CodeSearch-Pocket-offline.html](CodeSearch-Pocket-offline.html) enthält Code, Daten und Bilder zusammen. Für die installierte Handyseite gilt der Service Worker. Der konkrete Dateizugriff und Offline-Start müssen auf dem jeweiligen Gerät geprüft werden.
+[CodeSearch-Pocket-offline.html](CodeSearch-Pocket-offline.html) enthält Code, Daten und Bilder zusammen. Für die installierte Handyseite gilt der Service Worker. Der konkrete Dateizugriff und Offline-Start müssen auf dem jeweiligen Gerät geprüft werden. Die Einzeldatei läuft ohne Content Security Policy und zeigt darum keine eigenen Projekte (PROJEKTE ist dort abgeschaltet) – als Datei ebenso wie über https.
 
 ## Lokal starten und prüfen
 

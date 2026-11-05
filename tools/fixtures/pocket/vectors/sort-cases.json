@@ -1,0 +1,265 @@
+[
+ {
+  "name": "null-first",
+  "items": [
+   [
+    "b"
+   ],
+   [
+    null
+   ],
+   [
+    "a"
+   ]
+  ],
+  "sorted": [
+   [
+    null
+   ],
+   [
+    "a"
+   ],
+   [
+    "b"
+   ]
+  ]
+ },
+ {
+  "name": "int-numeric",
+  "items": [
+   [
+    10
+   ],
+   [
+    2
+   ],
+   [
+    -1
+   ]
+  ],
+  "sorted": [
+   [
+    -1
+   ],
+   [
+    2
+   ],
+   [
+    10
+   ]
+  ]
+ },
+ {
+  "name": "utf16-not-codepoint",
+  "items": [
+   [
+    "\uff61"
+   ],
+   [
+    "\ud83d\ude00"
+   ],
+   [
+    "z"
+   ],
+   [
+    "\u00e9"
+   ],
+   [
+    "Z"
+   ]
+  ],
+  "sorted": [
+   [
+    "Z"
+   ],
+   [
+    "z"
+   ],
+   [
+    "\u00e9"
+   ],
+   [
+    "\ud83d\ude00"
+   ],
+   [
+    "\uff61"
+   ]
+  ]
+ },
+ {
+  "name": "prefix-shorter-first",
+  "items": [
+   [
+    "ab"
+   ],
+   [
+    "a"
+   ],
+   [
+    "a/b"
+   ]
+  ],
+  "sorted": [
+   [
+    "a"
+   ],
+   [
+    "a/b"
+   ],
+   [
+    "ab"
+   ]
+  ]
+ },
+ {
+  "name": "rank",
+  "items": [
+   [
+    {
+     "a": 1
+    }
+   ],
+   [
+    "s"
+   ],
+   [
+    3
+   ],
+   [
+    true
+   ],
+   [
+    null
+   ]
+  ],
+  "sorted": [
+   [
+    null
+   ],
+   [
+    true
+   ],
+   [
+    3
+   ],
+   [
+    "s"
+   ],
+   [
+    {
+     "a": 1
+    }
+   ]
+  ]
+ },
+ {
+  "name": "objects-by-c14n",
+  "items": [
+   [
+    {
+     "op": "b"
+    }
+   ],
+   [
+    {
+     "external": "/z"
+    }
+   ],
+   [
+    {
+     "op": ""
+    }
+   ],
+   [
+    {
+     "unresolved": "dynamic"
+    }
+   ]
+  ],
+  "sorted": [
+   [
+    {
+     "external": "/z"
+    }
+   ],
+   [
+    {
+     "op": ""
+    }
+   ],
+   [
+    {
+     "op": "b"
+    }
+   ],
+   [
+    {
+     "unresolved": "dynamic"
+    }
+   ]
+  ]
+ },
+ {
+  "name": "tuple-order",
+  "items": [
+   [
+    "a",
+    2
+   ],
+   [
+    "a",
+    10
+   ],
+   [
+    "a",
+    null
+   ],
+   [
+    "b",
+    0
+   ]
+  ],
+  "sorted": [
+   [
+    "a",
+    null
+   ],
+   [
+    "a",
+    2
+   ],
+   [
+    "a",
+    10
+   ],
+   [
+    "b",
+    0
+   ]
+  ]
+ },
+ {
+  "name": "operators-depth-then-rel",
+  "list": "operators",
+  "rels": [
+   "b",
+   "",
+   "a/x",
+   "a",
+   "B",
+   "a/x/y",
+   "\ud83d\ude00",
+   "\uff61"
+  ],
+  "sorted": [
+   "",
+   "B",
+   "a",
+   "b",
+   "\ud83d\ude00",
+   "\uff61",
+   "a/x",
+   "a/x/y"
+  ]
+ }
+]

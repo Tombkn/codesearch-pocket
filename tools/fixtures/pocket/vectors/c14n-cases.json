@@ -1,0 +1,219 @@
+[
+ {
+  "name": "key-order-numeric",
+  "input": "{\"9\":1,\"10\":2,\"a\":3}",
+  "output": "{\"10\":2,\"9\":1,\"a\":3}",
+  "error": null,
+  "category": null
+ },
+ {
+  "name": "key-order-utf16",
+  "input": "{\"\\uff61\":1,\"\\ud83d\\ude00\":2,\"z\":3,\"\\u00e9\":4,\"Z\":5,\"_\":6,\"a_b\":7,\"aB\":8}",
+  "output": "{\"Z\":5,\"_\":6,\"aB\":8,\"a_b\":7,\"z\":3,\"\u00e9\":4,\"\ud83d\ude00\":2,\"\uff61\":1}",
+  "error": null,
+  "category": null
+ },
+ {
+  "name": "controls-escaped",
+  "input": "{\"s\": \"\\u0000\\u0001\\u0002\\u0003\\u0004\\u0005\\u0006\\u0007\\b\\t\\n\\u000b\\f\\r\\u000e\\u000f\\u0010\\u0011\\u0012\\u0013\\u0014\\u0015\\u0016\\u0017\\u0018\\u0019\\u001a\\u001b\\u001c\\u001d\\u001e\\u001f\"}",
+  "output": "{\"s\":\"\\u0000\\u0001\\u0002\\u0003\\u0004\\u0005\\u0006\\u0007\\b\\t\\n\\u000b\\f\\r\\u000e\\u000f\\u0010\\u0011\\u0012\\u0013\\u0014\\u0015\\u0016\\u0017\\u0018\\u0019\\u001a\\u001b\\u001c\\u001d\\u001e\\u001f\"}",
+  "error": null,
+  "category": null
+ },
+ {
+  "name": "quotes-backslash",
+  "input": "{\"s\":\"C:\\\\pfad\\\\\\\"q\\\" 'x'\"}",
+  "output": "{\"s\":\"C:\\\\pfad\\\\\\\"q\\\" 'x'\"}",
+  "error": null,
+  "category": null
+ },
+ {
+  "name": "raw-del-ls-ps-bom",
+  "input": "{\"s\":\"\\u007f\\u2028\\u2029\\ufeff\"}",
+  "output": "{\"s\":\"\u007f\u2028\u2029\ufeff\"}",
+  "error": null,
+  "category": null
+ },
+ {
+  "name": "raw-astral-umlaut",
+  "input": "{\"s\":\"\\u00e4\\u00f6\\u00fc\\u00df \\ud83d\\ude00 \\ud834\\udd1e\"}",
+  "output": "{\"s\":\"\u00e4\u00f6\u00fc\u00df \ud83d\ude00 \ud834\udd1e\"}",
+  "error": null,
+  "category": null
+ },
+ {
+  "name": "noncanonical-escapes",
+  "input": "{\"s\":\"\\u00e4\\/\\u0041\\u001F\"}",
+  "output": "{\"s\":\"\u00e4/A\\u001f\"}",
+  "error": null,
+  "category": null
+ },
+ {
+  "name": "whitespace",
+  "input": " { \"b\" : [ 1 , 2 ] ,\n \"a\" : { } } ",
+  "output": "{\"a\":{},\"b\":[1,2]}",
+  "error": null,
+  "category": null
+ },
+ {
+  "name": "literals",
+  "input": "{\"t\":true,\"f\":false,\"n\":null,\"e\":[],\"o\":{}}",
+  "output": "{\"e\":[],\"f\":false,\"n\":null,\"o\":{},\"t\":true}",
+  "error": null,
+  "category": null
+ },
+ {
+  "name": "int-safe-bounds",
+  "input": "{\"max\":9007199254740991,\"min\":-9007199254740991,\"z\":0}",
+  "output": "{\"max\":9007199254740991,\"min\":-9007199254740991,\"z\":0}",
+  "error": null,
+  "category": null
+ },
+ {
+  "name": "depth-32",
+  "input": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]",
+  "output": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]",
+  "error": null,
+  "category": null
+ },
+ {
+  "name": "int-2-53",
+  "input": "{\"x\":9007199254740992}",
+  "output": null,
+  "error": "json.int-range",
+  "category": "json"
+ },
+ {
+  "name": "int-minus-2-53",
+  "input": "{\"x\":-9007199254740992}",
+  "output": null,
+  "error": "json.int-range",
+  "category": "json"
+ },
+ {
+  "name": "float-1-0",
+  "input": "{\"x\":1.0}",
+  "output": null,
+  "error": "json.number",
+  "category": "json"
+ },
+ {
+  "name": "float-1e2",
+  "input": "{\"x\":1e2}",
+  "output": null,
+  "error": "json.number",
+  "category": "json"
+ },
+ {
+  "name": "minus-zero",
+  "input": "{\"x\":-0}",
+  "output": null,
+  "error": "json.number",
+  "category": "json"
+ },
+ {
+  "name": "minus-zero-float",
+  "input": "{\"x\":-0.0}",
+  "output": null,
+  "error": "json.number",
+  "category": "json"
+ },
+ {
+  "name": "float-half",
+  "input": "{\"x\":0.5}",
+  "output": null,
+  "error": "json.number",
+  "category": "json"
+ },
+ {
+  "name": "nan",
+  "input": "{\"x\":NaN}",
+  "output": null,
+  "error": "json.constant",
+  "category": "json"
+ },
+ {
+  "name": "infinity",
+  "input": "{\"x\":Infinity}",
+  "output": null,
+  "error": "json.constant",
+  "category": "json"
+ },
+ {
+  "name": "duplicate-same",
+  "input": "{\"a\":1,\"a\":1}",
+  "output": null,
+  "error": "json.duplicate-key",
+  "category": "json"
+ },
+ {
+  "name": "duplicate-diff",
+  "input": "{\"a\":1,\"a\":2}",
+  "output": null,
+  "error": "json.duplicate-key",
+  "category": "json"
+ },
+ {
+  "name": "duplicate-nested",
+  "input": "{\"o\":{\"k\":\"x\",\"k\":\"y\"}}",
+  "output": null,
+  "error": "json.duplicate-key",
+  "category": "json"
+ },
+ {
+  "name": "lone-surrogate-value",
+  "input": "{\"s\":\"\\ud800\"}",
+  "output": null,
+  "error": "json.surrogate",
+  "category": "json"
+ },
+ {
+  "name": "lone-surrogate-key",
+  "input": "{\"\\udc00\":1}",
+  "output": null,
+  "error": "json.surrogate",
+  "category": "json"
+ },
+ {
+  "name": "lone-low-after-high",
+  "input": "{\"s\":\"\\ude00\\ud83d\"}",
+  "output": null,
+  "error": "json.surrogate",
+  "category": "json"
+ },
+ {
+  "name": "proto-key",
+  "input": "{\"__proto__\":{\"polluted\":true}}",
+  "output": null,
+  "error": "json.proto",
+  "category": "json"
+ },
+ {
+  "name": "proto-nested",
+  "input": "{\"a\":[{\"__proto__\":1}]}",
+  "output": null,
+  "error": "json.proto",
+  "category": "json"
+ },
+ {
+  "name": "js-names-are-fine",
+  "input": "{\"constructor\":1,\"toString\":\"x\",\"hasOwnProperty\":null,\"valueOf\":[]}",
+  "output": "{\"constructor\":1,\"hasOwnProperty\":null,\"toString\":\"x\",\"valueOf\":[]}",
+  "error": null,
+  "category": null
+ },
+ {
+  "name": "depth-33",
+  "input": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]",
+  "output": null,
+  "error": "json.depth",
+  "category": "json"
+ },
+ {
+  "name": "trailing-comma",
+  "input": "{\"a\":1,}",
+  "output": null,
+  "error": "json.syntax",
+  "category": "json"
+ }
+]

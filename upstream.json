@@ -1,7 +1,7 @@
 {
   "repo": "Tombkn/td-codesearch",
-  "commit": "15e8356835380d4518159058740cb02daf25612c",
-  "version": "1.10.4",
+  "commit": "34dd1225a8b9d9213a31c830cabef369c567f064",
+  "version": "1.11.0",
   "checked": "2026-11-05",
   "lesson_count": 640,
   "files": {
@@ -43,7 +43,7 @@
     },
     "CodeSearchExt.py": {
       "path": "src/CodeSearchExt.py",
-      "sha256": "d4d6512ecce3961baf6c556c51e7b325f6104b22cf628cb822c23baf2294e1c3"
+      "sha256": "6555abea44da637f4607ca353c7b05da92052046e82de6060d5aadcd19894749"
     },
     "CodeModelExt.py": {
       "path": "src/CodeModelExt.py",
@@ -51,15 +51,15 @@
     },
     "CodeSearch.tdn": {
       "path": "src/tdn/CodeSearch.tdn",
-      "sha256": "837b262b2fbcc92ba48917a0f4dfb47947fa308fa6f21495be885cf83b64a563"
+      "sha256": "2a3d59696a4b76293b7580bebd9abf30a0c8463a5edef34d44a1705cf5103d9b"
     },
     "CodeSearch_Tutorial.tdn": {
       "path": "src/tdn/CodeSearch_Tutorial.tdn",
-      "sha256": "934963f8eeb048fddf0ce9b6e1eb7756701a3f9318cab72ce9ea50effebea48a"
+      "sha256": "1c04aba20b5ed25fbeb66affbe382eb4d9289966f2696fa754593fbfc6bcde85"
     },
     "TourExt.py": {
       "path": "src/tutorial/TourExt.py",
-      "sha256": "cfb43af62980b441162b1b7bdbaf5e88bb0cf511406b91138b564898cfd7081e"
+      "sha256": "dfb6c5d0de32ada7894034e9306696ce67a308ba5d1a59127eec21090cfd16fe"
     },
     "lessons.json": {
       "path": "src/tutorial/lessons.json",
@@ -87,7 +87,7 @@
     },
     "cs_workbench.py": {
       "path": "src/stateatlas/cs_workbench.py",
-      "sha256": "915e281256b28ed6ccc0778deb32b80b35e16ebf0ade9fd193f78a8958a1c5c7"
+      "sha256": "7f7b6c8293675ff4bc26f50ea7b8af3dba417aba75fb639d5fe4efe83da0f69e"
     },
     "tutorial_adapter.py": {
       "path": "src/stateatlas/tutorial_adapter.py",

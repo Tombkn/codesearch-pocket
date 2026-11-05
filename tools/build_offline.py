@@ -119,6 +119,14 @@ def build_single() -> int:
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     img_payload = json.dumps(imgs, separators=(",", ":"))
 
+    # CSP-Meta der App (Vertrag 14) heraus: die Einzeldatei fuehrt alles als Inline-Skript aus, unter "script-src 'self'"
+    # liefe dort nichts (Browser-Test Welle 3b, WebKit + Chromium). Ohne diese Meta schaltet js/ui/projects.js die
+    # Projekte ab - unter file:// und ebenso ueber https (Pages liefert die Datei mit aus); die Datei zeigt nur eigene
+    # Kursdaten. Genau eine Meta erwartet - sonst stimmt die Vorlage nicht mehr.
+    html, csp_count = re.subn(r'\s*<meta http-equiv="Content-Security-Policy"[^>]*>', "", html)
+    if csp_count != 1:
+        raise SystemExit(f"index.html: genau eine CSP-Meta erwartet, gefunden {csp_count}")
+    html = re.sub(r"\s*<!-- CSP \(POCKET-PROJECTS-SPEC.*?-->", "", html, count=1, flags=re.S)
     # Kopf: kein Manifest (die Datei ist keine installierbare App), Icon eingebettet, CSS inline
     html = re.sub(r'\s*<link rel="manifest"[^>]*>', "", html)
     html = re.sub(r'\s*<link rel="(?:icon|apple-touch-icon)"[^>]*>', "", html)
@@ -137,11 +145,28 @@ def build_single() -> int:
 
 
 # ------------------------------------------------------------------ Service Worker
+# Sicherheitsregeln (Vertrag POCKET-PROJECTS-SPEC 13 und 15) stehen als Kommentar im erzeugten sw.js; geprueft
+# werden sie in tools/package-tests.mjs (Text) und tools/projects-sw-tests.mjs (Verhalten in einer Sandbox).
+# Im Template keine Backslashes verwenden: es ist ein normaler Python-String.
 SW_TEMPLATE = """// Erzeugt von tools/build_offline.py - nicht von Hand aendern.
-// Speichert beim ersten Besuch JEDE Datei des Kurses; ohne Netz kommt alles aus diesem Speicher.
+// Speichert beim Installieren JEDE Datei des Kurses; ohne Netz kommt alles aus diesem Speicher.
+//
+// Erlaubt-Liste (Vertrag POCKET-PROJECTS-SPEC 13 und 15): Der Worker antwortet NUR fuer die Dateien aus offline.json
+// und fuer Seitenaufrufe dieser App. Alles andere geht ohne respondWith unveraendert ans Netz, als gaebe es den
+// Worker nicht: fremde Origins (api.github.com), Anfragen mit Authorization-Header oder ausdruecklichen
+// Zugangsdaten, alles ausser GET und unbekannte Pfade derselben Origin. Grund: private Projektdaten und Tokens
+// laufen nie durch diesen Code und landen nie in Cache Storage, das sich alle Seiten von tombkn.github.io teilen.
+// Geschrieben wird der Speicher nur beim Installieren, nie beim Beantworten einer Anfrage.
 const VERSION = "__VERSION__";
 const CACHE = `codesearch-pocket-${VERSION}`;
 const FILES = __FILES__;
+// Ort von sw.js = Geltungsbereich der App (app.js meldet sw.js ohne eigenes scope an).
+const SCOPE = new URL("./", self.location.href);
+// Erlaubte Pfade ohne ?v=...: index.html haengt die Version an CSS und JS, der Speicher sucht mit ignoreSearch.
+const ALLOWED = new Set(FILES.map((file) => new URL(file, SCOPE).pathname));
+// Nur Speicher mit dem eigenen Namensschema aufraeumen (10 Hex, ganz frueher "v2"); fremde Caches derselben Origin,
+// die zufaellig aehnlich anfangen, bleiben unberuehrt.
+const OWN_CACHE = /^codesearch-pocket-(?:[0-9a-f]{10}|v[0-9]+)$/;
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
@@ -163,39 +188,62 @@ self.addEventListener("activate", (event) => {
 });
 
 // Alte Speicher weg. Ein alter Service Worker kann waehrend des Wechsels noch einmal in seinen Speicher schreiben,
-// darum nicht nur beim Aktivieren, sondern bei jedem Seitenaufruf.
+// darum nicht nur beim Aktivieren, sondern bei jedem Seitenaufruf. Nicht, solange ein neuerer Worker installiert oder
+// wartet: dessen halb gefuellter Speicher waere hier sonst "alt" und weg - die Seite luede alles doppelt, und ohne Netz
+// startete der neue Worker mit Luecken. Aufgeraeumt wird dann beim Aktivieren des neuen Workers.
 async function dropOld() {
+  const reg = self.registration;
+  if (reg && (reg.installing || reg.waiting)) return;
   for (const key of await caches.keys()) {
-    if (key.startsWith("codesearch-pocket") && key !== CACHE) await caches.delete(key);
+    if (OWN_CACHE.test(key) && key !== CACHE) await caches.delete(key);
   }
 }
 
-// Mit Netz: frisch holen. Ohne Netz oder nach 4 s Funkloch: aus dem Speicher.
-// Geschrieben wird der Speicher nur beim Installieren - so liegt darin immer genau EINE Version.
+// Nur App-Anfragen bekommen eine Antwort vom Worker; alles andere sieht der Worker nur kurz und gibt es frei.
 self.addEventListener("fetch", (event) => {
   const req = event.request;
-  const url = new URL(req.url);
-  if (req.method !== "GET" || url.origin !== self.location.origin) return;
+  if (!isAppRequest(req)) return;
   if (req.mode === "navigate") event.waitUntil(dropOld());
-  event.respondWith((async () => {
-    const cache = await caches.open(CACHE);
-    const key = url.origin + url.pathname;
-    const fromNet = fetch(req, { cache: "no-cache" });
-    fromNet.catch(() => undefined);
-    const cached = () => cache.match(key, { ignoreSearch: true })
-      .then((hit) => hit || (req.mode === "navigate" ? cache.match("index.html") : undefined));
-    const slow = new Promise((resolve) => { setTimeout(resolve, 4000, "slow"); });
-    try {
-      const first = await Promise.race([fromNet, slow]);
-      if (first !== "slow") return first;
-      return (await cached()) || (await fromNet);
-    } catch {
-      const hit = await cached();
-      if (hit) return hit;
-      return new Response("offline und nicht gespeichert", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } });
-    }
-  })());
+  event.respondWith(netFirst(req));
 });
+
+// Darf der Worker antworten? Erst alles Fremde aussortieren, danach zaehlt nur die Erlaubt-Liste.
+function isAppRequest(req) {
+  if (req.method !== "GET") return false;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return false;
+  // Ein Token im Header heisst: Daten eines Kontos. Solche Antworten gehen nie durch diesen Code.
+  if (req.headers.has("authorization")) return false;
+  // Seitenaufrufe der App; der Browser schickt sie immer mit credentials "include", das ist hier normal.
+  if (req.mode === "navigate") return url.href.startsWith(SCOPE.href);
+  // credentials "include" aus fetch() (mode cors oder same-origin) ist eine ausdrueckliche Anfrage mit Zugangsdaten
+  // und bleibt draussen. Bilder, CSS und Icons laedt der Browser nach HTML-Regel auch mit "include", aber im mode
+  // "no-cors" - das sind die App-Dateien selbst und muessen offline weiter aus dem Speicher kommen.
+  if (req.credentials === "include" && req.mode !== "no-cors") return false;
+  return ALLOWED.has(url.pathname);
+}
+
+// Mit Netz: frisch holen. Ohne Netz oder nach 4 s Funkloch: aus dem Speicher.
+// Hier steht bewusst kein cache.put: so liegt im Speicher immer genau EINE Version und nie eine Laufzeitantwort.
+async function netFirst(req) {
+  const url = new URL(req.url);
+  const cache = await caches.open(CACHE);
+  const key = url.origin + url.pathname;
+  const fromNet = fetch(req, { cache: "no-cache" });
+  fromNet.catch(() => undefined);
+  const cached = () => cache.match(key, { ignoreSearch: true })
+    .then((hit) => hit || (req.mode === "navigate" ? cache.match("index.html") : undefined));
+  const slow = new Promise((resolve) => { setTimeout(resolve, 4000, "slow"); });
+  try {
+    const first = await Promise.race([fromNet, slow]);
+    if (first !== "slow") return first;
+    return (await cached()) || (await fromNet);
+  } catch {
+    const hit = await cached();
+    if (hit) return hit;
+    return new Response("offline und nicht gespeichert", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  }
+}
 """
 
 

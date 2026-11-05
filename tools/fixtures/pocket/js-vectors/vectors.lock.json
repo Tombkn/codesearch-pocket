@@ -1,0 +1,847 @@
+{
+ "format": "codesearch.pocket.vectors",
+ "version": 1,
+ "owner": "codesearch-pocket tools/projects-core-tests.mjs (synthetisch, Paketform von cs_pocket_export)",
+ "note": "Zu grosse Pakete (16 MiB + 1) entstehen im Test, nicht als Datei. Gegenprobe 2026-11-05 (einmalig, ausserhalb von npm test): cs_pocket_export.validate_bytes nahm alle gueltigen an und lehnte alle ungueltigen mit derselben Kategorie ab.",
+ "files": [
+  {
+   "file": "valid-weichzeichner.json",
+   "sha256": "ea390ddfad152e85d49e49342c781506d43d3b487e60a995a1fa14392720fbf9",
+   "bytes": 6822,
+   "expect": {
+    "valid": true,
+    "ignored": []
+   },
+   "note": "Referenzexport Weichzeichner (Tutorial, Vertrag 17)"
+  },
+  {
+   "file": "valid-code-model.json",
+   "sha256": "52609fb89fb64d9fdfa66cf80c0ea4e2834c95fa4d30fcde3069a9353c13a5b2",
+   "bytes": 16143,
+   "expect": {
+    "valid": true,
+    "ignored": []
+   },
+   "note": "zwei Klassen, Modulfunktion, Extensions mit {value}, kaputter Analyse-Eintrag"
+  },
+  {
+   "file": "valid-root-slash.json",
+   "sha256": "c59ebb2b861d17bf81faf530d5ad18745384b687d91173ab7c12d5763d2c7246",
+   "bytes": 3622,
+   "expect": {
+    "valid": true,
+    "ignored": []
+   },
+   "note": "Export ab Root /"
+  },
+  {
+   "file": "valid-prototype-names.json",
+   "sha256": "c2accec7610e14881cbb437e52e8901914821c6bb52022cdda1edcb78bcbecc1",
+   "bytes": 6959,
+   "expect": {
+    "valid": true,
+    "ignored": []
+   },
+   "note": "Ops und Symbole constructor/toString/hasOwnProperty/__proto__"
+  },
+  {
+   "file": "valid-depth-32.json",
+   "sha256": "1712f632b4447c72b236f8c7f4de39ddbb193758e094b323efdcddcb0f50b7e9",
+   "bytes": 7819,
+   "expect": {
+    "valid": true,
+    "ignored": []
+   },
+   "note": "genau 32 Ebenen (in stateAtlas.states)"
+  },
+  {
+   "file": "valid-duplicate-source.json",
+   "sha256": "8bef8d8f3752cae81e4cb3dce62b96f684798d62e99928a010dad41e632eda4a",
+   "bytes": 8397,
+   "expect": {
+    "valid": true,
+    "ignored": []
+   },
+   "note": "zweite Quelle mit gleichem Text: duplicateOf"
+  },
+  {
+   "file": "valid-markers.json",
+   "sha256": "b815c5c1d548b5ed0c9734337b5a284ffd089004b15972b87d4398af13b4a28d",
+   "bytes": 7529,
+   "expect": {
+    "valid": true,
+    "ignored": []
+   },
+   "note": "Platzhalter {omitted:secret}/{unknown:size}/{unknown,expr} statt Text"
+  },
+  {
+   "file": "valid-dynamic-ref.json",
+   "sha256": "497cef7d47f14a503d7f2b6cd0da453d1a32485919d1dd6ad121efb72c547b64",
+   "bytes": 8521,
+   "expect": {
+    "valid": true,
+    "ignored": []
+   },
+   "note": "op(<Ausdruck>): code mit name \"\" plus dynamic/reason, target unresolved dynamic"
+  },
+  {
+   "file": "valid-color-null.json",
+   "sha256": "6522cb84fd0afa2b8ed49303a1a7229450da444bf44cbe5ff7ee98c1f4aef74d",
+   "bytes": 6804,
+   "expect": {
+    "valid": true,
+    "ignored": []
+   },
+   "note": "operators.color null (nicht lesbar, Vertrag 4.7)"
+  },
+  {
+   "file": "valid-warning-newer-minor.json",
+   "sha256": "822f209c70141eb71514ba86de954059b4356feb70ca55063aa634ffb8845cf8",
+   "bytes": 6986,
+   "expect": {
+    "valid": true,
+    "ignored": [
+     "/warnings/0/code"
+    ]
+   },
+   "note": "Warncode einer neueren Minor-Version: nennen statt ablehnen (4.1)"
+  },
+  {
+   "file": "valid-table-truncated.json",
+   "sha256": "4d90fcbd2274332d467e52ef053572513395bdea4dc4e9c10256970950ab15c6",
+   "bytes": 7843,
+   "expect": {
+    "valid": true,
+    "ignored": []
+   },
+   "note": "gekuerzte Tabelle mit truncation"
+  },
+  {
+   "file": "valid-expr-size.json",
+   "sha256": "9599c4e316cb191649997636a8041e332df81322910552f5e839f9efdd6a8344",
+   "bytes": 7750,
+   "expect": {
+    "valid": true,
+    "ignored": []
+   },
+   "note": "Expression/Wert zu lang: omitted size bzw. unknown size"
+  },
+  {
+   "file": "invalid-bom.json",
+   "sha256": "aa8dba7dfe8e74ca877b6eba3cf219d0c0a8ec4c7f13f352897d69227df61281",
+   "bytes": 6825,
+   "expect": {
+    "valid": false,
+    "code": "encoding.bom",
+    "category": "encoding"
+   },
+   "note": "UTF-8-BOM"
+  },
+  {
+   "file": "invalid-utf16.json",
+   "sha256": "291f7619e556f5f88eb93295a4c66d3f06ed6cec13a4603d8af1cb2aafd3a09f",
+   "bytes": 13644,
+   "expect": {
+    "valid": false,
+    "code": "encoding.utf8",
+    "category": "encoding"
+   },
+   "note": "UTF-16LE-Datei"
+  },
+  {
+   "file": "invalid-utf8.json",
+   "sha256": "6805f6bbd338c5eb58eb9d369f5ba6968efc159206e489efea6fdddab0bf3cf9",
+   "bytes": 6823,
+   "expect": {
+    "valid": false,
+    "code": "encoding.utf8",
+    "category": "encoding"
+   },
+   "note": "ungueltiges UTF-8 (C3 28)"
+  },
+  {
+   "file": "invalid-surrogate-utf8.json",
+   "sha256": "ef1584e7b50046d58938c04880b755658d07e64d2805682eb5d658bc51a60deb",
+   "bytes": 6824,
+   "expect": {
+    "valid": false,
+    "code": "encoding.utf8",
+    "category": "encoding"
+   },
+   "note": "Surrogat roh als CESU-Bytes"
+  },
+  {
+   "file": "invalid-truncated.json",
+   "sha256": "9e1f2f9845eed48259cef527a62cc51cf278c9ac02c5acb82149c1b78ef77160",
+   "bytes": 6815,
+   "expect": {
+    "valid": false,
+    "code": "json.syntax",
+    "category": "json"
+   },
+   "note": "abgeschnitten"
+  },
+  {
+   "file": "invalid-nan.json",
+   "sha256": "15f7677ba7c5a7abae91b2f25d835eaf63ec2904c186d8c747b61a84de202efe",
+   "bytes": 6824,
+   "expect": {
+    "valid": false,
+    "code": "json.syntax",
+    "category": "json"
+   },
+   "note": "NaN ist kein JSON (Python: json.constant)"
+  },
+  {
+   "file": "invalid-duplicate-same.json",
+   "sha256": "f314cd3659fb54ca30355632c3eaa67527131d140a83f59641d45094a6b61a6c",
+   "bytes": 6838,
+   "expect": {
+    "valid": false,
+    "code": "json.duplicate-key",
+    "category": "json"
+   },
+   "note": "doppelter Schluessel, gleicher Wert"
+  },
+  {
+   "file": "invalid-duplicate-diff.json",
+   "sha256": "97229b466fbdc7ebf50481d6d361ef3aa7a5ab7f5467cc44e54add9a0692bcfb",
+   "bytes": 6838,
+   "expect": {
+    "valid": false,
+    "code": "json.duplicate-key",
+    "category": "json"
+   },
+   "note": "doppelter Schluessel, anderer Wert"
+  },
+  {
+   "file": "invalid-float-1.0.json",
+   "sha256": "7f15debdfd6070ef40ab29f5f3c4ea21383c9417b2e9d9912ba4fb20adb63252",
+   "bytes": 6824,
+   "expect": {
+    "valid": false,
+    "code": "json.number",
+    "category": "json"
+   },
+   "note": "1.0"
+  },
+  {
+   "file": "invalid-float-1e2.json",
+   "sha256": "bf404c74acb9f90a280d0ad9ac38487074c5372efd6b733f92e10229937a31aa",
+   "bytes": 6822,
+   "expect": {
+    "valid": false,
+    "code": "json.number",
+    "category": "json"
+   },
+   "note": "1e2"
+  },
+  {
+   "file": "invalid-minus-zero.json",
+   "sha256": "808ebd4fd3841596ccf3597641f2f9faa07dcf2e52571a5bd556110526b7b7fd",
+   "bytes": 6823,
+   "expect": {
+    "valid": false,
+    "code": "json.number",
+    "category": "json"
+   },
+   "note": "-0"
+  },
+  {
+   "file": "invalid-number-float.json",
+   "sha256": "fd3ce951b8018feb524420dc433dbb4cc8cfa06945aba049e8747153f0845726",
+   "bytes": 6824,
+   "expect": {
+    "valid": false,
+    "code": "json.number",
+    "category": "json"
+   },
+   "note": "Gleitkommazahl"
+  },
+  {
+   "file": "invalid-number-big.json",
+   "sha256": "3b16db0599562a0d1ad947a126ecc0a0ba2ad2df5f278f1601a00c5b021225d6",
+   "bytes": 6837,
+   "expect": {
+    "valid": false,
+    "code": "json.int-range",
+    "category": "json"
+   },
+   "note": "jenseits 2^53-1"
+  },
+  {
+   "file": "invalid-surrogate-value.json",
+   "sha256": "07b565af8470317a8219ebeda685b01240975d6e248836347abf48a37c695bc1",
+   "bytes": 6815,
+   "expect": {
+    "valid": false,
+    "code": "json.surrogate",
+    "category": "json"
+   },
+   "note": "einzelnes Surrogat im Wert (escaped)"
+  },
+  {
+   "file": "invalid-surrogate-key.json",
+   "sha256": "8032592aafe07a43c35bdac11d2a662660f8b5236c1427b25af76e22f77c81fe",
+   "bytes": 6834,
+   "expect": {
+    "valid": false,
+    "code": "json.surrogate",
+    "category": "json"
+   },
+   "note": "einzelnes Surrogat im Schluessel"
+  },
+  {
+   "file": "invalid-proto-key.json",
+   "sha256": "da13830fc80b6f667d45ebc5be2355215e3c49e2ec60bb96b28328add09685b1",
+   "bytes": 6836,
+   "expect": {
+    "valid": false,
+    "code": "json.proto",
+    "category": "json"
+   },
+   "note": "Schluessel __proto__"
+  },
+  {
+   "file": "invalid-depth-33.json",
+   "sha256": "51c3b50fde60cc1e2214ea747eeb25a2849e0c1f3a573f38f9265fec68faa81a",
+   "bytes": 6889,
+   "expect": {
+    "valid": false,
+    "code": "json.depth",
+    "category": "json"
+   },
+   "note": "33 Ebenen"
+  },
+  {
+   "file": "invalid-whitespace.json",
+   "sha256": "1d80a20cdec18c45be795b82a0982db20b966d18eeef50005bba1da14826abbf",
+   "bytes": 6823,
+   "expect": {
+    "valid": false,
+    "code": "canonical.mismatch",
+    "category": "canonical"
+   },
+   "note": "Leerraum vor dem Objekt"
+  },
+  {
+   "file": "invalid-escape.json",
+   "sha256": "3f7ec639cfe7687c94492e2ddf48963f8439fedbd2fe492c36e539bd67dd82da",
+   "bytes": 6827,
+   "expect": {
+    "valid": false,
+    "code": "canonical.mismatch",
+    "category": "canonical"
+   },
+   "note": "Unicode-Escape eines Nicht-Steuerzeichens"
+  },
+  {
+   "file": "invalid-key-order.json",
+   "sha256": "220d1cf4a504914ec3f57e907c982acab4927461b01c533a446810ab94fc1411",
+   "bytes": 6822,
+   "expect": {
+    "valid": false,
+    "code": "canonical.mismatch",
+    "category": "canonical"
+   },
+   "note": "Schluessel nicht nach UTF-16 sortiert"
+  },
+  {
+   "file": "invalid-corrupted.json",
+   "sha256": "e61a63409a2641cf63b1e92cfc4f1dc494cd9743398544c61622a3b67c21a161",
+   "bytes": 6822,
+   "expect": {
+    "valid": false,
+    "code": "integrity.mismatch",
+    "category": "integrity"
+   },
+   "note": "ein Zeichen veraendert, Bytes weiter kanonisch"
+  },
+  {
+   "file": "invalid-integrity-missing.json",
+   "sha256": "8c3603a7b69cc6689397b31e10a025b250a0176a4d1915222456a396ebb44d13",
+   "bytes": 6675,
+   "expect": {
+    "valid": false,
+    "code": "integrity.missing",
+    "category": "integrity"
+   },
+   "note": "integrity fehlt (sonst kanonisch)"
+  },
+  {
+   "file": "invalid-algorithm.json",
+   "sha256": "1f836e71972d2bff98592a22fa551741deff70abe14576c39f24f80f5594f9f9",
+   "bytes": 6822,
+   "expect": {
+    "valid": false,
+    "code": "integrity.algorithm",
+    "category": "integrity"
+   },
+   "note": "algorithm falsch"
+  },
+  {
+   "file": "invalid-content-hash.json",
+   "sha256": "61e2b9a6d3a99935338bf35dfcb1f94aae008c165093e215f1c012508008a764",
+   "bytes": 6822,
+   "expect": {
+    "valid": false,
+    "code": "integrity.content-hash",
+    "category": "integrity"
+   },
+   "note": "contentHash falsch, revision.id passend, integrity neu"
+  },
+  {
+   "file": "invalid-analysis-hash.json",
+   "sha256": "4644ecd9e78df001f4aaedd526a268a3622ca6529a08a6793bbe2b12ee1947bf",
+   "bytes": 6822,
+   "expect": {
+    "valid": false,
+    "code": "integrity.analysis-hash",
+    "category": "integrity"
+   },
+   "note": "analysisHash falsch"
+  },
+  {
+   "file": "invalid-revision-id.json",
+   "sha256": "e136fd9b42748f5782b0f001180d9942469cd05d95556a8a9357d7baedaba649",
+   "bytes": 6822,
+   "expect": {
+    "valid": false,
+    "code": "integrity.revision-id",
+    "category": "integrity"
+   },
+   "note": "revision.id falsch"
+  },
+  {
+   "file": "invalid-schema-version-2.json",
+   "sha256": "da1c542deecf71904022937a1fe8480178e13270ad7315af76a576a709f5e841",
+   "bytes": 6822,
+   "expect": {
+    "valid": false,
+    "code": "schema.version-newer",
+    "category": "schema"
+   },
+   "note": "andere Hauptversion"
+  },
+  {
+   "file": "invalid-format.json",
+   "sha256": "c121f0038ea25538e98b9d7027a172e190e4646d11ba9a2a3e3aaa01fd36567b",
+   "bytes": 6819,
+   "expect": {
+    "valid": false,
+    "code": "schema.format",
+    "category": "schema"
+   },
+   "note": "falsches format"
+  },
+  {
+   "file": "invalid-promote-type.json",
+   "sha256": "448a7aee002f978b87cc3e7f4d15f12cbb94d8d057b2ac060fd321a9dc299de0",
+   "bytes": 16143,
+   "expect": {
+    "valid": false,
+    "code": "schema.type",
+    "category": "schema"
+   },
+   "note": "promote ist ein Toggle: {value:bool}"
+  },
+  {
+   "file": "invalid-omitted-other.json",
+   "sha256": "8b83db6b139b9cc753671ffc278a99317ae0348e0468e1ef3442bfb63a3522ea",
+   "bytes": 7752,
+   "expect": {
+    "valid": false,
+    "code": "schema.enum",
+    "category": "schema"
+   },
+   "note": "omitted nur secret|size"
+  },
+  {
+   "file": "invalid-warning-code.json",
+   "sha256": "dabaee8623f73438741387874c7f13f97a628f71c63fc82501da2a4ce77c4410",
+   "bytes": 6987,
+   "expect": {
+    "valid": false,
+    "code": "schema.enum",
+    "category": "schema"
+   },
+   "note": "Warncode ausserhalb der Liste v1.0"
+  },
+  {
+   "file": "invalid-truncation-name.json",
+   "sha256": "f1b323c29931455053f48238e94edd01160347d705f6d66c816ccba37df60665",
+   "bytes": 7842,
+   "expect": {
+    "valid": false,
+    "code": "schema.missing",
+    "category": "schema"
+   },
+   "note": "alter Feldname truncated statt truncation"
+  },
+  {
+   "file": "invalid-project-name.json",
+   "sha256": "9e8829c2ba36faa740c13432656913805a43133295c0c9adaf1d8825427c3b59",
+   "bytes": 6930,
+   "expect": {
+    "valid": false,
+    "code": "limit.length",
+    "category": "limit"
+   },
+   "note": "projectName laenger als 120"
+  },
+  {
+   "file": "invalid-code-null.json",
+   "sha256": "dd0d36dab87c6d1882fbc9921ea550254cdfd8f22c648f03a3bd029a72f30cd5",
+   "bytes": 8444,
+   "expect": {
+    "valid": false,
+    "code": "schema.type",
+    "category": "schema"
+   },
+   "note": "code-* ohne code-Objekt (Vertrag 4.12: Pflicht)"
+  },
+  {
+   "file": "invalid-dynamic-name.json",
+   "sha256": "fab5e5c703b6e674c49fe50816ed5e578d82d3dabdfb2dfdf49dd1e9f7605fba",
+   "bytes": 8522,
+   "expect": {
+    "valid": false,
+    "code": "schema.value",
+    "category": "schema"
+   },
+   "note": "dynamic:true mit festem Namen"
+  },
+  {
+   "file": "invalid-dynamic-target.json",
+   "sha256": "fa08bc25f3d0b1ede86a08ed6a7b881e7e4006f0b62f519585221d65937f5b9c",
+   "bytes": 8509,
+   "expect": {
+    "valid": false,
+    "code": "schema.value",
+    "category": "schema"
+   },
+   "note": "dynamic:true mit aufgeloestem Ziel"
+  },
+  {
+   "file": "invalid-color-partial.json",
+   "sha256": "67bed759872cc7ce5003d1a922a29df5b9517b089d79cbe4cf0dceb8b5bb240b",
+   "bytes": 6820,
+   "expect": {
+    "valid": false,
+    "code": "schema.type",
+    "category": "schema"
+   },
+   "note": "color mit Luecke statt null"
+  },
+  {
+   "file": "invalid-key-ascii.json",
+   "sha256": "62aeb8ca1a6a442954503653a5a8f58cfe38afa9ca912f18da38c4abe98c8af1",
+   "bytes": 6834,
+   "expect": {
+    "valid": false,
+    "code": "schema.keys",
+    "category": "schema"
+   },
+   "note": "unbekannter Schluessel ist kein ASCII-Feldname (Vertrag 4)"
+  },
+  {
+   "file": "invalid-key-integrity.json",
+   "sha256": "88606b63a027b4698dc6bc991ab6ae8e414b5adbf4e79266ae6d0faa1aae15c8",
+   "bytes": 6829,
+   "expect": {
+    "valid": false,
+    "code": "schema.keys",
+    "category": "schema"
+   },
+   "note": "Nicht-ASCII-Schluessel im integrity-Objekt: keine Ausnahme (Vertrag 16)"
+  },
+  {
+   "file": "valid-helper-extutils.json",
+   "sha256": "cb8c33cffa6b59923e2b843cc2ec6a8f59213969d018847d6cda70ec01c4526f",
+   "bytes": 8409,
+   "expect": {
+    "valid": true,
+    "ignored": []
+   },
+   "note": "COMP mit Tag ExtUtils und sein Inneres als role helper"
+  },
+  {
+   "file": "invalid-annotate-operator.json",
+   "sha256": "30aede698b78b8b4767c97cfa1787214ff3be48b87440f55f9ff541eb1446867",
+   "bytes": 7322,
+   "expect": {
+    "valid": false,
+    "code": "schema.value",
+    "category": "schema"
+   },
+   "note": "Operator vom opType annotateCOMP (4.7: Annotationen sind nie Operatoren)"
+  },
+  {
+   "file": "invalid-children-non-comp.json",
+   "sha256": "49ad761c66f2e6e47245f640f476429194a9d9686899761acac1363c3cb5d143",
+   "bytes": 6819,
+   "expect": {
+    "valid": false,
+    "code": "schema.value",
+    "category": "schema"
+   },
+   "note": "children an einem TOP (nur COMP)"
+  },
+  {
+   "file": "invalid-connectors-non-comp.json",
+   "sha256": "2704f97c54e223ade8a8f68c4ac57cfb5a3e88a6fc5aaf1fc052b095f2b4b344",
+   "bytes": 6836,
+   "expect": {
+    "valid": false,
+    "code": "schema.value",
+    "category": "schema"
+   },
+   "note": "connectors an einem TOP (nur COMP)"
+  },
+  {
+   "file": "invalid-extensions-non-comp.json",
+   "sha256": "a62ffb1d5ca7c27d983c40fc7b7ecb8203d9ece425c6c5364ac6cfe4b0bc4917",
+   "bytes": 6922,
+   "expect": {
+    "valid": false,
+    "code": "schema.value",
+    "category": "schema"
+   },
+   "note": "extensions an einem TOP (nur COMP)"
+  },
+  {
+   "file": "invalid-internal-shortcuts-non-comp.json",
+   "sha256": "8d9a27c1bf28942c84474c7ebe7af30dea3b99e9e53bf9d369dc44fba73fd6c7",
+   "bytes": 6872,
+   "expect": {
+    "valid": false,
+    "code": "schema.value",
+    "category": "schema"
+   },
+   "note": "internalShortcuts an einem TOP (nur COMP)"
+  },
+  {
+   "file": "invalid-allow-cooking-non-comp.json",
+   "sha256": "403ba0d992f88eff8b40b2411bcf48dca79d1cde7dbefa485ca6d4b070129dc6",
+   "bytes": 6842,
+   "expect": {
+    "valid": false,
+    "code": "schema.value",
+    "category": "schema"
+   },
+   "note": "flags.allowCooking an einem TOP (nur COMP)"
+  },
+  {
+   "file": "invalid-helper-outside.json",
+   "sha256": "40140a900923a355d4f23b0d7dd69cdbe5ec52d033285d5fd33b5065695b5ad4",
+   "bytes": 8413,
+   "expect": {
+    "valid": false,
+    "code": "schema.value",
+    "category": "schema"
+   },
+   "note": "role helper ausserhalb eines ExtUtils-COMP"
+  },
+  {
+   "file": "invalid-helper-comp-missing.json",
+   "sha256": "8d1a25a7a70f921673229ce94d46a7ac4f38dc8b428cd4c301e06bfaf6622e0c",
+   "bytes": 8405,
+   "expect": {
+    "valid": false,
+    "code": "schema.value",
+    "category": "schema"
+   },
+   "note": "ExtUtils-COMP ohne role helper"
+  },
+  {
+   "file": "invalid-helper-inner-missing.json",
+   "sha256": "286990b4a521e747ac0885aed928fdd4fb0c5f3b70bca3b607b8903f93b8a970",
+   "bytes": 8405,
+   "expect": {
+    "valid": false,
+    "code": "schema.value",
+    "category": "schema"
+   },
+   "note": "Inneres des ExtUtils-COMP ohne role helper"
+  },
+  {
+   "file": "invalid-wire-both-external.json",
+   "sha256": "36d7bf89335834566116369f096adfcb9fa8a9792d66354917cca269540f87c6",
+   "bytes": 6867,
+   "expect": {
+    "valid": false,
+    "code": "schema.value",
+    "category": "schema"
+   },
+   "note": "Leitung mit zwei externen Enden (4.9)"
+  },
+  {
+   "file": "invalid-external-relative.json",
+   "sha256": "b1e98f6573f72e8e4f9e118297d9f649fec2323fd27bba4a7c34bda3563cd2be",
+   "bytes": 6821,
+   "expect": {
+    "valid": false,
+    "code": "schema.pattern",
+    "category": "schema"
+   },
+   "note": "externes Leitungsende relativ statt absolut"
+  },
+  {
+   "file": "invalid-dock-relative.json",
+   "sha256": "5897e5a1968b46e2d80c1dae222f47434f888455c4cd7df1c357d336d00f8423",
+   "bytes": 6836,
+   "expect": {
+    "valid": false,
+    "code": "schema.pattern",
+    "category": "schema"
+   },
+   "note": "externes Dock relativ statt absolut"
+  },
+  {
+   "file": "invalid-dependency-relative.json",
+   "sha256": "aaeba192920cff88d4ef808c333ad0a4bbc5567173d60d737e85e7b51807b649",
+   "bytes": 6821,
+   "expect": {
+    "valid": false,
+    "code": "schema.pattern",
+    "category": "schema"
+   },
+   "note": "externalDependencies.path relativ statt absolut (4.13)"
+  },
+  {
+   "file": "invalid-duplicate-of.json",
+   "sha256": "6195656c2bc98677dc6f7a1162a42676113e0abbf2ee73c71ce62a08b2cc5ba0",
+   "bytes": 8394,
+   "expect": {
+    "valid": false,
+    "code": "consistency.duplicate-of",
+    "category": "consistency"
+   },
+   "note": "duplicateOf fehlt"
+  },
+  {
+   "file": "invalid-source-sha.json",
+   "sha256": "c38eaf45012428759a3c6ff8320495424cf17b38bec3561d342cd40a4172d44f",
+   "bytes": 8394,
+   "expect": {
+    "valid": false,
+    "code": "consistency.sha256",
+    "category": "consistency"
+   },
+   "note": "sha256 passt nicht zum Text"
+  },
+  {
+   "file": "invalid-inner-order.json",
+   "sha256": "c43447af7d76c52d2d7d04aee1118270eb521ec6f232e547b06b05a64d1a0477",
+   "bytes": 7025,
+   "expect": {
+    "valid": false,
+    "code": "consistency.sort",
+    "category": "consistency"
+   },
+   "note": "extensions nicht nach slot"
+  },
+  {
+   "file": "invalid-order.json",
+   "sha256": "b733f5417c24a5832c5609dc804888fdd53f281fad4999dc91897fd623aa1f04",
+   "bytes": 6822,
+   "expect": {
+    "valid": false,
+    "code": "consistency.sort",
+    "category": "consistency"
+   },
+   "note": "operators unsortiert"
+  },
+  {
+   "file": "invalid-counts.json",
+   "sha256": "0feb555fc92909c0f0a471f20cf0913c59c9e211b683227cd3b89834aebb5e2f",
+   "bytes": 6822,
+   "expect": {
+    "valid": false,
+    "code": "consistency.counts",
+    "category": "consistency"
+   },
+   "note": "report.counts passt nicht"
+  },
+  {
+   "file": "invalid-dangling-dock.json",
+   "sha256": "5c1cce5a5b4c4b660c9e47f5716bdc21d733e92381a41a7eba448db93f934209",
+   "bytes": 6831,
+   "expect": {
+    "valid": false,
+    "code": "consistency.reference",
+    "category": "consistency"
+   },
+   "note": "dock.op ist kein exportierter Op"
+  },
+  {
+   "file": "invalid-dangling-target.json",
+   "sha256": "6de67fdd0851a00d639eaa479219171351d3499392674010da1062be1f993aed",
+   "bytes": 6826,
+   "expect": {
+    "valid": false,
+    "code": "consistency.reference",
+    "category": "consistency"
+   },
+   "note": "references.target.op fehlt"
+  },
+  {
+   "file": "invalid-warning-severity.json",
+   "sha256": "55df6ffe2104b3272413745fe1cba0586feacc8b370f44db817f4f65b0680ae1",
+   "bytes": 6989,
+   "expect": {
+    "valid": false,
+    "code": "consistency.warning",
+    "category": "consistency"
+   },
+   "note": "Schwere passt nicht zum Code"
+  },
+  {
+   "file": "invalid-truncation-missing.json",
+   "sha256": "db976c6d2cbd84c901b3a17cda90d0f8b6b1941a82f815c3d96b96125549e449",
+   "bytes": 7802,
+   "expect": {
+    "valid": false,
+    "code": "consistency.status",
+    "category": "consistency"
+   },
+   "note": "status truncated ohne truncation"
+  }
+ ],
+ "cases": [
+  {
+   "file": "valid-weichzeichner.json",
+   "expect": {
+    "valid": false,
+    "code": "binding.project",
+    "category": "binding",
+    "binding": {
+     "projectId": "psp_fedcba9876543210fedcba9876543210"
+    }
+   },
+   "note": "projectId ist nicht der angefragte"
+  },
+  {
+   "file": "valid-weichzeichner.json",
+   "expect": {
+    "valid": false,
+    "code": "binding.revision",
+    "category": "binding",
+    "binding": {
+     "revisionId": "rev_ffffffffffffffffffffffffffffffff"
+    }
+   },
+   "note": "revision.id ist nicht die angefragte"
+  },
+  {
+   "file": "valid-weichzeichner.json",
+   "expect": {
+    "valid": false,
+    "code": "limit.bytes",
+    "category": "limit",
+    "maxBytes": 100
+   },
+   "note": "Grenze vor dem Dekodieren (hier 100 Bytes)"
+  }
+ ]
+}

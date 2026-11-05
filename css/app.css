@@ -781,3 +781,310 @@ body[data-look="iridium"] .cs-title { background: linear-gradient(115deg,var(--p
 :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=submit]):not([type=file]):not([type=color]), textarea, [contenteditable="true"]) {
   background: var(--field); border: 1px solid var(--field-line); color: var(--text);
 }
+
+/* projects-views:begin */
+/* Projekt-Ansichten (js/ui/project-*.js, Paket P2a-2): Netz, Code Reader, Details, Verstehen, Notizen.
+   Nur vorhandene CSS-Variablen/Looks; Touch-Ziele >= 44 px; touch-action:none nur auf der Netzflaeche;
+   Paketinhalte stehen nur als Text im DOM - Marken fuer unsichtbare Zeichen kommen per ::before aus attr(data-cp). */
+.pv-root { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; min-width: 0; height: 100%; color: var(--text); background: var(--bg); }
+.pv-scroll { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 10px 12px calc(16px + var(--safe-b)); }
+.pv-u { unicode-bidi: isolate; overflow-wrap: anywhere; }
+.pv-mono { font-family: var(--mono); }
+.pv-strong { font-weight: 700; }
+.pv-title { font-size: 17px; font-weight: 700; }
+.pv-dim { color: var(--dim); }
+.pv-k { color: var(--accent); font-weight: 700; font-size: 10.5px; letter-spacing: .05em; }
+.pv-hint { margin: 4px 0; color: var(--muted); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.pv-warn { color: var(--yellow); }
+.pv-marker { color: var(--yellow); font-style: italic; }
+.pv-chip { display: inline-flex; align-items: center; min-height: 22px; padding: 2px 7px; border-radius: 3px; background: var(--chip); color: var(--muted); font-size: 11px; white-space: nowrap; }
+.pv-chip.pv-ext { white-space: normal; overflow-wrap: anywhere; border: 1px dashed var(--line2); background: transparent; }
+.pv-btnrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.pv-btn { min-height: 44px; min-width: 44px; padding: 6px 10px; border: 1px solid var(--line2); border-radius: 4px; background: var(--panel); color: var(--text); font-size: 12.5px; touch-action: manipulation; }
+.pv-btn:disabled { opacity: .4; cursor: default; }
+.pv-btn[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
+.pv-btn-link { color: var(--cyan); text-align: left; overflow-wrap: anywhere; max-width: 100%; }
+.pv-btn-danger { color: var(--red); }
+.pv-btn:focus-visible, .pv-input:focus-visible, .pv-code-scroll:focus-visible, .pv-net-surface:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.pv-input { min-height: 44px; min-width: 0; flex: 1 1 140px; padding: 0 10px; border-radius: 4px; font-family: var(--mono); font-size: 16px; }
+.pv-input-line { flex: 0 1 96px; }
+.pv-pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.5; }
+.pv-ctl { unicode-bidi: isolate; display: inline; }
+.pv-ctl::before { content: "U+" attr(data-cp); margin: 0 1px; padding: 0 2px; border: 1px solid var(--red); border-radius: 2px; color: var(--red); font: 9px/1 var(--mono); vertical-align: middle; }
+.pv-info-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+
+/* Netz */
+.pv-net-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--panel2); flex: 0 0 auto; }
+.pv-net-path { display: flex; align-items: baseline; gap: 6px; flex: 1 1 160px; min-width: 0; font-size: 11.5px; color: var(--muted); }
+.pv-net-tools { display: flex; flex-wrap: wrap; gap: 4px; }
+.pv-net-hints { display: flex; flex-wrap: wrap; gap: 2px 12px; padding: 2px 10px; flex: 0 0 auto; }
+.pv-net-hints:empty { display: none; }
+.pv-net-surface { position: relative; flex: 1 1 auto; min-height: 240px; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; background: var(--code); }
+.pv-net-svg { display: block; width: 100%; height: 100%; }
+.pv-net-info { flex: 0 0 auto; max-height: 34%; overflow-y: auto; overscroll-behavior: contain; padding: 6px 10px; border-top: 1px solid var(--line); background: var(--panel); font-size: 12.5px; }
+.pv-info-path { margin: 2px 0; font-size: 11px; color: var(--muted); }
+.pv-op { cursor: pointer; }
+.pv-op .pv-box { fill: var(--panel2); stroke: var(--line2); stroke-width: 2; }
+.pv-fam-TOP .pv-box { stroke: var(--purple); }
+.pv-fam-CHOP .pv-box { stroke: var(--green); }
+.pv-fam-SOP .pv-box { stroke: var(--blue); }
+.pv-fam-DAT .pv-box { stroke: var(--dat-fg); }
+.pv-fam-COMP .pv-box { stroke: var(--text); }
+.pv-fam-MAT .pv-box { stroke: var(--yellow); }
+.pv-fam-POP .pv-box { stroke: var(--cyan); }
+.pv-op.pv-unknown .pv-box { fill: var(--panel); stroke-dasharray: 8 6; }
+.pv-op.pv-linked .pv-box { stroke: var(--yellow); stroke-width: 3; }
+.pv-op.pv-sel .pv-box { stroke: var(--sel-line); stroke-width: 5; fill: var(--sel); }
+.pv-op:focus, .pv-ann:focus { outline: none; }
+.pv-op:focus-visible .pv-box { stroke: var(--cyan); stroke-width: 6; }
+.pv-ann:focus-visible .pv-ann-box { stroke: var(--cyan); stroke-width: 4; }
+.pv-op text, .pv-ann text, .pv-ph text, .pv-net-unknown text { pointer-events: none; unicode-bidi: isolate; }
+.pv-op-name { fill: var(--text); font: 600 15px var(--sans); }
+.pv-op-type { fill: var(--muted); font: 12px var(--mono); }
+.pv-op-reason { fill: var(--yellow); font: 11px var(--sans); }
+.pv-ticks { fill: none; stroke: var(--muted); stroke-width: 2; }
+.pv-wire { fill: none; stroke: var(--cyan); stroke-width: 2.5; }
+.pv-wire.pv-wire-comp { stroke: var(--accent); }
+.pv-wire.pv-dashed { stroke-dasharray: 10 7; }
+.pv-wire.pv-hot { stroke: var(--yellow); stroke-width: 4.5; }
+.pv-couple { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 2 6; stroke-linecap: round; }
+.pv-ann { cursor: pointer; }
+.pv-ann-box { fill: color-mix(in srgb, var(--accent) 9%, transparent); stroke: color-mix(in srgb, var(--accent) 35%, transparent); stroke-width: 2; }
+.pv-ann-title { fill: var(--accent); font: 700 17px var(--sans); }
+.pv-ann-body { fill: var(--muted); font: 13px var(--sans); }
+.pv-ph-box { fill: var(--panel); stroke: var(--dim); stroke-width: 2; stroke-dasharray: 6 5; }
+.pv-ph-text { fill: var(--muted); font: 13px var(--mono); }
+.pv-ph-sub { fill: var(--dim); font: 11px var(--sans); }
+.pv-unknown-frame { fill: none; stroke: var(--line2); stroke-dasharray: 4 6; }
+.pv-unknown-label { fill: var(--yellow); font: 600 14px var(--sans); }
+@media (prefers-reduced-motion: no-preference) {
+  .pv-wire, .pv-op .pv-box { transition: stroke 120ms ease, stroke-width 120ms ease; }
+}
+
+/* Code Reader: Zeilenhoehe 20 px = CODE_ROW_PX in js/ui/project-code.js (virtuelles Fenster). */
+.pv-code-head, .pv-code-actions, .pv-code-find, .pv-code-notes { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px 8px; border-bottom: 1px solid var(--line); background: var(--panel2); }
+.pv-code-title { display: flex; align-items: baseline; gap: 6px; flex: 1 1 100%; min-width: 0; font-size: 11.5px; color: var(--muted); }
+.pv-code-banner { flex: 0 0 auto; padding: 0 8px; }
+.pv-code-banner:empty { display: none; }
+.pv-find-count { min-width: 5em; }
+.pv-outline { flex: 0 1 auto; max-height: 38%; overflow-y: auto; overscroll-behavior: contain; padding: 4px 8px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.pv-outline-list { list-style: none; margin: 0; padding: 0 0 0 12px; }
+.pv-outline > .pv-outline-list { padding-left: 0; }
+.pv-outline-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.pv-outline-group { margin: 8px 0 2px; color: var(--muted); font-size: 11px; letter-spacing: .06em; }
+.pv-fold-btn { font-size: 11px; color: var(--muted); }
+.pv-lineinfo { flex: 0 0 auto; max-height: 26%; overflow-y: auto; overscroll-behavior: contain; padding: 0 8px; background: var(--panel); font-size: 12px; }
+.pv-lineinfo:not(:empty) { padding: 4px 8px; border-bottom: 1px solid var(--line); }
+.pv-lineinfo .pv-btnrow { margin: 3px 0; }
+/* pinch-zoom: die Ansicht hat keinen eigenen Schriftregler, also bleibt das Browser-Zoomen (Textgroesse) erlaubt;
+   die Zeilenhoehe in CSS-px und damit das virtuelle Fenster aendern sich dabei nicht. */
+.pv-code-scroll { position: relative; flex: 1 1 auto; min-height: 160px; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y pinch-zoom; background: var(--code); }
+.pv-code-sizer { position: relative; min-width: 100%; }
+.pv-code-win { position: absolute; left: 0; top: 0; min-width: 100%; width: max-content; font: 12.5px/20px var(--mono); }
+/* Nur Code-Zeilen sind Flex-Reihen; Tabellenzeilen tragen dieselbe Klasse fuer Klick und Fokus, bleiben aber table-row. */
+div.pv-ln { display: flex; height: 20px; white-space: pre; tab-size: 4; -moz-tab-size: 4; }
+.pv-no { position: sticky; left: 0; z-index: 1; flex: 0 0 auto; min-width: 4.5em; padding: 0 8px 0 4px; text-align: right; color: var(--dim); background: var(--code); user-select: none; -webkit-user-select: none; cursor: pointer; }
+.pv-src { unicode-bidi: isolate; padding-right: 24px; }
+.pv-ln.pv-in-sel, .pv-ln.pv-in-sel .pv-no { background: color-mix(in srgb, var(--sel) 80%, var(--code)); }
+.pv-ln.pv-focus, .pv-ln.pv-focus .pv-no { background: color-mix(in srgb, var(--accent) 22%, var(--code)); }
+.pv-ln.pv-find-cur .pv-no { box-shadow: inset 3px 0 0 var(--yellow); }
+.pv-hit { background: color-mix(in srgb, var(--yellow) 35%, transparent); }
+.pv-t-kw { color: var(--purple); }
+.pv-t-str { color: var(--string); }
+.pv-t-cm { color: var(--muted); font-style: italic; }
+.pv-t-num { color: var(--yellow); }
+.pv-t-fn { color: var(--cyan); }
+.pv-t-ty { color: var(--green); }
+.pv-t-bi { color: var(--blue); }
+.pv-t-dec, .pv-t-pp { color: var(--magenta); }
+.pv-fold-chip { margin-left: 12px; color: var(--dim); font-style: italic; }
+/* Tabellenzeilen exakt 20 px = CODE_ROW_PX: getrennte Raender ohne Abstand, je Zelle nur rechts/unten 1 px, Inhalt
+   19 px. Mit border-collapse waeren es 21 px (Rand oben und unten) und das Fenster liefe je Zeile 1 px weg. Der feste
+   Innenkasten .pv-cell-in haelt die Hoehe auch bei Marken (::before) oder anderem Schriftschnitt. */
+.pv-table { border-collapse: separate; border-spacing: 0; }
+.pv-table td, .pv-table th { box-sizing: content-box; height: 19px; padding: 0 8px; border: 0 solid var(--line); border-width: 0 1px 1px 0; line-height: 19px; vertical-align: top; white-space: nowrap; text-align: left; font-weight: 400; }
+.pv-cell-in { height: 19px; max-width: 32ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pv-table tr.pv-focus td { background: color-mix(in srgb, var(--accent) 22%, var(--code)); }
+.pv-table tr.pv-find-line td { box-shadow: inset 0 -2px 0 var(--yellow); }
+
+/* Details, Verstehen, Notizen */
+.pv-det-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 8px; }
+.pv-sec { margin: 14px 0; }
+.pv-sec-h { margin: 0 0 6px; font-size: 11px; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
+.pv-page-h { margin: 10px 0 4px; font-size: 11.5px; color: var(--accent); font-weight: 600; }
+.pv-kv { display: grid; grid-template-columns: minmax(96px, 32%) minmax(0, 1fr); gap: 6px; padding: 5px 0; border-bottom: 1px solid var(--line); align-items: start; font-size: 12.5px; }
+.pv-kv .pv-k { padding-top: 2px; }
+.pv-v { min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.pv-par { padding: 6px 0; border-bottom: 1px solid var(--line2); }
+.pv-par-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 2px; }
+.pv-par .pv-kv { border-bottom: 0; padding: 2px 0 2px 10px; }
+.pv-dormant-row .pv-k { color: var(--muted); }
+.pv-dormant { color: var(--muted); font-style: italic; }
+.pv-t-chip { margin-left: 6px; }
+.pv-ext-row { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.pv-ref, .pv-wire-row, .pv-edge { padding: 3px 0; }
+.pv-reftext { color: var(--text); font-size: 12px; }
+.pv-cert { display: inline-flex; align-items: center; min-height: 22px; padding: 1px 6px; border: 1px solid currentColor; border-radius: 3px; font-size: 10.5px; white-space: nowrap; }
+.pv-cert-captured { color: var(--green); }
+.pv-cert-static { color: var(--cyan); }
+.pv-cert-unknown { color: var(--yellow); }
+.pv-static-note { padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--panel); color: var(--text); }
+.pv-claim { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.pv-claim-text { font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.pv-claim-proof { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 2px; font-size: 11.5px; color: var(--muted); }
+.pv-ev { color: var(--muted); overflow-wrap: anywhere; }
+.pv-note { margin: 8px 0; padding: 8px 10px; border: 1px solid var(--line2); border-radius: 6px; background: var(--panel); }
+.pv-note-head { margin-bottom: 4px; }
+.pv-note-text { margin: 6px 0; }
+.pv-excerpt { max-height: 14em; overflow: auto; padding: 6px 8px; background: var(--code); border-radius: 4px; font-size: 12px; white-space: pre; overflow-wrap: normal; }
+.pv-st-kept { color: var(--green); }
+.pv-st-moved { color: var(--cyan); }
+.pv-st-missing { color: var(--yellow); }
+.pv-st-unmatched { color: var(--red); }
+/* Loeschen in zwei Schritten: .pv-btnrow setzt display:flex und schlaegt damit [hidden] - daher ausdruecklich. */
+.pv-note-confirm { margin-top: 6px; }
+.pv-note-confirm[hidden] { display: none; }
+.pv-note-live:empty { margin: 0; }
+/* projects-views:end */
+
+/* projects-shell:begin */
+/* Ebene PROJEKTE (js/ui/projects.js, Paket P2a-1): Rahmen, Liste, Zugang, Import, Tabs, Uebersicht, Hierarchie, Suche,
+   Blaetter und kleine Fenster. Nur vorhandene CSS-Variablen der Looks; Touch-Ziele >= 44 px; Safe-Area kommt ueber
+   .layer. Inline-Style gibt es nur fuer --pp-depth (berechnete Einrueckung, nie ein Paketwert). */
+#app.pp-open ~ .quick, #app.pp-open ~ .floats { visibility: hidden; }
+#btn-projects { white-space: nowrap; }
+@media (max-width: 374px) { #btn-projects { padding: 0 4px; letter-spacing: 0; } }
+#layer-projects { overflow: hidden; }
+#layer-projects .pp-main { position: relative; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+#layer-projects .lhead .pp-btn { min-height: 44px; padding: 6px 10px; font-size: 12px; }
+#layer-projects .lhead h1 { outline: none; overflow-wrap: anywhere; }
+.pp-btn { min-height: 44px; min-width: 44px; padding: 8px 12px; border: 1px solid var(--line2); border-radius: 6px; background: var(--panel); color: var(--text); font-size: 14px; touch-action: manipulation; }
+.pp-btn.pp-primary { border-color: var(--accent); color: var(--accent); background: var(--tour2); font-weight: 600; }
+.pp-btn.pp-danger { border-color: var(--red); color: var(--red); }
+.pp-btn.pp-inline { margin-left: 8px; }
+.pp-btn.pp-link-btn { border: 0; background: none; padding: 6px 0; color: var(--cyan); text-align: left; overflow-wrap: anywhere; max-width: 100%; }
+.pp-btn.pp-tile { display: block; width: 100%; text-align: left; }
+.pp-notices:empty { display: none; }
+.pp-notice { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--line); border-left: 3px solid var(--cyan); background: var(--panel); font-size: 13px; }
+.pp-notice-error { border-left-color: var(--red); }
+.pp-notice-warn { border-left-color: var(--magenta); }
+.pp-tabs[hidden] { display: none; }
+.pp-tab { min-height: 44px; }
+.pp-body { padding: 12px 12px calc(16px + var(--safe-b)); font-size: 14px; line-height: 1.5; outline: none; }
+.pp-body.pp-body-full { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.pp-body-full > .pp-toolbar { padding: 8px 10px 0; flex: 0 0 auto; }
+.pp-body-full > .pp-empty { padding: 12px; }
+.pp-view { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 240px; min-width: 0; }
+.pp-section { max-width: 860px; margin: 0 auto 22px; }
+.pp-section h2 { margin: 4px 0 8px; font-size: 16px; letter-spacing: .02em; overflow-wrap: anywhere; }
+.pp-section h3 { margin: 14px 0 6px; font-size: 14px; }
+.pp-section h4 { margin: 10px 0 4px; font-size: 13px; color: var(--muted); }
+.pp-section p { overflow-wrap: anywhere; }
+.pp-muted { color: var(--muted); font-size: 13px; }
+.pp-empty { color: var(--muted); }
+.pp-error { color: var(--red); }
+.pp-hint { padding: 8px 10px; border-left: 3px solid var(--cyan); border-radius: 0 6px 6px 0; background: var(--tour2); font-size: 13px; }
+.pp-hint-warn { border-left-color: var(--magenta); }
+.pp-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.pp-snapshot { padding: 8px 10px; border: 1px dashed var(--line2); border-radius: 6px; font-size: 13px; }
+.pp-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 8px 0; font-size: 13px; }
+.pp-facts dt { color: var(--muted); }
+.pp-facts dd { margin: 0; overflow-wrap: anywhere; }
+.pp-list { list-style: none; margin: 0; padding: 0; }
+.pp-list li { padding: 4px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.pp-stats { margin: 0; padding-left: 18px; }
+.pp-ext { font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; }
+.pp-state-sev { margin-right: 4px; font-size: 12px; font-weight: 700; color: var(--cyan); }
+.pp-state-warning .pp-state-sev { color: var(--magenta); }
+.pp-state-error .pp-state-sev { color: var(--red); }
+
+/* Projektliste */
+.pp-cards { display: grid; gap: 10px; }
+.pp-card { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--panel); }
+.pp-card-main { flex: 1 1 auto; min-width: 0; }
+.pp-card-title { margin: 0 0 4px; font-size: 15px; overflow-wrap: anywhere; }
+.pp-card p { margin: 2px 0; font-size: 13px; overflow-wrap: anywhere; }
+.pp-card-meta, .pp-card-time { color: var(--muted); }
+.pp-card-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+.pp-badge { display: inline-block; margin-right: 6px; padding: 2px 8px; border: 1px solid var(--line2); border-radius: 10px; font-size: 12px; }
+.pp-badge-offline { border-color: var(--green); color: var(--green); }
+.pp-badge-local { border-color: var(--accent); color: var(--accent); }
+.pp-badge-imported { border-color: var(--purple); color: var(--purple); }
+.pp-badge-loading { border-color: var(--cyan); color: var(--cyan); }
+.pp-badge-remote { color: var(--muted); }
+.pp-badge-failed { border-color: var(--red); color: var(--red); }
+.pp-offline { color: var(--muted); font-size: 12px; }
+.pp-card-problem { color: var(--red); }
+.pp-card-flag { color: var(--magenta); }
+.pp-card-flag.pp-flag-newer { color: var(--cyan); }
+/* Lokal entfernt (nicht automatisch geladen): eigene Zeilen unter den Karten, Knopf rechts, 44 px */
+.pp-removed { margin-top: 16px; }
+.pp-removed h3 { margin: 0 0 4px; font-size: 14px; }
+.pp-removed-row { display: flex; align-items: center; gap: 10px; }
+.pp-removed-text { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+.pp-removed-name { font-weight: 600; }
+.pp-removed-row .pp-btn { flex-shrink: 0; }
+/* Notizen ohne Projekt: Text klappt auf (details), Loeschen nur nach Rueckfrage */
+.pp-orphans h3 { margin: 10px 0 4px; font-size: 14px; }
+.pp-orphan { display: grid; gap: 2px; padding: 6px 0; }
+.pp-orphan p { margin: 0; }
+.pp-orphan-text summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; overflow-wrap: anywhere; }
+.pp-orphan-full { padding: 6px 8px; border-left: 3px solid var(--line2); white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; }
+.pp-orphan .pp-btn { justify-self: start; }
+
+/* Zugang und Import */
+.pp-steps { margin: 6px 0; padding-left: 20px; }
+.pp-steps li { margin-bottom: 8px; }
+.pp-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--cyan); }
+.pp-label { display: block; margin: 8px 0 4px; font-size: 13px; font-weight: 600; }
+.pp-input { box-sizing: border-box; width: 100%; max-width: 100%; min-height: 44px; padding: 8px 10px; border-radius: 6px; font-size: 16px; }
+.pp-access-result:empty, .pp-import-result:empty { display: none; }
+.pp-access-result, .pp-import-result { padding: 6px 0; font-size: 13px; overflow-wrap: anywhere; }
+
+/* Werkzeugzeile, Hierarchie, Suche */
+.pp-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.pp-toolbar .pp-label { margin: 0; }
+.pp-toolbar .pp-input { flex: 1 1 200px; width: auto; }
+.pp-tree { font-size: 13.5px; }
+.pp-row { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 2px 0 2px calc(var(--pp-depth, 0) * 14px); border-bottom: 1px solid var(--line); }
+.pp-btn.pp-twisty { min-width: 44px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 16px; }
+.pp-twisty-space { display: inline-block; flex-shrink: 0; width: 44px; }
+.pp-row-text { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; min-width: 0; }
+.pp-row-name { font-weight: 600; overflow-wrap: anywhere; }
+.pp-row-type, .pp-row-count { color: var(--muted); font-size: 12px; }
+.pp-row-path { flex-basis: 100%; color: var(--dim); font-family: var(--mono); font-size: 11.5px; overflow-wrap: anywhere; }
+.pp-row-actions { display: flex; flex-shrink: 0; gap: 4px; }
+.pp-row-actions .pp-btn { padding: 4px 8px; font-size: 12px; }
+.pp-btn.pp-more { margin: 6px 0 6px 44px; }
+.pp-tree-note { padding-left: 44px; }
+.pp-kinds { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.pp-kind { min-height: 44px; border: 1px solid var(--line2); }
+.pp-search-meta { color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
+.pp-hits { margin: 0; padding: 0; list-style: none; }
+.pp-hit { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; width: 100%; min-height: 44px; padding: 8px 4px; border-bottom: 1px solid var(--line); background: none; color: var(--text); text-align: left; }
+.pp-hit-kind { grid-row: span 2; color: var(--accent); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.pp-hit-where { color: var(--muted); font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
+.pp-hit-text { font-family: var(--mono); font-size: 12.5px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Blatt (Details, Verstehen, Notizen) und kleine Fenster */
+.pp-sheet-wrap { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; background: var(--bg); }
+.pp-sheet-wrap[hidden] { display: none; }
+.pp-sheet { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
+.pp-sheet-head { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--tour); }
+.pp-sheet-head h2 { flex: 1; margin: 0; font-size: 14px; letter-spacing: .1em; outline: none; }
+.pp-sheet-body { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; overflow: hidden; }
+.pp-sheet-body > .pp-empty, .pp-sheet-body > .pp-error { padding: 12px; }
+.pp-dialog-wrap { position: absolute; inset: 0; z-index: 6; display: flex; align-items: flex-end; justify-content: center; }
+.pp-dialog-wrap[hidden] { display: none; }
+.pp-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .45); }
+.pp-dialog { position: relative; box-sizing: border-box; width: min(560px, 100%); max-height: calc(100% - 24px); overflow-y: auto; overscroll-behavior: contain; padding: 16px 16px calc(16px + var(--safe-b)); border: 1px solid var(--line2); border-radius: 12px 12px 0 0; background: var(--win); }
+.pp-dialog h2 { margin: 0 0 10px; font-size: 16px; overflow-wrap: anywhere; }
+.pp-menu { display: grid; gap: 8px; }
+.pp-menu .pp-btn { text-align: left; }
+.pp-fieldset { margin: 10px 0; padding: 8px 10px; border: 1px solid var(--line2); border-radius: 6px; }
+.pp-fieldset legend { padding: 0 4px; font-size: 13px; font-weight: 600; }
+.pp-radio { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.pp-radio input { width: 22px; height: 22px; min-height: 22px; margin: 0; }
+.pp-radio label { flex: 1; padding: 10px 0; }
+@media (min-width: 700px) { .pp-dialog-wrap { align-items: center; } .pp-dialog { border-radius: 12px; } }
+/* projects-shell:end */

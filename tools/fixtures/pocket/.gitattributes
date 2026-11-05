@@ -1,0 +1,3 @@
+# Testvektoren sind Bytefolgen (BOM, UTF-16, ungueltiges UTF-8, kanonisches JSON): Git darf nichts umwandeln,
+# sonst passen sie nach einem Windows-Checkout (core.autocrlf) nicht mehr zu vectors.lock.json.
+* -text
