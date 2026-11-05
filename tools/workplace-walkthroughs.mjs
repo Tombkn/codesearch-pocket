@@ -138,7 +138,8 @@ export const WORKPLACE_SCRIPTS = {
   workspace_40: observed((g) => {
     g.type(''); g.filter('all');
     const focusRow = (h) => h.kind === 'opfind' && h.detail === 'FOCUS' && /\/Sensor$/.test(h.path || '');
-    if (!g.cs.state.hits.some(focusRow)) { g.enter('SignalGarden/Sensor'); g.enter('BranchLab'); g.type(''); }
+    // Hilfsschritt wie im Stationstext (05.11.2026): Pfad in USES tippen - in SEARCH springt Enter nur zur Trefferzeile.
+    if (!g.cs.state.hits.some(focusRow)) { g.tab('trace'); g.enter('SignalGarden/Sensor'); g.enter('BranchLab'); g.tab('search'); g.type(''); g.filter('all'); }
     g.tapRow(focusRow); g.key('Enter');
   }),
   workspace_41: observed((g) => {

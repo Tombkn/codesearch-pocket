@@ -680,7 +680,8 @@ export class CodeSearch {
     if (TARGET_EDIT_MODES.includes(s.mode) && value) {
       const t = rel(value.replace(/^op\(['"]|['"]\)$/g, ""));
       const found = this.net.op(t) ? t : [...this.net.ops.keys()].find((p) => baseName(p) === value);
-      if (found != null) { if(s.mode==='chain')return this.flowSetTarget(found); s.focus = found; s.targets = [abs(found)]; return this.rebuild(); }
+      // Getippter Pfad + Enter setzt den FOCUS wie Enter auf einer Zeile: auch in LETZTE FOCUS (wie nativ 1.10.4, Station 40).
+      if (found != null) { if(s.mode==='chain')return this.flowSetTarget(found); this.rememberFocus(found); s.focus = found; s.targets = [abs(found)]; return this.rebuild(); }
     }
   }
 

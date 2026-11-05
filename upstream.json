@@ -1,8 +1,8 @@
 {
   "repo": "Tombkn/td-codesearch",
-  "commit": "9f953e12bc1c1a1b9f264400feed0d6c4565a5e9",
-  "version": "1.10.3",
-  "checked": "2026-11-03",
+  "commit": "15e8356835380d4518159058740cb02daf25612c",
+  "version": "1.10.4",
+  "checked": "2026-11-05",
   "lesson_count": 640,
   "files": {
     "upstream_docs/SPEC-KIT-HANDOFF.md": {
@@ -15,7 +15,7 @@
     },
     "cs_search_sessions.py": {
       "path": "src/cs_search_sessions.py",
-      "sha256": "b876d270e31954e0e8d4d350bf2a5ddbdc53f7b33a66da561ef58096d3aecb94"
+      "sha256": "bdee6868f5c8bf9a8d8d3ca31af83234fffdbd5f088fb810246a5d9ec82ced9e"
     },
     "cs_comp_operations.py": {
       "path": "src/cs_comp_operations.py",
@@ -43,7 +43,7 @@
     },
     "CodeSearchExt.py": {
       "path": "src/CodeSearchExt.py",
-      "sha256": "6013c9ad41919d22bcadb73112633a04a2f736b1ca55272428dbb1ed57e4e9e0"
+      "sha256": "d4d6512ecce3961baf6c556c51e7b325f6104b22cf628cb822c23baf2294e1c3"
     },
     "CodeModelExt.py": {
       "path": "src/CodeModelExt.py",
@@ -51,19 +51,19 @@
     },
     "CodeSearch.tdn": {
       "path": "src/tdn/CodeSearch.tdn",
-      "sha256": "9ed93dd62a8e35413d490f569bc5c8d37a9b86952f3b12e6d95e8f854b10e717"
+      "sha256": "837b262b2fbcc92ba48917a0f4dfb47947fa308fa6f21495be885cf83b64a563"
     },
     "CodeSearch_Tutorial.tdn": {
       "path": "src/tdn/CodeSearch_Tutorial.tdn",
-      "sha256": "8f238219bb32cd77da983b5b7a871b007ab852f48033083c201a70a59f65cba6"
+      "sha256": "934963f8eeb048fddf0ce9b6e1eb7756701a3f9318cab72ce9ea50effebea48a"
     },
     "TourExt.py": {
       "path": "src/tutorial/TourExt.py",
-      "sha256": "8ff9b38f57f677f7bb7936df60e42c4077ed2615e1ee7e06d2acab972e23ca8d"
+      "sha256": "cfb43af62980b441162b1b7bdbaf5e88bb0cf511406b91138b564898cfd7081e"
     },
     "lessons.json": {
       "path": "src/tutorial/lessons.json",
-      "sha256": "42227341d3405aa561bfafc0a87dc4e733703f67ac67f160d15d3882b9556066"
+      "sha256": "c0deed541816fc7377d46d674936b030f1fca0149aa3b8f5caf8cfba899f43b9"
     },
     "marker_catalogue.json": {
       "path": "src/tutorial/marker_catalogue.json",

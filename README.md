@@ -1,8 +1,10 @@
 # CodeSearch Pocket
 
-Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **666 Schritte in 54 Kapiteln**, ein bedienbares Übungsnetz und **Laptop-Anleitungen für alle Kapitel**. Quellenstand: **CodeSearch 1.10.3, Commit [9f953e1](https://github.com/Tombkn/td-codesearch/tree/9f953e12bc1c1a1b9f264400feed0d6c4565a5e9)**, abgeglichen am 03.11.2026.
+Ein deutscher Mitmach-Kurs für CodeSearch auf dem Handy: **666 Schritte in 54 Kapiteln**, ein bedienbares Übungsnetz und **Laptop-Anleitungen für alle Kapitel**. Quellenstand: **CodeSearch 1.10.4, Commit [15e8356](https://github.com/Tombkn/td-codesearch/tree/15e8356835380d4518159058740cb02daf25612c)**, abgeglichen am 05.11.2026.
 
 [Veröffentlichte Handyseite](https://tombkn.github.io/codesearch-pocket/)
+
+**Neu in 1.10.4:** Station 40 (LETZTE FOCUS) führt ihren Hilfsschritt wie die Laptop-Fassung über USES: Pfad ins Feld tippen und Enter setzt den FOCUS und landet jetzt auch in LETZTE FOCUS. Die übrigen 1.10.4-Änderungen (lesbares Tour-Fenster, getippte Pfade, LETZTE FOCUS nach einer Schnellsuche, AUSLÖSEN im Methodenmenü) betreffen die Laptop-Fassung in TouchDesigner.
 
 **Neu in 1.10.3:** Der Kopf ist wie in der Laptop-Fassung aufgeräumt: AUSWAHL / DIESE COMP, Zieltext, LLM ANALYSE, FLOWLENS und ZWEITANSICHT stehen in der Zeile SUCHEN IN (bei DIESE COMP werden die Bereichs-Chips gedimmt, das Label heißt BEREICH), die Gruppentitel stehen klein vor ihren Tabs, die Brotkrume nennt nur FOCUS › Art › Symbol › Zeile, und ein Trennsystem ersetzt die gemischten Linien. Im Desktop-Browser zoomt Strg+Rad je Zone (Liste, Details, Code; über Leisten alles), Alt+0 setzt alles zurück; Shift+F6 führt die Tastatur in die Detail-Spalte (Enter führt die Zeile aus, Esc zurück zur Liste); ◁ GRUPPEN / DETAILS ▷ klappen Spalten ein; „Ziel ändern…“ wechselt den FOCUS ohne Netzklick; die Schnellsuche hat im Zeilenmenü → IN USES / USED BY / FLOW. **Kapitel 51** übt alles Neue in 21 Stationen, jeweils mit Laptop- und iPhone-Schritten.
 
@@ -89,6 +91,7 @@ npm test
 - `smoke.mjs`: Aufbau der Ansichten, Detailfelder und Kopiermenüs.
 - `ui-tests.mjs`: DOM-Integration der echten App-Handler mit jsdom; Lesen/Üben, Lesestelle, Schriftgröße, Rückmeldung, JSON-Eingabe, überlagernde Fenster und Kapitelwechsel. **jsdom besitzt keine Layout- oder Touch-Engine.**
 - `ui-upgrade-tests.mjs`: Extension-Menüs, Alt-Hilfe, Shortcutkatalog und Textkontraste aller importierten Looks (Anzahl aus `ui.json`) einschließlich der Kontext-Buttons.
+- `pocket-1104-tests.mjs`: Station 40 auf einer frischen App ohne gemerkten Sensor – getippter Pfad in USES landet in LETZTE FOCUS, die Station besteht mit dem Hilfsschritt aus dem Stationstext.
 - `pocket-1103-tests.mjs`: Kopfzeile wie native 1.10.3 (AUSWAHL / DIESE COMP in SUCHEN IN, Präfix-Schilder vor den Tabs, kurze Brotkrume), Zonen-Zoom per Strg + Rad, Kurs-Keys `cs.zone_results` / `cs.zone_detail` / `cs.detail_focus`, prep `zoom_reset` / `zone_zoom`, Looks-Konstanten aus `ui.json`.
 - `viewport-tests.mjs`: simulierte Ereignisse für Bildschirmtastatur, Drehung, Pinch-Zoom und Browser ohne VisualViewport. **Kein Safari-Gerätetest.**
 - `package-tests.mjs`: Start und Grundbedienung der erzeugten Einzeldatei im DOM-Test; enthaltene Dateien und Versionskennung.
@@ -101,7 +104,7 @@ Die Prüfung auf einem echten Android/Chrome und iPhone/Safari bleibt eine eigen
 
 ```sh
 python -m pip install -r requirements-build.txt
-python tools/upstream.py --repo ../td-codesearch --ref 9f953e12bc1c1a1b9f264400feed0d6c4565a5e9 --version 1.10.3 --checked 2026-11-03 --freeze
+python tools/upstream.py --repo ../td-codesearch --ref 15e8356835380d4518159058740cb02daf25612c --version 1.10.4 --checked 2026-11-05 --freeze
 python tools/build_data.py
 python tools/build_offline.py
 npm test
